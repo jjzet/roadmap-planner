@@ -126,6 +126,13 @@ export function Toolbar() {
         {saveStatus === 'saved' && '✓ Saved'}
         {saveStatus === 'error' && '✗ Error'}
       </div>
+
+      {/* Logo */}
+      <img
+        src="/logo.png"
+        alt="Roadmap Planner"
+        className="h-8 w-auto object-contain"
+      />
     </div>
   );
 }
