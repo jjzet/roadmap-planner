@@ -1,0 +1,189 @@
+import { useMemo } from 'react';
+import { useUIStore } from '../../store/uiStore';
+import { useRoadmapStore } from '../../store/roadmapStore';
+import { EDIT_PANEL_WIDTH, PHASE_LABELS } from '../../lib/constants';
+import type { RoadmapItem } from '../../types';
+
+export function EditPanel() {
+  const editPanelOpen = useUIStore((s) => s.editPanelOpen);
+  const selectedItemId = useUIStore((s) => s.selectedItemId);
+  const selectedStreamId = useUIStore((s) => s.selectedStreamId);
+  const closeEditPanel = useUIStore((s) => s.closeEditPanel);
+  const streams = useRoadmapStore((s) => s.roadmap.streams);
+  const dependencies = useRoadmapStore((s) => s.roadmap.dependencies);
+  const updateItem = useRoadmapStore((s) => s.updateItem);
+  const removeItem = useRoadmapStore((s) => s.removeItem);
+  const removeDependency = useRoadmapStore((s) => s.removeDependency);
+
+  const item = useMemo(() => {
+    if (!selectedStreamId || !selectedItemId) return null;
+    const stream = streams.find((s) => s.id === selectedStreamId);
+    return stream?.items.find((it) => it.id === selectedItemId) || null;
+  }, [streams, selectedStreamId, selectedItemId]);
+
+  const itemDependencies = useMemo(() => {
+    if (!selectedItemId) return [];
+    return dependencies.filter(
+      (d) => d.fromItemId === selectedItemId || d.toItemId === selectedItemId
+    );
+  }, [dependencies, selectedItemId]);
+
+  // Find item name by id (for dependency display)
+  const getItemName = (itemId: string): string => {
+    for (const stream of streams) {
+      const item = stream.items.find((it) => it.id === itemId);
+      if (item) return item.name;
+    }
+    return 'Unknown';
+  };
+
+  if (!editPanelOpen || !item || !selectedStreamId) return null;
+
+  const handleChange = (field: keyof RoadmapItem, value: string) => {
+    updateItem(selectedStreamId, item.id, { [field]: value });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm(`Delete "${item.name}"?`)) {
+      removeItem(selectedStreamId, item.id);
+      closeEditPanel();
+    }
+  };
+
+  return (
+    <div
+      className="fixed right-0 top-0 bottom-0 bg-white border-l border-gray-200 shadow-lg z-40 overflow-y-auto"
+      style={{ width: EDIT_PANEL_WIDTH }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <h2 className="text-sm font-semibold text-gray-700">Edit Item</h2>
+        <button
+          onClick={closeEditPanel}
+          className="text-gray-400 hover:text-gray-600 text-lg border-none bg-transparent cursor-pointer p-0"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Name */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+          <input
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            value={item.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+          />
+        </div>
+
+        {/* Lead */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Lead</label>
+          <input
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            value={item.lead}
+            onChange={(e) => handleChange('lead', e.target.value)}
+          />
+        </div>
+
+        {/* Support */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Support</label>
+          <input
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            value={item.support}
+            onChange={(e) => handleChange('support', e.target.value)}
+          />
+        </div>
+
+        {/* Phase */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Phase</label>
+          <select
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400 bg-white"
+            value={item.phase}
+            onChange={(e) => handleChange('phase', e.target.value)}
+          >
+            {Object.entries(PHASE_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Start</label>
+            <input
+              type="date"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+              value={item.startDate}
+              onChange={(e) => handleChange('startDate', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">End</label>
+            <input
+              type="date"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+              value={item.endDate}
+              onChange={(e) => handleChange('endDate', e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+          <textarea
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400 min-h-20 resize-y"
+            value={item.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        {/* Dependencies */}
+        {itemDependencies.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Dependencies</label>
+            <div className="space-y-1">
+              {itemDependencies.map((dep) => (
+                <div
+                  key={dep.id}
+                  className="flex items-center justify-between text-xs bg-gray-50 rounded px-2 py-1.5"
+                >
+                  <span className="text-gray-600">
+                    {dep.fromItemId === item.id ? '→ ' : '← '}
+                    {getItemName(
+                      dep.fromItemId === item.id ? dep.toItemId : dep.fromItemId
+                    )}
+                  </span>
+                  <button
+                    onClick={() => removeDependency(dep.id)}
+                    className="text-gray-400 hover:text-red-500 border-none bg-transparent cursor-pointer p-0 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Delete button */}
+        <div className="pt-4 border-t border-gray-200">
+          <button
+            onClick={handleDelete}
+            className="w-full text-sm px-3 py-2 bg-red-50 text-red-600 rounded border border-red-200 cursor-pointer hover:bg-red-100"
+          >
+            Delete Item
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
