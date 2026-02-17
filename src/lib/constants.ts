@@ -43,6 +43,23 @@ export const PHASE_SHORT_LABELS: Record<PhaseType, string> = {
   'fbn-led-work': 'FBN-Led',
 };
 
+/** Subtle alternating background colors per month (indexed 0-11, Jan-Dec).
+ *  Uses a 6-color palette that repeats, so adjacent months always contrast. */
+export const MONTH_SHADING_COLORS = [
+  '#EFF6FF', // Jan - blue-50
+  '#F0FDF4', // Feb - green-50
+  '#FFFBEB', // Mar - amber-50
+  '#FFF1F2', // Apr - rose-50
+  '#F5F3FF', // May - violet-50
+  '#ECFDF5', // Jun - emerald-50
+  '#EFF6FF', // Jul - blue-50
+  '#F0FDF4', // Aug - green-50
+  '#FFFBEB', // Sep - amber-50
+  '#FFF1F2', // Oct - rose-50
+  '#F5F3FF', // Nov - violet-50
+  '#ECFDF5', // Dec - emerald-50
+];
+
 export const DEFAULT_SETTINGS = {
   timelineStartDate: '2025-12-22',
   timelineEndDate: '2026-12-31',

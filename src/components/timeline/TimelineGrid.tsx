@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
 import { getTimelineColumns } from '../../store/selectors';
+import { MONTH_SHADING_COLORS } from '../../lib/constants';
 
 interface TimelineGridProps {
   height: number;
@@ -22,7 +23,12 @@ export function TimelineGrid({ height }: TimelineGridProps) {
         <div
           key={i}
           className="absolute top-0 border-r border-gray-100"
-          style={{ left: col.x, width: col.width, height }}
+          style={{
+            left: col.x,
+            width: col.width,
+            height,
+            backgroundColor: MONTH_SHADING_COLORS[col.month],
+          }}
         />
       ))}
     </div>

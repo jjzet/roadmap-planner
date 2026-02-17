@@ -82,6 +82,8 @@ export interface TimelineColumn {
   x: number;
   width: number;
   date: Date;
+  /** 0-based month index (0=Jan, 11=Dec) — used for month-based column shading */
+  month: number;
 }
 
 export function generateWeekColumns(start: Date, end: Date, origin: Date): TimelineColumn[] {
@@ -97,6 +99,7 @@ export function generateWeekColumns(start: Date, end: Date, origin: Date): Timel
       x,
       width: COLUMN_WIDTH_WEEK,
       date: new Date(current),
+      month: current.getMonth(),
     });
     current = addDays(current, 7);
   }
@@ -117,6 +120,7 @@ export function generateMonthColumns(start: Date, end: Date, origin: Date): Time
       x,
       width: COLUMN_WIDTH_MONTH,
       date: new Date(current),
+      month: current.getMonth(),
     });
     current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
   }
