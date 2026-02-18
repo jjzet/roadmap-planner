@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
-import type { Stream } from '../../types';
+import type { Milestone, Stream } from '../../types';
 import { STREAM_HEADER_HEIGHT, ITEM_ROW_HEIGHT } from '../../lib/constants';
 import { getBarRect } from '../../store/selectors';
+import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
+import { dateToX, parseDate } from '../../lib/dates';
 import { TimelineBar } from './TimelineBar';
+import { MilestoneMarker } from './MilestoneMarker';
 
 interface StreamGroupProps {
   stream: Stream;
@@ -12,6 +15,13 @@ interface StreamGroupProps {
 
 export function StreamGroup({ stream, originDate }: StreamGroupProps) {
   const zoom = useUIStore((s) => s.zoom);
+  const milestones = useRoadmapStore((s) => s.roadmap.milestones);
+
+  // Milestones belonging to this stream
+  const streamMilestones = useMemo(
+    () => milestones.filter((m: Milestone) => m.streamId === stream.id),
+    [milestones, stream.id]
+  );
 
   // Compute the summary bar: spans from earliest item start to latest item end
   const summaryRect = useMemo(() => {
@@ -30,12 +40,13 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
 
   return (
     <div>
-      {/* Stream header row with summary bar */}
+      {/* Stream header row with summary bar — z-[2] to sit above the month color grid overlay */}
       <div
         className="relative border-b border-gray-200"
         style={{
           height: STREAM_HEADER_HEIGHT,
           backgroundColor: `${stream.color}08`,
+          zIndex: 2,
         }}
       >
         {/* Summary bar */}
@@ -52,6 +63,18 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
             }}
           />
         )}
+
+        {/* Milestones on the header row */}
+        {streamMilestones.map((ms) => (
+          <MilestoneMarker
+            key={ms.id}
+            milestone={ms}
+            x={dateToX(parseDate(ms.date), originDate, zoom)}
+            streamColor={stream.color}
+            originDate={originDate}
+            zoom={zoom}
+          />
+        ))}
       </div>
 
       {/* Item rows */}

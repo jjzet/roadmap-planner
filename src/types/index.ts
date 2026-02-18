@@ -32,6 +32,13 @@ export interface Dependency {
   toItemId: string;
 }
 
+export interface Milestone {
+  id: string;
+  name: string;
+  date: string; // ISO date "YYYY-MM-DD"
+  streamId: string; // which stream this milestone belongs to
+}
+
 export interface RoadmapSettings {
   timelineStartDate: string;
   timelineEndDate: string;
@@ -40,6 +47,7 @@ export interface RoadmapSettings {
 export interface RoadmapData {
   streams: Stream[];
   dependencies: Dependency[];
+  milestones: Milestone[];
   settings: RoadmapSettings;
 }
 

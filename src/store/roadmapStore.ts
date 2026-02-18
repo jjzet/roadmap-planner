@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { RoadmapData, RoadmapItem, Stream, PhaseType } from '../types';
+import type { RoadmapData, RoadmapItem, Stream, Milestone, PhaseType } from '../types';
 import { DEFAULT_SETTINGS } from '../lib/constants';
 import { hasOverlap } from '../utils/overlapDetection';
 import { supabase } from '../lib/supabase';
@@ -14,6 +14,7 @@ function emptyRoadmap(): RoadmapData {
   return {
     streams: [],
     dependencies: [],
+    milestones: [],
     settings: { ...DEFAULT_SETTINGS },
   };
 }
@@ -49,6 +50,11 @@ interface RoadmapStore {
   // Dependency actions
   addDependency: (fromItemId: string, toItemId: string) => void;
   removeDependency: (depId: string) => void;
+
+  // Milestone actions
+  addMilestone: (name: string, date: string, streamId: string) => void;
+  removeMilestone: (milestoneId: string) => void;
+  moveMilestone: (milestoneId: string, newDate: string) => void;
 
   // Persistence
   fetchRoadmapList: () => Promise<void>;
@@ -110,6 +116,8 @@ export const useRoadmapStore = create<RoadmapStore>()(
         s.roadmap.dependencies = s.roadmap.dependencies.filter(
           (d) => !removedItemIds.has(d.fromItemId) && !removedItemIds.has(d.toItemId)
         );
+        // Remove milestones belonging to this stream
+        s.roadmap.milestones = s.roadmap.milestones.filter((m: Milestone) => m.streamId !== streamId);
         // Reorder remaining
         s.roadmap.streams.forEach((st: Stream, i: number) => {
           st.order = i;
@@ -246,6 +254,32 @@ export const useRoadmapStore = create<RoadmapStore>()(
       });
     },
 
+    // ── Milestone Actions ──
+
+    addMilestone: (name, date, streamId) => {
+      set((s) => {
+        s.roadmap.milestones.push({ id: uuid(), name, date, streamId });
+        s.isDirty = true;
+      });
+    },
+
+    removeMilestone: (milestoneId) => {
+      set((s) => {
+        s.roadmap.milestones = s.roadmap.milestones.filter((m: Milestone) => m.id !== milestoneId);
+        s.isDirty = true;
+      });
+    },
+
+    moveMilestone: (milestoneId, newDate) => {
+      set((s) => {
+        const ms = s.roadmap.milestones.find((m: Milestone) => m.id === milestoneId);
+        if (ms) {
+          ms.date = newDate;
+          s.isDirty = true;
+        }
+      });
+    },
+
     // ── Persistence ──
 
     fetchRoadmapList: async () => {
@@ -280,6 +314,7 @@ export const useRoadmapStore = create<RoadmapStore>()(
           roadmap: {
             streams: roadmapData.streams || [],
             dependencies: roadmapData.dependencies || [],
+            milestones: roadmapData.milestones || [],
             settings: roadmapData.settings || { ...DEFAULT_SETTINGS },
           },
           isDirty: false,
