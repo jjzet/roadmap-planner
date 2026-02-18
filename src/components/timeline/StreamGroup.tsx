@@ -1,9 +1,12 @@
 import { useMemo } from 'react';
-import type { Stream } from '../../types';
+import type { Milestone, Stream } from '../../types';
 import { STREAM_HEADER_HEIGHT, ITEM_ROW_HEIGHT } from '../../lib/constants';
 import { getBarRect } from '../../store/selectors';
+import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
+import { dateToX, parseDate } from '../../lib/dates';
 import { TimelineBar } from './TimelineBar';
+import { MilestoneMarker } from './MilestoneMarker';
 
 interface StreamGroupProps {
   stream: Stream;
@@ -12,6 +15,13 @@ interface StreamGroupProps {
 
 export function StreamGroup({ stream, originDate }: StreamGroupProps) {
   const zoom = useUIStore((s) => s.zoom);
+  const milestones = useRoadmapStore((s) => s.roadmap.milestones);
+
+  // Milestones belonging to this stream
+  const streamMilestones = useMemo(
+    () => milestones.filter((m: Milestone) => m.streamId === stream.id),
+    [milestones, stream.id]
+  );
 
   // Compute the summary bar: spans from earliest item start to latest item end
   const summaryRect = useMemo(() => {
@@ -52,6 +62,16 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
             }}
           />
         )}
+
+        {/* Milestones on the header row */}
+        {streamMilestones.map((ms) => (
+          <MilestoneMarker
+            key={ms.id}
+            milestone={ms}
+            x={dateToX(parseDate(ms.date), originDate, zoom)}
+            streamColor={stream.color}
+          />
+        ))}
       </div>
 
       {/* Item rows */}

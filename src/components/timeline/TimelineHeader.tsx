@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
 import { getTimelineColumns } from '../../store/selectors';
-import { TIMELINE_HEADER_HEIGHT } from '../../lib/constants';
+import { TIMELINE_HEADER_HEIGHT, MONTH_SHADING_COLORS } from '../../lib/constants';
 
 export function TimelineHeader() {
   const settings = useRoadmapStore((s) => s.roadmap.settings);
@@ -32,7 +32,7 @@ export function TimelineHeader() {
 
   return (
     <div
-      className="sticky top-0 z-20 bg-white border-b border-gray-200"
+      className="sticky top-0 z-20 border-b border-gray-200"
       style={{ height: TIMELINE_HEADER_HEIGHT }}
     >
       {/* Quarter labels (month view only) */}
@@ -56,7 +56,11 @@ export function TimelineHeader() {
           <div
             key={i}
             className="absolute top-0 bottom-0 flex items-center justify-center text-xs text-gray-500 border-r border-gray-100"
-            style={{ left: col.x, width: col.width }}
+            style={{
+              left: col.x,
+              width: col.width,
+              backgroundColor: MONTH_SHADING_COLORS[col.month],
+            }}
           >
             {col.label}
           </div>
