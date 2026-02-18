@@ -40,12 +40,13 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
 
   return (
     <div>
-      {/* Stream header row with summary bar */}
+      {/* Stream header row with summary bar — z-[2] to sit above the month color grid overlay */}
       <div
         className="relative border-b border-gray-200"
         style={{
           height: STREAM_HEADER_HEIGHT,
           backgroundColor: `${stream.color}08`,
+          zIndex: 2,
         }}
       >
         {/* Summary bar */}
@@ -70,6 +71,8 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
             milestone={ms}
             x={dateToX(parseDate(ms.date), originDate, zoom)}
             streamColor={stream.color}
+            originDate={originDate}
+            zoom={zoom}
           />
         ))}
       </div>

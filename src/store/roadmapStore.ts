@@ -54,6 +54,7 @@ interface RoadmapStore {
   // Milestone actions
   addMilestone: (name: string, date: string, streamId: string) => void;
   removeMilestone: (milestoneId: string) => void;
+  moveMilestone: (milestoneId: string, newDate: string) => void;
 
   // Persistence
   fetchRoadmapList: () => Promise<void>;
@@ -266,6 +267,16 @@ export const useRoadmapStore = create<RoadmapStore>()(
       set((s) => {
         s.roadmap.milestones = s.roadmap.milestones.filter((m: Milestone) => m.id !== milestoneId);
         s.isDirty = true;
+      });
+    },
+
+    moveMilestone: (milestoneId, newDate) => {
+      set((s) => {
+        const ms = s.roadmap.milestones.find((m: Milestone) => m.id === milestoneId);
+        if (ms) {
+          ms.date = newDate;
+          s.isDirty = true;
+        }
       });
     },
 
