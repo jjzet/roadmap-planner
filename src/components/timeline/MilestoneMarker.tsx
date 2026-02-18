@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import type { Milestone, ZoomLevel } from '../../types';
 import { useRoadmapStore } from '../../store/roadmapStore';
-import { ITEM_ROW_HEIGHT, STREAM_HEADER_HEIGHT } from '../../lib/constants';
+import { STREAM_HEADER_HEIGHT } from '../../lib/constants';
 import { formatDateDisplay, dateToX, xToDate, parseDate, formatDate } from '../../lib/dates';
 import { snapToWeek } from '../../utils/snapToWeek';
 
