@@ -366,17 +366,17 @@ function SortableStreamBlock({
                     {sub.name}
                   </div>
                   {showLead && (
-                    <div className="text-[10px] text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.lead || '—'}>
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.lead || '—'}>
                       {sub.lead || '—'}
                     </div>
                   )}
                   {showSupport && (
-                    <div className="text-[10px] text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.support || '—'}>
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.support || '—'}>
                       {sub.support || '—'}
                     </div>
                   )}
                   {showPhase && (
-                    <div className="text-[10px] text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}>
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}>
                       {PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}
                     </div>
                   )}
