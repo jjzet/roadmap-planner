@@ -11,6 +11,8 @@ import {
   STREAM_HEADER_HEIGHT,
   ITEM_ROW_HEIGHT,
   SUB_ITEM_ROW_HEIGHT,
+  PHASE_ROW_HEIGHT,
+  PHASE_HIGHLIGHT_STRIP_HEIGHT,
   TIMELINE_BUFFER_WEEKS,
 } from '../lib/constants';
 
@@ -37,6 +39,7 @@ export function getBarRect(
 export interface SubItemY {
   subItemId: string;
   y: number;
+  phaseBarRowY?: number;
 }
 
 export interface ItemLayout {
@@ -73,8 +76,22 @@ export function computeStreamLayouts(streams: Stream[]): StreamLayout[] {
         const subItemYs: SubItemY[] = [];
         if (item.expanded && item.subItems && item.subItems.length > 0) {
           for (const sub of item.subItems) {
-            subItemYs.push({ subItemId: sub.id, y: currentY });
+            const subY = currentY;
             currentY += SUB_ITEM_ROW_HEIGHT;
+
+            // Highlight strip when collapsed with phase bars
+            const hasPhases = sub.phaseBars && sub.phaseBars.length > 0;
+            if (!sub.phasesExpanded && hasPhases) {
+              currentY += PHASE_HIGHLIGHT_STRIP_HEIGHT;
+            }
+
+            let phaseBarRowY: number | undefined;
+            if (sub.phasesExpanded) {
+              phaseBarRowY = currentY;
+              currentY += PHASE_ROW_HEIGHT;
+            }
+
+            subItemYs.push({ subItemId: sub.id, y: subY, phaseBarRowY });
           }
           // Space for "+ Add Sub-item" row
           currentY += SUB_ITEM_ROW_HEIGHT;

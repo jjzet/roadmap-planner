@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { useRoadmapStore } from '../../store/roadmapStore';
-import { EDIT_PANEL_WIDTH, PHASE_LABELS } from '../../lib/constants';
+import { EDIT_PANEL_WIDTH, PHASE_LABELS, DEFAULT_STREAM_COLORS } from '../../lib/constants';
 import type { RoadmapItem } from '../../types';
 
 export function EditPanel() {
@@ -16,6 +16,8 @@ export function EditPanel() {
   const updateSubItem = useRoadmapStore((s) => s.updateSubItem);
   const removeSubItem = useRoadmapStore((s) => s.removeSubItem);
   const removeDependency = useRoadmapStore((s) => s.removeDependency);
+  const updatePhaseBar = useRoadmapStore((s) => s.updatePhaseBar);
+  const removePhaseBar = useRoadmapStore((s) => s.removePhaseBar);
 
   // Find selected item — may be a top-level item or a sub-item
   const { item, parentItemId } = useMemo(() => {
@@ -106,6 +108,40 @@ export function EditPanel() {
           />
         </div>
 
+        {/* Bar Color (sub-items only) */}
+        {isSubItem && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Bar Color</label>
+            <div className="flex gap-1 flex-wrap items-center">
+              {DEFAULT_STREAM_COLORS.map((color) => (
+                <button
+                  key={color}
+                  className="w-6 h-6 rounded border-2 cursor-pointer p-0"
+                  style={{
+                    backgroundColor: color,
+                    borderColor: item.color === color ? '#1a1a2e' : 'transparent',
+                  }}
+                  onClick={() => handleChange('color', color)}
+                  title={color}
+                />
+              ))}
+              {item.color && (
+                <button
+                  className="text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 cursor-pointer bg-white ml-1"
+                  onClick={() => {
+                    if (isSubItem) {
+                      updateSubItem(selectedStreamId, parentItemId, item.id, { color: undefined } as Partial<RoadmapItem>);
+                    }
+                  }}
+                  title="Reset to stream color"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Lead */}
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Lead</label>
@@ -174,6 +210,79 @@ export function EditPanel() {
             rows={3}
           />
         </div>
+
+        {/* Phase Bars (sub-items only) */}
+        {isSubItem && item.phaseBars && item.phaseBars.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Phase Bars</label>
+            <div className="space-y-2">
+              {item.phaseBars.map((bar) => (
+                <div
+                  key={bar.id}
+                  className="bg-gray-50 rounded px-2 py-2 space-y-1.5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 outline-none focus:border-blue-400"
+                      value={bar.name}
+                      onChange={(e) =>
+                        updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { name: e.target.value })
+                      }
+                    />
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete phase "${bar.name}"?`)) {
+                          removePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id);
+                        }
+                      }}
+                      className="text-gray-400 hover:text-red-500 border-none bg-transparent cursor-pointer p-0 text-xs flex-shrink-0"
+                      title="Delete phase bar"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {/* Color swatches */}
+                  <div className="flex gap-0.5 flex-wrap">
+                    {DEFAULT_STREAM_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        className="w-4 h-4 rounded-sm border cursor-pointer p-0"
+                        style={{
+                          backgroundColor: color,
+                          borderColor: bar.color === color ? '#1a1a2e' : 'transparent',
+                          borderWidth: bar.color === color ? 2 : 1,
+                        }}
+                        onClick={() =>
+                          updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { color })
+                        }
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <input
+                      type="date"
+                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-blue-400"
+                      value={bar.startDate}
+                      onChange={(e) =>
+                        updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { startDate: e.target.value })
+                      }
+                    />
+                    <input
+                      type="date"
+                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-blue-400"
+                      value={bar.endDate}
+                      onChange={(e) =>
+                        updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { endDate: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Dependencies */}
         {itemDependencies.length > 0 && (

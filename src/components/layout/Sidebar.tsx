@@ -20,6 +20,8 @@ import {
   STREAM_HEADER_HEIGHT,
   ITEM_ROW_HEIGHT,
   SUB_ITEM_ROW_HEIGHT,
+  PHASE_ROW_HEIGHT,
+  PHASE_HIGHLIGHT_STRIP_HEIGHT,
   TIMELINE_HEADER_HEIGHT,
   DEFAULT_STREAM_COLORS,
   DETAIL_COLUMN_WIDTH,
@@ -37,6 +39,7 @@ export function Sidebar() {
   const addSubItem = useRoadmapStore((s) => s.addSubItem);
   const toggleStreamCollapse = useRoadmapStore((s) => s.toggleStreamCollapse);
   const toggleItemExpanded = useRoadmapStore((s) => s.toggleItemExpanded);
+  const toggleSubItemPhasesExpanded = useRoadmapStore((s) => s.toggleSubItemPhasesExpanded);
   const selectItem = useUIStore((s) => s.selectItem);
   const openEditPanel = useUIStore((s) => s.openEditPanel);
   const selectedItemId = useUIStore((s) => s.selectedItemId);
@@ -154,6 +157,7 @@ export function Sidebar() {
                 onAddItem={addItem}
                 onAddSubItem={addSubItem}
                 onToggleItemExpanded={toggleItemExpanded}
+                onToggleSubItemPhasesExpanded={toggleSubItemPhasesExpanded}
                 onSelectItem={selectItem}
                 onDoubleClickItem={handleItemDoubleClick}
               />
@@ -216,6 +220,7 @@ interface SortableStreamBlockProps {
   onAddItem: (id: string) => void;
   onAddSubItem: (streamId: string, parentItemId: string) => void;
   onToggleItemExpanded: (streamId: string, itemId: string) => void;
+  onToggleSubItemPhasesExpanded: (streamId: string, parentItemId: string, subItemId: string) => void;
   onSelectItem: (itemId: string, streamId: string) => void;
   onDoubleClickItem: (itemId: string, streamId: string) => void;
 }
@@ -232,6 +237,7 @@ function SortableStreamBlock({
   onAddItem,
   onAddSubItem,
   onToggleItemExpanded,
+  onToggleSubItemPhasesExpanded,
   onSelectItem,
   onDoubleClickItem,
 }: SortableStreamBlockProps) {
@@ -350,38 +356,84 @@ function SortableStreamBlock({
               </div>
 
               {/* Sub-items (indented) */}
-              {item.expanded && item.subItems && item.subItems.map((sub) => (
-                <div
-                  key={sub.id}
-                  className={`flex items-center px-2 border-b border-gray-50 cursor-pointer ${
-                    selectedItemId === sub.id
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'hover:bg-gray-50 text-gray-500'
-                  }`}
-                  style={{ height: SUB_ITEM_ROW_HEIGHT }}
-                  onClick={() => onSelectItem(sub.id, stream.id)}
-                  onDoubleClick={() => onDoubleClickItem(sub.id, stream.id)}
-                >
-                  <div className="text-xs truncate pl-10" style={{ width: nameColumnWidth }}>
-                    {sub.name}
+              {item.expanded && item.subItems && item.subItems.map((sub) => {
+                const phaseBars = sub.phaseBars || [];
+                const hasPhases = phaseBars.length > 0;
+
+                return (
+                  <div key={sub.id}>
+                    <div
+                      className={`flex items-center px-2 border-b border-gray-50 cursor-pointer group/sub ${
+                        selectedItemId === sub.id
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'hover:bg-gray-50 text-gray-500'
+                      }`}
+                      style={{ height: SUB_ITEM_ROW_HEIGHT + (!sub.phasesExpanded && hasPhases ? PHASE_HIGHLIGHT_STRIP_HEIGHT : 0) }}
+                      onClick={() => onSelectItem(sub.id, stream.id)}
+                      onDoubleClick={() => onDoubleClickItem(sub.id, stream.id)}
+                    >
+                      {/* Phases expand/collapse toggle */}
+                      <span
+                        className="text-[8px] text-gray-300 hover:text-gray-500 w-3 flex-shrink-0 cursor-pointer ml-7 mr-0.5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleSubItemPhasesExpanded(stream.id, item.id, sub.id);
+                        }}
+                        title={sub.phasesExpanded ? 'Collapse phases' : 'Expand phases'}
+                      >
+                        {hasPhases || sub.phasesExpanded
+                          ? sub.phasesExpanded ? '▼' : '▶'
+                          : <span className="opacity-0 group-hover/sub:opacity-100">▶</span>}
+                      </span>
+                      <div className="text-xs truncate" style={{ width: nameColumnWidth - 30 }}>
+                        {sub.name}
+                      </div>
+                      {showLead && (
+                        <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.lead || '—'}>
+                          {sub.lead || '—'}
+                        </div>
+                      )}
+                      {showSupport && (
+                        <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.support || '—'}>
+                          {sub.support || '—'}
+                        </div>
+                      )}
+                      {showPhase && (
+                        <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}>
+                          {PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Phase summary row when expanded */}
+                    {sub.phasesExpanded && (
+                      <div
+                        className="flex items-center px-2 pl-12 border-b border-gray-50 overflow-hidden"
+                        style={{ height: PHASE_ROW_HEIGHT }}
+                      >
+                        {hasPhases ? (
+                          <div className="flex items-center gap-1 overflow-hidden">
+                            {phaseBars.map((bar) => (
+                              <span
+                                key={bar.id}
+                                className="text-[9px] text-white px-1.5 py-0.5 rounded-sm truncate max-w-[80px]"
+                                style={{ backgroundColor: bar.color }}
+                                title={bar.name}
+                              >
+                                {bar.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-gray-300 italic">
+                            Click timeline to add phases
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {showLead && (
-                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.lead || '—'}>
-                      {sub.lead || '—'}
-                    </div>
-                  )}
-                  {showSupport && (
-                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.support || '—'}>
-                      {sub.support || '—'}
-                    </div>
-                  )}
-                  {showPhase && (
-                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}>
-                      {PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               {/* Add sub-item row */}
               {item.expanded && (

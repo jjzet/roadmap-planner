@@ -1,29 +1,35 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
-import type { RoadmapItem } from '../../types';
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import type { PhaseBar } from '../../types';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
 import { getBarRect } from '../../store/selectors';
 import { parseDate, dateToX, xToDate, formatDate, formatDateDisplay, durationInWeeks } from '../../lib/dates';
-import { SUB_BAR_HEIGHT, SUB_BAR_VERTICAL_PADDING } from '../../lib/constants';
+import { PHASE_BAR_HEIGHT, PHASE_BAR_VERTICAL_PADDING } from '../../lib/constants';
 import { snapToWeek } from '../../utils/snapToWeek';
+import { hasPhaseBarOverlap } from '../../utils/overlapDetection';
 import { BarResizeHandle } from './BarResizeHandle';
 
-interface SubItemBarProps {
-  subItem: RoadmapItem;
+interface PhaseBarSegmentProps {
+  bar: PhaseBar;
+  allBars: PhaseBar[];
+  subItemId: string;
   parentItemId: string;
   streamId: string;
-  streamColor: string;
   originDate: Date;
 }
 
-export function SubItemBar({ subItem, parentItemId, streamId, streamColor, originDate }: SubItemBarProps) {
-  const moveSubItem = useRoadmapStore((s) => s.moveSubItem);
-  const resizeSubItem = useRoadmapStore((s) => s.resizeSubItem);
+export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamId, originDate }: PhaseBarSegmentProps) {
+  const movePhaseBar = useRoadmapStore((s) => s.movePhaseBar);
+  const resizePhaseBar = useRoadmapStore((s) => s.resizePhaseBar);
+  const removePhaseBar = useRoadmapStore((s) => s.removePhaseBar);
   const selectItem = useUIStore((s) => s.selectItem);
+  const selectPhaseBar = useUIStore((s) => s.selectPhaseBar);
+  const selectedPhaseBarId = useUIStore((s) => s.selectedPhaseBarId);
   const openEditPanel = useUIStore((s) => s.openEditPanel);
-  const selectedItemId = useUIStore((s) => s.selectedItemId);
   const isPanning = useUIStore((s) => s.isPanning);
   const zoom = useUIStore((s) => s.zoom);
+
+  const isSelected = selectedPhaseBarId === bar.id;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragDeltaX, setDragDeltaX] = useState(0);
@@ -35,8 +41,10 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
   const dragStartX = useRef(0);
   const didDrag = useRef(false);
 
-  const subItemRef = useRef(subItem);
-  subItemRef.current = subItem;
+  const barRef = useRef(bar);
+  barRef.current = bar;
+  const allBarsRef = useRef(allBars);
+  allBarsRef.current = allBars;
   const originDateRef = useRef(originDate);
   originDateRef.current = originDate;
   const zoomRef = useRef(zoom);
@@ -45,10 +53,11 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
   streamIdRef.current = streamId;
   const parentItemIdRef = useRef(parentItemId);
   parentItemIdRef.current = parentItemId;
+  const subItemIdRef = useRef(subItemId);
+  subItemIdRef.current = subItemId;
   const resizeSideRef = useRef<'left' | 'right'>('right');
 
-  const isSelected = selectedItemId === subItem.id;
-  const rect = useMemo(() => getBarRect(subItem.startDate, subItem.endDate, originDate, zoom), [subItem.startDate, subItem.endDate, originDate, zoom]);
+  const rect = useMemo(() => getBarRect(bar.startDate, bar.endDate, originDate, zoom), [bar.startDate, bar.endDate, originDate, zoom]);
 
   const displayX = isResizing && resizeSide === 'left' ? rect.x + resizeDelta : rect.x + (isDragging ? dragDeltaX : 0);
   const displayWidth = isResizing
@@ -57,11 +66,9 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
       : rect.width + resizeDelta
     : rect.width;
 
-  // Use custom color if set, otherwise muted version of stream color (40% opacity)
-  const subColor = subItem.color || (streamColor + '66');
-
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      e.stopPropagation(); // Prevent click-to-create on the row
       if (isPanning || isResizing) return;
 
       dragStartX.current = e.clientX;
@@ -88,7 +95,7 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
           const scrollDelta = (scrollContainer?.scrollLeft || 0) - startScrollLeft;
           const totalDelta = delta + scrollDelta;
 
-          const current = subItemRef.current;
+          const current = barRef.current;
           const currentOrigin = originDateRef.current;
           const currentZoom = zoomRef.current;
 
@@ -99,9 +106,17 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
           const duration = currentEnd.getTime() - currentStart.getTime();
           const snappedEnd = new Date(snappedStart.getTime() + duration);
 
-          moveSubItem(streamIdRef.current, parentItemIdRef.current, current.id, formatDate(snappedStart), formatDate(snappedEnd));
+          const newStartStr = formatDate(snappedStart);
+          const newEndStr = formatDate(snappedEnd);
+
+          if (!hasPhaseBarOverlap(allBarsRef.current, current.id, newStartStr, newEndStr)) {
+            movePhaseBar(streamIdRef.current, parentItemIdRef.current, subItemIdRef.current, current.id, newStartStr, newEndStr);
+          }
         } else {
-          selectItem(subItemRef.current.id, streamIdRef.current);
+          // Select the parent sub-item and this phase bar on click, open edit panel
+          selectItem(subItemIdRef.current, streamIdRef.current);
+          selectPhaseBar(barRef.current.id);
+          openEditPanel();
         }
 
         setIsDragging(false);
@@ -111,16 +126,16 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     },
-    [isPanning, isResizing, moveSubItem, selectItem]
+    [isPanning, isResizing, movePhaseBar, selectItem, selectPhaseBar, openEditPanel]
   );
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      selectItem(subItem.id, streamId);
+      selectItem(subItemId, streamId);
       openEditPanel();
     },
-    [subItem.id, streamId, selectItem, openEditPanel]
+    [subItemId, streamId, selectItem, openEditPanel]
   );
 
   const handleResizeStart = useCallback((side: 'left' | 'right') => {
@@ -135,7 +150,7 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
   }, []);
 
   const handleResizeEnd = useCallback((finalDelta: number) => {
-    const current = subItemRef.current;
+    const current = barRef.current;
     const currentOrigin = originDateRef.current;
     const currentZoom = zoomRef.current;
     const side = resizeSideRef.current;
@@ -157,12 +172,33 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
     }
 
     if (newEndDate.getTime() - newStartDate.getTime() >= 7 * 86400000) {
-      resizeSubItem(streamIdRef.current, parentItemIdRef.current, current.id, formatDate(newStartDate), formatDate(newEndDate));
+      const newStartStr = formatDate(newStartDate);
+      const newEndStr = formatDate(newEndDate);
+      if (!hasPhaseBarOverlap(allBarsRef.current, current.id, newStartStr, newEndStr)) {
+        resizePhaseBar(streamIdRef.current, parentItemIdRef.current, subItemIdRef.current, current.id, newStartStr, newEndStr);
+      }
     }
 
     setIsResizing(false);
     setResizeDelta(0);
-  }, [resizeSubItem]);
+  }, [resizePhaseBar]);
+
+  // Delete key handler when this phase bar is selected
+  useEffect(() => {
+    if (!isSelected) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Don't trigger if user is typing in an input/textarea
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        removePhaseBar(streamIdRef.current, parentItemIdRef.current, subItemIdRef.current, barRef.current.id);
+        selectPhaseBar(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSelected, removePhaseBar, selectPhaseBar]);
 
   const handleMouseEnter = () => {
     tooltipTimeout.current = setTimeout(() => setShowTooltip(true), 500);
@@ -174,24 +210,24 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
 
   return (
     <div
-      className={`absolute rounded cursor-pointer group select-none ${
-        isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-      } ${isDragging ? 'opacity-80 shadow-md' : ''}`}
+      className={`absolute rounded-sm cursor-pointer group select-none ${
+        isDragging ? 'opacity-80 shadow-md' : ''
+      } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
       style={{
         left: displayX,
-        width: Math.max(displayWidth, 16),
-        top: SUB_BAR_VERTICAL_PADDING,
-        height: SUB_BAR_HEIGHT,
-        backgroundColor: subColor,
-        zIndex: isDragging || isResizing ? 30 : 5,
+        width: Math.max(displayWidth, 12),
+        top: PHASE_BAR_VERTICAL_PADDING,
+        height: PHASE_BAR_HEIGHT,
+        backgroundColor: bar.color,
+        zIndex: isDragging || isResizing ? 30 : isSelected ? 10 : 5,
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="px-1.5 text-[10px] text-white font-medium leading-[20px] truncate pointer-events-none">
-        {subItem.name}
+      <div className="px-1 text-[9px] text-white font-medium leading-[16px] truncate pointer-events-none">
+        {bar.name}
       </div>
 
       {!isPanning && (
@@ -213,12 +249,14 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
 
       {showTooltip && !isDragging && !isResizing && (
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg whitespace-nowrap pointer-events-none z-50">
-          <div className="font-medium">{subItem.name}</div>
-          <div className="text-gray-300 mt-0.5">
-            {formatDateDisplay(subItem.startDate)} — {formatDateDisplay(subItem.endDate)}
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: bar.color }} />
+            <span className="font-medium">{bar.name}</span>
           </div>
-          <div className="text-gray-300">{durationInWeeks(subItem.startDate, subItem.endDate)} weeks</div>
-          {subItem.lead && <div className="text-gray-300">Lead: {subItem.lead}</div>}
+          <div className="text-gray-300 mt-0.5">
+            {formatDateDisplay(bar.startDate)} — {formatDateDisplay(bar.endDate)}
+          </div>
+          <div className="text-gray-300">{durationInWeeks(bar.startDate, bar.endDate)} weeks</div>
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ interface UIState {
   zoom: ZoomLevel;
   selectedItemId: string | null;
   selectedStreamId: string | null;
+  selectedPhaseBarId: string | null;
   editPanelOpen: boolean;
   isPanning: boolean;
   dependencyMode: boolean;
@@ -21,6 +22,7 @@ interface UIState {
   setZoom: (z: ZoomLevel) => void;
   toggleZoom: () => void;
   selectItem: (itemId: string | null, streamId?: string | null) => void;
+  selectPhaseBar: (phaseBarId: string | null) => void;
   openEditPanel: () => void;
   closeEditPanel: () => void;
   setPanning: (v: boolean) => void;
@@ -36,6 +38,7 @@ export const useUIStore = create<UIState>((set) => ({
   zoom: 'week',
   selectedItemId: null,
   selectedStreamId: null,
+  selectedPhaseBarId: null,
   editPanelOpen: false,
   isPanning: false,
   dependencyMode: false,
@@ -54,12 +57,15 @@ export const useUIStore = create<UIState>((set) => ({
     set({
       selectedItemId: itemId,
       selectedStreamId: streamId,
+      selectedPhaseBarId: null,
       // Don't auto-open edit panel on select — only double-click opens it
     }),
 
+  selectPhaseBar: (phaseBarId) => set({ selectedPhaseBarId: phaseBarId }),
+
   openEditPanel: () => set({ editPanelOpen: true }),
   closeEditPanel: () =>
-    set({ editPanelOpen: false, selectedItemId: null, selectedStreamId: null }),
+    set({ editPanelOpen: false, selectedItemId: null, selectedStreamId: null, selectedPhaseBarId: null }),
 
   setPanning: (v) => set({ isPanning: v }),
 

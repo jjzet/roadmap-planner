@@ -5,6 +5,14 @@ export type PhaseType =
   | 'ongoing-continuous'
   | 'fbn-led-work';
 
+export interface PhaseBar {
+  id: string;
+  name: string;
+  startDate: string; // ISO date "YYYY-MM-DD"
+  endDate: string;
+  color: string; // hex color, user-picked
+}
+
 export interface RoadmapItem {
   id: string;
   name: string;
@@ -15,8 +23,11 @@ export interface RoadmapItem {
   phase: PhaseType;
   notes: string;
   order: number;
+  color?: string; // optional override color for the bar
   subItems?: RoadmapItem[];
   expanded?: boolean;
+  phaseBars?: PhaseBar[];
+  phasesExpanded?: boolean;
 }
 
 export interface Stream {
