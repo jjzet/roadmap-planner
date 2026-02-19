@@ -19,6 +19,7 @@ import { useUIStore } from '../../store/uiStore';
 import {
   STREAM_HEADER_HEIGHT,
   ITEM_ROW_HEIGHT,
+  SUB_ITEM_ROW_HEIGHT,
   TIMELINE_HEADER_HEIGHT,
   DEFAULT_STREAM_COLORS,
   DETAIL_COLUMN_WIDTH,
@@ -33,7 +34,9 @@ export function Sidebar() {
   const reorderStreams = useRoadmapStore((s) => s.reorderStreams);
   const removeStream = useRoadmapStore((s) => s.removeStream);
   const addItem = useRoadmapStore((s) => s.addItem);
+  const addSubItem = useRoadmapStore((s) => s.addSubItem);
   const toggleStreamCollapse = useRoadmapStore((s) => s.toggleStreamCollapse);
+  const toggleItemExpanded = useRoadmapStore((s) => s.toggleItemExpanded);
   const selectItem = useUIStore((s) => s.selectItem);
   const openEditPanel = useUIStore((s) => s.openEditPanel);
   const selectedItemId = useUIStore((s) => s.selectedItemId);
@@ -149,6 +152,8 @@ export function Sidebar() {
                 onToggleCollapse={toggleStreamCollapse}
                 onRemoveStream={removeStream}
                 onAddItem={addItem}
+                onAddSubItem={addSubItem}
+                onToggleItemExpanded={toggleItemExpanded}
                 onSelectItem={selectItem}
                 onDoubleClickItem={handleItemDoubleClick}
               />
@@ -209,6 +214,8 @@ interface SortableStreamBlockProps {
   onToggleCollapse: (id: string) => void;
   onRemoveStream: (id: string) => void;
   onAddItem: (id: string) => void;
+  onAddSubItem: (streamId: string, parentItemId: string) => void;
+  onToggleItemExpanded: (streamId: string, itemId: string) => void;
   onSelectItem: (itemId: string, streamId: string) => void;
   onDoubleClickItem: (itemId: string, streamId: string) => void;
 }
@@ -223,6 +230,8 @@ function SortableStreamBlock({
   onToggleCollapse,
   onRemoveStream,
   onAddItem,
+  onAddSubItem,
+  onToggleItemExpanded,
   onSelectItem,
   onDoubleClickItem,
 }: SortableStreamBlockProps) {
@@ -296,33 +305,92 @@ function SortableStreamBlock({
       {!stream.collapsed && (
         <>
           {stream.items.map((item) => (
-            <div
-              key={item.id}
-              className={`flex items-center px-2 border-b border-gray-50 cursor-pointer ${
-                selectedItemId === item.id
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'hover:bg-gray-50 text-gray-600'
-              }`}
-              style={{ height: ITEM_ROW_HEIGHT }}
-              onClick={() => onSelectItem(item.id, stream.id)}
-              onDoubleClick={() => onDoubleClickItem(item.id, stream.id)}
-            >
-              <div className="text-sm truncate pl-6" style={{ width: nameColumnWidth }}>
-                {item.name}
+            <div key={item.id}>
+              <div
+                className={`flex items-center px-2 border-b border-gray-50 cursor-pointer group/item ${
+                  selectedItemId === item.id
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'hover:bg-gray-50 text-gray-600'
+                }`}
+                style={{ height: ITEM_ROW_HEIGHT }}
+                onClick={() => onSelectItem(item.id, stream.id)}
+                onDoubleClick={() => onDoubleClickItem(item.id, stream.id)}
+              >
+                {/* Expand/collapse toggle for sub-items */}
+                <span
+                  className="text-[10px] text-gray-300 hover:text-gray-500 w-4 flex-shrink-0 cursor-pointer ml-4 mr-0.5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleItemExpanded(stream.id, item.id);
+                  }}
+                  title={item.expanded ? 'Collapse sub-tasks' : 'Expand sub-tasks'}
+                >
+                  {item.subItems && item.subItems.length > 0
+                    ? item.expanded ? '▼' : '▶'
+                    : <span className="opacity-0 group-hover/item:opacity-100">▶</span>}
+                </span>
+                <div className="text-sm truncate" style={{ width: nameColumnWidth - 24 }}>
+                  {item.name}
+                </div>
+                {showLead && (
+                  <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={item.lead || '—'}>
+                    {item.lead || '—'}
+                  </div>
+                )}
+                {showSupport && (
+                  <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={item.support || '—'}>
+                    {item.support || '—'}
+                  </div>
+                )}
+                {showPhase && (
+                  <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[item.phase as PhaseType] || item.phase}>
+                    {PHASE_SHORT_LABELS[item.phase as PhaseType] || item.phase}
+                  </div>
+                )}
               </div>
-              {showLead && (
-                <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={item.lead || '—'}>
-                  {item.lead || '—'}
+
+              {/* Sub-items (indented) */}
+              {item.expanded && item.subItems && item.subItems.map((sub) => (
+                <div
+                  key={sub.id}
+                  className={`flex items-center px-2 border-b border-gray-50 cursor-pointer ${
+                    selectedItemId === sub.id
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'hover:bg-gray-50 text-gray-500'
+                  }`}
+                  style={{ height: SUB_ITEM_ROW_HEIGHT }}
+                  onClick={() => onSelectItem(sub.id, stream.id)}
+                  onDoubleClick={() => onDoubleClickItem(sub.id, stream.id)}
+                >
+                  <div className="text-xs truncate pl-10" style={{ width: nameColumnWidth }}>
+                    {sub.name}
+                  </div>
+                  {showLead && (
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.lead || '—'}>
+                      {sub.lead || '—'}
+                    </div>
+                  )}
+                  {showSupport && (
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={sub.support || '—'}>
+                      {sub.support || '—'}
+                    </div>
+                  )}
+                  {showPhase && (
+                    <div className="text-[10px] text-gray-400 truncate pl-2" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}>
+                      {PHASE_SHORT_LABELS[sub.phase as PhaseType] || sub.phase}
+                    </div>
+                  )}
                 </div>
-              )}
-              {showSupport && (
-                <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={item.support || '—'}>
-                  {item.support || '—'}
-                </div>
-              )}
-              {showPhase && (
-                <div className="text-xs text-gray-400 truncate" style={{ width: DETAIL_COLUMN_WIDTH }} title={PHASE_SHORT_LABELS[item.phase as PhaseType] || item.phase}>
-                  {PHASE_SHORT_LABELS[item.phase as PhaseType] || item.phase}
+              ))}
+
+              {/* Add sub-item row */}
+              {item.expanded && (
+                <div
+                  className="flex items-center px-2 pl-12 text-xs text-gray-300 hover:text-blue-500 cursor-pointer border-b border-gray-50"
+                  style={{ height: SUB_ITEM_ROW_HEIGHT }}
+                  onClick={() => onAddSubItem(stream.id, item.id)}
+                >
+                  + Add Sub-task
                 </div>
               )}
             </div>

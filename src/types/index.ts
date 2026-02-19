@@ -15,6 +15,8 @@ export interface RoadmapItem {
   phase: PhaseType;
   notes: string;
   order: number;
+  subItems?: RoadmapItem[];
+  expanded?: boolean;
 }
 
 export interface Stream {

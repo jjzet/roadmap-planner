@@ -15,6 +15,9 @@ interface UIState {
   showSupportColumn: boolean;
   showPhaseColumn: boolean;
 
+  // Timeline display
+  showMonthColors: boolean;
+
   setZoom: (z: ZoomLevel) => void;
   toggleZoom: () => void;
   selectItem: (itemId: string | null, streamId?: string | null) => void;
@@ -26,6 +29,7 @@ interface UIState {
   toggleLeadColumn: () => void;
   toggleSupportColumn: () => void;
   togglePhaseColumn: () => void;
+  toggleMonthColors: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -40,6 +44,7 @@ export const useUIStore = create<UIState>((set) => ({
   showLeadColumn: false,
   showSupportColumn: false,
   showPhaseColumn: false,
+  showMonthColors: true,
 
   setZoom: (z) => set({ zoom: z }),
   toggleZoom: () =>
@@ -67,4 +72,5 @@ export const useUIStore = create<UIState>((set) => ({
   toggleLeadColumn: () => set((s) => ({ showLeadColumn: !s.showLeadColumn })),
   toggleSupportColumn: () => set((s) => ({ showSupportColumn: !s.showSupportColumn })),
   togglePhaseColumn: () => set((s) => ({ showPhaseColumn: !s.showPhaseColumn })),
+  toggleMonthColors: () => set((s) => ({ showMonthColors: !s.showMonthColors })),
 }));

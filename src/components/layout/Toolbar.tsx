@@ -15,6 +15,8 @@ export function Toolbar() {
   const addMilestone = useRoadmapStore((s) => s.addMilestone);
   const zoom = useUIStore((s) => s.zoom);
   const setZoom = useUIStore((s) => s.setZoom);
+  const showMonthColors = useUIStore((s) => s.showMonthColors);
+  const toggleMonthColors = useUIStore((s) => s.toggleMonthColors);
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState(roadmapName);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
@@ -130,6 +132,26 @@ export function Toolbar() {
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Save status */}
+      <div className="text-xs text-gray-400 w-16 text-right">
+        {saveStatus === 'saving' && 'Saving...'}
+        {saveStatus === 'saved' && '\u2713 Saved'}
+        {saveStatus === 'error' && '\u2717 Error'}
+      </div>
+
+      {/* Month colors toggle */}
+      <button
+        onClick={toggleMonthColors}
+        className={`text-sm px-3 py-1 rounded-md border transition-colors ${
+          showMonthColors
+            ? 'bg-blue-50 text-blue-600 border-blue-200'
+            : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-gray-700'
+        }`}
+        title={showMonthColors ? 'Hide month colors' : 'Show month colors'}
+      >
+        Colors
+      </button>
+
       {/* Zoom toggle */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
         <button
@@ -154,13 +176,6 @@ export function Toolbar() {
         </button>
       </div>
 
-      {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && '✓ Saved'}
-        {saveStatus === 'error' && '✗ Error'}
-      </div>
-
       {/* Logo */}
       <img
         src="/logo.png"
@@ -171,18 +186,12 @@ export function Toolbar() {
       {/* Milestone creation popover */}
       {showMilestoneForm && (
         <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setShowMilestoneForm(false)}
-          />
-          {/* Popover */}
+          <div className="fixed inset-0 z-40" onClick={() => setShowMilestoneForm(false)} />
           <div
             className="absolute top-full left-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50"
             style={{ width: 300 }}
           >
             <div className="text-sm font-medium text-gray-700 mb-3">Add Milestone</div>
-
             <label className="block text-xs text-gray-500 mb-1">Name</label>
             <input
               className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-blue-400"
@@ -192,7 +201,6 @@ export function Toolbar() {
               onKeyDown={(e) => { if (e.key === 'Enter') handleAddMilestone(); }}
               autoFocus
             />
-
             <label className="block text-xs text-gray-500 mb-1">Date</label>
             <input
               type="date"
@@ -200,7 +208,6 @@ export function Toolbar() {
               value={msDate}
               onChange={(e) => setMsDate(e.target.value)}
             />
-
             <label className="block text-xs text-gray-500 mb-1">Stream</label>
             <select
               className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 bg-white outline-none focus:border-blue-400"
@@ -208,25 +215,12 @@ export function Toolbar() {
               onChange={(e) => setMsStreamId(e.target.value)}
             >
               {streams.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
-
             <div className="flex gap-2">
-              <button
-                onClick={handleAddMilestone}
-                className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 border-none cursor-pointer"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => setShowMilestoneForm(false)}
-                className="text-sm px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 border-none cursor-pointer"
-              >
-                Cancel
-              </button>
+              <button onClick={handleAddMilestone} className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 border-none cursor-pointer">Add</button>
+              <button onClick={() => setShowMilestoneForm(false)} className="text-sm px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 border-none cursor-pointer">Cancel</button>
             </div>
           </div>
         </>

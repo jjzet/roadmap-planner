@@ -46,6 +46,14 @@ interface RoadmapStore {
   removeItem: (streamId: string, itemId: string) => void;
   moveItem: (streamId: string, itemId: string, newStart: string, newEnd: string) => void;
   resizeItem: (streamId: string, itemId: string, newStart: string, newEnd: string) => void;
+  toggleItemExpanded: (streamId: string, itemId: string) => void;
+
+  // Sub-item actions
+  addSubItem: (streamId: string, parentItemId: string) => void;
+  removeSubItem: (streamId: string, parentItemId: string, subItemId: string) => void;
+  updateSubItem: (streamId: string, parentItemId: string, subItemId: string, patch: Partial<RoadmapItem>) => void;
+  moveSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
+  resizeSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
 
   // Dependency actions
   addDependency: (fromItemId: string, toItemId: string) => void;
@@ -195,13 +203,21 @@ export const useRoadmapStore = create<RoadmapStore>()(
       set((s) => {
         const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
         if (!stream) return;
+        const item = stream.items.find((it: RoadmapItem) => it.id === itemId);
+        // Collect IDs to remove from dependencies (item + its sub-items)
+        const idsToRemove = new Set([itemId]);
+        if (item?.subItems) {
+          for (const sub of item.subItems) {
+            idsToRemove.add(sub.id);
+          }
+        }
         stream.items = stream.items.filter((it: RoadmapItem) => it.id !== itemId);
         stream.items.forEach((it: RoadmapItem, i: number) => {
           it.order = i;
         });
         // Remove associated dependencies
         s.roadmap.dependencies = s.roadmap.dependencies.filter(
-          (d) => d.fromItemId !== itemId && d.toItemId !== itemId
+          (d) => !idsToRemove.has(d.fromItemId) && !idsToRemove.has(d.toItemId)
         );
         s.isDirty = true;
       });
@@ -229,6 +245,108 @@ export const useRoadmapStore = create<RoadmapStore>()(
         if (!item) return;
         item.startDate = newStart;
         item.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    toggleItemExpanded: (streamId, itemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const item = stream.items.find((it: RoadmapItem) => it.id === itemId);
+        if (!item) return;
+        item.expanded = !item.expanded;
+        if (!item.subItems) item.subItems = [];
+        s.isDirty = true;
+      });
+    },
+
+    // ── Sub-Item Actions ──
+
+    addSubItem: (streamId, parentItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent) return;
+        if (!parent.subItems) parent.subItems = [];
+
+        // Default sub-item dates: same as parent, 2 weeks
+        const startDate = parent.startDate;
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 14);
+
+        const newSubItem: RoadmapItem = {
+          id: uuid(),
+          name: 'New Sub-task',
+          lead: '',
+          support: '',
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          phase: parent.phase,
+          notes: '',
+          order: parent.subItems.length,
+        };
+        parent.subItems.push(newSubItem);
+        parent.expanded = true;
+        s.isDirty = true;
+      });
+    },
+
+    removeSubItem: (streamId, parentItemId, subItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        parent.subItems = parent.subItems.filter((si: RoadmapItem) => si.id !== subItemId);
+        parent.subItems.forEach((si: RoadmapItem, i: number) => { si.order = i; });
+        // Remove associated dependencies
+        s.roadmap.dependencies = s.roadmap.dependencies.filter(
+          (d) => d.fromItemId !== subItemId && d.toItemId !== subItemId
+        );
+        s.isDirty = true;
+      });
+    },
+
+    updateSubItem: (streamId, parentItemId, subItemId, patch) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        Object.assign(sub, patch);
+        s.isDirty = true;
+      });
+    },
+
+    moveSubItem: (streamId, parentItemId, subItemId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.startDate = newStart;
+        sub.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    resizeSubItem: (streamId, parentItemId, subItemId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.startDate = newStart;
+        sub.endDate = newEnd;
         s.isDirty = true;
       });
     },
