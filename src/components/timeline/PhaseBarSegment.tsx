@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 import type { PhaseBar } from '../../types';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
@@ -21,10 +21,15 @@ interface PhaseBarSegmentProps {
 export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamId, originDate }: PhaseBarSegmentProps) {
   const movePhaseBar = useRoadmapStore((s) => s.movePhaseBar);
   const resizePhaseBar = useRoadmapStore((s) => s.resizePhaseBar);
+  const removePhaseBar = useRoadmapStore((s) => s.removePhaseBar);
   const selectItem = useUIStore((s) => s.selectItem);
+  const selectPhaseBar = useUIStore((s) => s.selectPhaseBar);
+  const selectedPhaseBarId = useUIStore((s) => s.selectedPhaseBarId);
   const openEditPanel = useUIStore((s) => s.openEditPanel);
   const isPanning = useUIStore((s) => s.isPanning);
   const zoom = useUIStore((s) => s.zoom);
+
+  const isSelected = selectedPhaseBarId === bar.id;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragDeltaX, setDragDeltaX] = useState(0);
@@ -108,8 +113,10 @@ export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamI
             movePhaseBar(streamIdRef.current, parentItemIdRef.current, subItemIdRef.current, current.id, newStartStr, newEndStr);
           }
         } else {
-          // Select the parent sub-item on click
+          // Select the parent sub-item and this phase bar on click, open edit panel
           selectItem(subItemIdRef.current, streamIdRef.current);
+          selectPhaseBar(barRef.current.id);
+          openEditPanel();
         }
 
         setIsDragging(false);
@@ -119,7 +126,7 @@ export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamI
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     },
-    [isPanning, isResizing, movePhaseBar, selectItem]
+    [isPanning, isResizing, movePhaseBar, selectItem, selectPhaseBar, openEditPanel]
   );
 
   const handleDoubleClick = useCallback(
@@ -176,6 +183,23 @@ export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamI
     setResizeDelta(0);
   }, [resizePhaseBar]);
 
+  // Delete key handler when this phase bar is selected
+  useEffect(() => {
+    if (!isSelected) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Don't trigger if user is typing in an input/textarea
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        e.preventDefault();
+        removePhaseBar(streamIdRef.current, parentItemIdRef.current, subItemIdRef.current, barRef.current.id);
+        selectPhaseBar(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSelected, removePhaseBar, selectPhaseBar]);
+
   const handleMouseEnter = () => {
     tooltipTimeout.current = setTimeout(() => setShowTooltip(true), 500);
   };
@@ -188,14 +212,14 @@ export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamI
     <div
       className={`absolute rounded-sm cursor-pointer group select-none ${
         isDragging ? 'opacity-80 shadow-md' : ''
-      }`}
+      } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
       style={{
         left: displayX,
         width: Math.max(displayWidth, 12),
         top: PHASE_BAR_VERTICAL_PADDING,
         height: PHASE_BAR_HEIGHT,
         backgroundColor: bar.color,
-        zIndex: isDragging || isResizing ? 30 : 5,
+        zIndex: isDragging || isResizing ? 30 : isSelected ? 10 : 5,
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}

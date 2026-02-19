@@ -110,13 +110,11 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
                 // Only create on direct click (not on a phase bar)
                 if (e.target !== e.currentTarget) return;
 
+                // The phase row div spans the full timeline width inside the
+                // scroll container, so clientX - rect.left already gives us
+                // the absolute X position within the timeline (no need to add scrollLeft).
                 const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-
-                // Account for scroll position
-                const scrollContainer = e.currentTarget.closest('.timeline-scroll') as HTMLElement | null;
-                const scrollLeft = scrollContainer?.scrollLeft || 0;
-                const absoluteX = clickX + scrollLeft;
+                const absoluteX = e.clientX - rect.left;
 
                 const clickDate = xToDate(absoluteX, originDate, zoom);
                 const snappedStart = snapToWeek(clickDate);
