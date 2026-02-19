@@ -132,6 +132,13 @@ export function Toolbar() {
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Save status */}
+      <div className="text-xs text-gray-400 w-16 text-right">
+        {saveStatus === 'saving' && 'Saving...'}
+        {saveStatus === 'saved' && '\u2713 Saved'}
+        {saveStatus === 'error' && '\u2717 Error'}
+      </div>
+
       {/* Month colors toggle */}
       <button
         onClick={toggleMonthColors}
@@ -144,13 +151,6 @@ export function Toolbar() {
       >
         Colors
       </button>
-
-      {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && '\u2713 Saved'}
-        {saveStatus === 'error' && '\u2717 Error'}
-      </div>
 
       {/* Zoom toggle */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
