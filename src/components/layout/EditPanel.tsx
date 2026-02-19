@@ -60,13 +60,6 @@ export function EditPanel() {
 
   const isSubItem = parentItemId !== null;
 
-  // Get stream color for the "reset" option
-  const streamColor = useMemo(() => {
-    if (!selectedStreamId) return null;
-    const stream = streams.find((s) => s.id === selectedStreamId);
-    return stream?.color || null;
-  }, [streams, selectedStreamId]);
-
   if (!editPanelOpen || !item || !selectedStreamId) return null;
 
   const handleChange = (field: keyof RoadmapItem, value: string) => {
