@@ -57,8 +57,8 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
       : rect.width + resizeDelta
     : rect.width;
 
-  // Lighter color for sub-items (60% opacity)
-  const subColor = streamColor + '99';
+  // Use custom color if set, otherwise lighter version of stream color (60% opacity)
+  const subColor = subItem.color || (streamColor + '99');
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {

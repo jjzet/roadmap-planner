@@ -23,6 +23,7 @@ export interface RoadmapItem {
   phase: PhaseType;
   notes: string;
   order: number;
+  color?: string; // optional override color for the bar
   subItems?: RoadmapItem[];
   expanded?: boolean;
   phaseBars?: PhaseBar[];

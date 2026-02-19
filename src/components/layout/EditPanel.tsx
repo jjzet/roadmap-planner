@@ -60,6 +60,13 @@ export function EditPanel() {
 
   const isSubItem = parentItemId !== null;
 
+  // Get stream color for the "reset" option
+  const streamColor = useMemo(() => {
+    if (!selectedStreamId) return null;
+    const stream = streams.find((s) => s.id === selectedStreamId);
+    return stream?.color || null;
+  }, [streams, selectedStreamId]);
+
   if (!editPanelOpen || !item || !selectedStreamId) return null;
 
   const handleChange = (field: keyof RoadmapItem, value: string) => {
@@ -107,6 +114,40 @@ export function EditPanel() {
             onChange={(e) => handleChange('name', e.target.value)}
           />
         </div>
+
+        {/* Bar Color (sub-items only) */}
+        {isSubItem && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Bar Color</label>
+            <div className="flex gap-1 flex-wrap items-center">
+              {DEFAULT_STREAM_COLORS.map((color) => (
+                <button
+                  key={color}
+                  className="w-6 h-6 rounded border-2 cursor-pointer p-0"
+                  style={{
+                    backgroundColor: color,
+                    borderColor: item.color === color ? '#1a1a2e' : 'transparent',
+                  }}
+                  onClick={() => handleChange('color', color)}
+                  title={color}
+                />
+              ))}
+              {item.color && (
+                <button
+                  className="text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-1.5 py-0.5 cursor-pointer bg-white ml-1"
+                  onClick={() => {
+                    if (isSubItem) {
+                      updateSubItem(selectedStreamId, parentItemId, item.id, { color: undefined } as Partial<RoadmapItem>);
+                    }
+                  }}
+                  title="Reset to stream color"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Lead */}
         <div>
