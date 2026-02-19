@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import type { Milestone, RoadmapItem, Stream } from '../../types';
+import { useMemo } from 'react';
+import type { Milestone, Stream } from '../../types';
 import { STREAM_HEADER_HEIGHT, ITEM_ROW_HEIGHT, SUB_ITEM_ROW_HEIGHT, PHASE_ROW_HEIGHT, PHASE_HIGHLIGHT_STRIP_HEIGHT, DEFAULT_PHASE_BAR_DURATION_DAYS } from '../../lib/constants';
 import { getBarRect } from '../../store/selectors';
 import { useRoadmapStore } from '../../store/roadmapStore';
