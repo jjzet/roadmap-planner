@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { RoadmapData, RoadmapItem, Stream, Milestone, PhaseType } from '../types';
-import { DEFAULT_SETTINGS } from '../lib/constants';
-import { hasOverlap } from '../utils/overlapDetection';
+import type { RoadmapData, RoadmapItem, Stream, Milestone, PhaseType, PhaseBar } from '../types';
+import { DEFAULT_SETTINGS, DEFAULT_PHASE_BAR_COLOR } from '../lib/constants';
+import { hasOverlap, hasPhaseBarOverlap } from '../utils/overlapDetection';
 import { supabase } from '../lib/supabase';
 import { formatDate } from '../lib/dates';
 
@@ -54,6 +54,14 @@ interface RoadmapStore {
   updateSubItem: (streamId: string, parentItemId: string, subItemId: string, patch: Partial<RoadmapItem>) => void;
   moveSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
   resizeSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
+
+  // Phase bar actions
+  toggleSubItemPhasesExpanded: (streamId: string, parentItemId: string, subItemId: string) => void;
+  addPhaseBar: (streamId: string, parentItemId: string, subItemId: string, startDate: string, endDate: string, color?: string) => void;
+  removePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string) => void;
+  updatePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, patch: Partial<PhaseBar>) => void;
+  movePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, newStart: string, newEnd: string) => void;
+  resizePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, newStart: string, newEnd: string) => void;
 
   // Dependency actions
   addDependency: (fromItemId: string, toItemId: string) => void;
@@ -347,6 +355,106 @@ export const useRoadmapStore = create<RoadmapStore>()(
         if (!sub) return;
         sub.startDate = newStart;
         sub.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    // ── Phase Bar Actions ──
+
+    toggleSubItemPhasesExpanded: (streamId, parentItemId, subItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.phasesExpanded = !sub.phasesExpanded;
+        if (!sub.phaseBars) sub.phaseBars = [];
+        s.isDirty = true;
+      });
+    },
+
+    addPhaseBar: (streamId, parentItemId, subItemId, startDate, endDate, color) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        if (!sub.phaseBars) sub.phaseBars = [];
+        if (hasPhaseBarOverlap(sub.phaseBars, '', startDate, endDate)) return;
+        sub.phaseBars.push({
+          id: uuid(),
+          name: 'New Phase',
+          startDate,
+          endDate,
+          color: color || DEFAULT_PHASE_BAR_COLOR,
+        });
+        sub.phasesExpanded = true;
+        s.isDirty = true;
+      });
+    },
+
+    removePhaseBar: (streamId, parentItemId, subItemId, phaseBarId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        sub.phaseBars = sub.phaseBars.filter((pb: PhaseBar) => pb.id !== phaseBarId);
+        s.isDirty = true;
+      });
+    },
+
+    updatePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, patch) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        Object.assign(bar, patch);
+        s.isDirty = true;
+      });
+    },
+
+    movePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        if (hasPhaseBarOverlap(sub.phaseBars, phaseBarId, newStart, newEnd)) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        bar.startDate = newStart;
+        bar.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    resizePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        if (hasPhaseBarOverlap(sub.phaseBars, phaseBarId, newStart, newEnd)) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        bar.startDate = newStart;
+        bar.endDate = newEnd;
         s.isDirty = true;
       });
     },
