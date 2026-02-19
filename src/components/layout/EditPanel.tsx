@@ -13,12 +13,26 @@ export function EditPanel() {
   const dependencies = useRoadmapStore((s) => s.roadmap.dependencies);
   const updateItem = useRoadmapStore((s) => s.updateItem);
   const removeItem = useRoadmapStore((s) => s.removeItem);
+  const updateSubItem = useRoadmapStore((s) => s.updateSubItem);
+  const removeSubItem = useRoadmapStore((s) => s.removeSubItem);
   const removeDependency = useRoadmapStore((s) => s.removeDependency);
 
-  const item = useMemo(() => {
-    if (!selectedStreamId || !selectedItemId) return null;
+  // Find selected item — may be a top-level item or a sub-item
+  const { item, parentItemId } = useMemo(() => {
+    if (!selectedStreamId || !selectedItemId) return { item: null, parentItemId: null };
     const stream = streams.find((s) => s.id === selectedStreamId);
-    return stream?.items.find((it) => it.id === selectedItemId) || null;
+    if (!stream) return { item: null, parentItemId: null };
+    // Check top-level items first
+    const topItem = stream.items.find((it) => it.id === selectedItemId);
+    if (topItem) return { item: topItem, parentItemId: null };
+    // Check sub-items
+    for (const it of stream.items) {
+      if (it.subItems) {
+        const sub = it.subItems.find((si) => si.id === selectedItemId);
+        if (sub) return { item: sub, parentItemId: it.id };
+      }
+    }
+    return { item: null, parentItemId: null };
   }, [streams, selectedStreamId, selectedItemId]);
 
   const itemDependencies = useMemo(() => {
@@ -31,21 +45,36 @@ export function EditPanel() {
   // Find item name by id (for dependency display)
   const getItemName = (itemId: string): string => {
     for (const stream of streams) {
-      const item = stream.items.find((it) => it.id === itemId);
-      if (item) return item.name;
+      for (const it of stream.items) {
+        if (it.id === itemId) return it.name;
+        if (it.subItems) {
+          const sub = it.subItems.find((si) => si.id === itemId);
+          if (sub) return sub.name;
+        }
+      }
     }
     return 'Unknown';
   };
 
+  const isSubItem = parentItemId !== null;
+
   if (!editPanelOpen || !item || !selectedStreamId) return null;
 
   const handleChange = (field: keyof RoadmapItem, value: string) => {
-    updateItem(selectedStreamId, item.id, { [field]: value });
+    if (isSubItem) {
+      updateSubItem(selectedStreamId, parentItemId, item.id, { [field]: value });
+    } else {
+      updateItem(selectedStreamId, item.id, { [field]: value });
+    }
   };
 
   const handleDelete = () => {
     if (window.confirm(`Delete "${item.name}"?`)) {
-      removeItem(selectedStreamId, item.id);
+      if (isSubItem) {
+        removeSubItem(selectedStreamId, parentItemId, item.id);
+      } else {
+        removeItem(selectedStreamId, item.id);
+      }
       closeEditPanel();
     }
   };
@@ -57,7 +86,7 @@ export function EditPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <h2 className="text-sm font-semibold text-gray-700">Edit Item</h2>
+        <h2 className="text-sm font-semibold text-gray-700">{isSubItem ? 'Edit Sub-task' : 'Edit Item'}</h2>
         <button
           onClick={closeEditPanel}
           className="text-gray-400 hover:text-gray-600 text-lg border-none bg-transparent cursor-pointer p-0"

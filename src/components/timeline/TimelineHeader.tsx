@@ -7,6 +7,7 @@ import { TIMELINE_HEADER_HEIGHT, MONTH_SHADING_COLORS } from '../../lib/constant
 export function TimelineHeader() {
   const settings = useRoadmapStore((s) => s.roadmap.settings);
   const zoom = useUIStore((s) => s.zoom);
+  const showMonthColors = useUIStore((s) => s.showMonthColors);
 
   const columns = useMemo(
     () => getTimelineColumns(settings.timelineStartDate, settings.timelineEndDate, zoom),
@@ -59,7 +60,7 @@ export function TimelineHeader() {
             style={{
               left: col.x,
               width: col.width,
-              backgroundColor: MONTH_SHADING_COLORS[col.month],
+              backgroundColor: showMonthColors ? MONTH_SHADING_COLORS[col.month] : undefined,
             }}
           >
             {col.label}

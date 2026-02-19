@@ -11,6 +11,7 @@ interface TimelineGridProps {
 export function TimelineGrid({ height }: TimelineGridProps) {
   const settings = useRoadmapStore((s) => s.roadmap.settings);
   const zoom = useUIStore((s) => s.zoom);
+  const showMonthColors = useUIStore((s) => s.showMonthColors);
 
   const columns = useMemo(
     () => getTimelineColumns(settings.timelineStartDate, settings.timelineEndDate, zoom),
@@ -27,7 +28,7 @@ export function TimelineGrid({ height }: TimelineGridProps) {
             left: col.x,
             width: col.width,
             height,
-            backgroundColor: MONTH_SHADING_COLORS[col.month],
+            backgroundColor: showMonthColors ? MONTH_SHADING_COLORS[col.month] : undefined,
           }}
         />
       ))}

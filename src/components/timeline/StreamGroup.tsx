@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import type { Milestone, Stream } from '../../types';
-import { STREAM_HEADER_HEIGHT, ITEM_ROW_HEIGHT } from '../../lib/constants';
+import { STREAM_HEADER_HEIGHT, ITEM_ROW_HEIGHT, SUB_ITEM_ROW_HEIGHT } from '../../lib/constants';
 import { getBarRect } from '../../store/selectors';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
 import { dateToX, parseDate } from '../../lib/dates';
 import { TimelineBar } from './TimelineBar';
+import { SubItemBar } from './SubItemBar';
 import { MilestoneMarker } from './MilestoneMarker';
 
 interface StreamGroupProps {
@@ -80,18 +81,44 @@ export function StreamGroup({ stream, originDate }: StreamGroupProps) {
       {/* Item rows */}
       {!stream.collapsed &&
         stream.items.map((item) => (
-          <div
-            key={item.id}
-            className="relative border-b border-gray-50"
-            style={{ height: ITEM_ROW_HEIGHT }}
-          >
-            <TimelineBar
-              item={item}
-              streamId={stream.id}
-              streamColor={stream.color}
-              streamItems={stream.items}
-              originDate={originDate}
-            />
+          <div key={item.id}>
+            <div
+              className="relative border-b border-gray-50"
+              style={{ height: ITEM_ROW_HEIGHT }}
+            >
+              <TimelineBar
+                item={item}
+                streamId={stream.id}
+                streamColor={stream.color}
+                streamItems={stream.items}
+                originDate={originDate}
+              />
+            </div>
+
+            {/* Sub-item rows */}
+            {item.expanded && item.subItems && item.subItems.map((sub) => (
+              <div
+                key={sub.id}
+                className="relative border-b border-gray-50"
+                style={{ height: SUB_ITEM_ROW_HEIGHT, backgroundColor: `${stream.color}06` }}
+              >
+                <SubItemBar
+                  subItem={sub}
+                  parentItemId={item.id}
+                  streamId={stream.id}
+                  streamColor={stream.color}
+                  originDate={originDate}
+                />
+              </div>
+            ))}
+
+            {/* Add sub-item row spacing */}
+            {item.expanded && item.subItems && item.subItems.length >= 0 && (
+              <div
+                className="border-b border-gray-50"
+                style={{ height: SUB_ITEM_ROW_HEIGHT }}
+              />
+            )}
           </div>
         ))}
 
