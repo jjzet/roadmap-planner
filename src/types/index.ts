@@ -52,3 +52,36 @@ export interface RoadmapRecord {
 }
 
 export type ZoomLevel = 'week' | 'month';
+
+export type ActiveView = 'roadmap' | 'tasks';
+
+// ── Todo Types ──
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  link: string;
+  tags: string[];
+  order: number;
+}
+
+export interface TodoGroup {
+  id: string;
+  name: string;
+  collapsed: boolean;
+  order: number;
+  items: TodoItem[];
+}
+
+export interface TodoData {
+  groups: TodoGroup[];
+}
+
+export interface TodoRecord {
+  id: string;
+  name: string;
+  data: TodoData;
+  created_at: string;
+  updated_at: string;
+}
