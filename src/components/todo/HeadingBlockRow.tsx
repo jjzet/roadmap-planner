@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { HeadingBlock } from '@/types';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 
 interface Props {

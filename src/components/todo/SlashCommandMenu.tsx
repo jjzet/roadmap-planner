@@ -58,10 +58,9 @@ interface Props {
   query: string; // text after the slash, e.g. "te" for "/te"
   onSelect: (commandId: string) => void;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLElement | null>;
 }
 
-export function SlashCommandMenu({ query, onSelect, onClose, anchorRef }: Props) {
+export function SlashCommandMenu({ query, onSelect, onClose }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 

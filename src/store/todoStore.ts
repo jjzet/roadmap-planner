@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { TodoData, TodoGroup, TodoItem, PageBlock, HeadingBlock } from '../types';
+import type { TodoData, TodoGroup, TodoItem, PageBlock } from '../types';
 import { supabase } from '../lib/supabase';
 
 function uuid(): string {

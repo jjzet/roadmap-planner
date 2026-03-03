@@ -153,7 +153,7 @@ export function TextBlockRow({ block }: Props) {
             query={slashQuery}
             onSelect={handleSlashSelect}
             onClose={handleSlashClose}
-            anchorRef={textareaRef}
+
           />
         </div>
       )}
