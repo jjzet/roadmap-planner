@@ -14,13 +14,17 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useTodoStore } from '@/store/todoStore';
 import { TodoGroupBlock } from './TodoGroupBlock';
 import { TextBlockRow } from './TextBlockRow';
+import { DividerBlockRow } from './DividerBlockRow';
+import { HeadingBlockRow } from './HeadingBlockRow';
 import { useState } from 'react';
-import { Plus, Type, ListChecks } from 'lucide-react';
+import { Plus, Type, ListChecks, Minus, Heading2 } from 'lucide-react';
 
 export function TodoListContent() {
   const blocks = useTodoStore((s) => s.todo.blocks);
   const addGroupBlock = useTodoStore((s) => s.addGroupBlock);
   const addTextBlock = useTodoStore((s) => s.addTextBlock);
+  const addDividerBlock = useTodoStore((s) => s.addDividerBlock);
+  const addHeadingBlock = useTodoStore((s) => s.addHeadingBlock);
   const reorderBlocks = useTodoStore((s) => s.reorderBlocks);
   const [showAddGroup, setShowAddGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -50,6 +54,16 @@ export function TodoListContent() {
     setShowAddMenu(false);
   };
 
+  const handleAddHeading = () => {
+    addHeadingBlock(2);
+    setShowAddMenu(false);
+  };
+
+  const handleAddDivider = () => {
+    addDividerBlock();
+    setShowAddMenu(false);
+  };
+
   const handleShowAddGroup = () => {
     setShowAddGroup(true);
     setShowAddMenu(false);
@@ -68,10 +82,18 @@ export function TodoListContent() {
           strategy={verticalListSortingStrategy}
         >
           {blocks.map((block) => {
-            if (block.type === 'group') {
-              return <TodoGroupBlock key={block.data.id} group={block.data} />;
+            switch (block.type) {
+              case 'group':
+                return <TodoGroupBlock key={block.data.id} group={block.data} />;
+              case 'text':
+                return <TextBlockRow key={block.data.id} block={block.data} />;
+              case 'divider':
+                return <DividerBlockRow key={block.data.id} block={block.data} />;
+              case 'heading':
+                return <HeadingBlockRow key={block.data.id} block={block.data} />;
+              default:
+                return null;
             }
-            return <TextBlockRow key={block.data.id} block={block.data} />;
           })}
         </SortableContext>
       </DndContext>
@@ -133,7 +155,7 @@ export function TodoListContent() {
           </button>
 
           {showAddMenu && (
-            <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[140px]">
+            <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
               <button
                 onClick={handleAddText}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
@@ -142,11 +164,25 @@ export function TodoListContent() {
                 Text
               </button>
               <button
+                onClick={handleAddHeading}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
+              >
+                <Heading2 className="w-4 h-4 text-gray-400" />
+                Heading
+              </button>
+              <button
                 onClick={handleShowAddGroup}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
               >
                 <ListChecks className="w-4 h-4 text-gray-400" />
-                Group
+                Task Group
+              </button>
+              <button
+                onClick={handleAddDivider}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
+              >
+                <Minus className="w-4 h-4 text-gray-400" />
+                Divider
               </button>
             </div>
           )}

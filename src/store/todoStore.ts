@@ -28,9 +28,14 @@ interface TodoStore {
   // Block actions
   addTextBlock: () => void;
   addGroupBlock: (name: string) => void;
+  addDividerBlock: () => void;
+  addHeadingBlock: (level?: 1 | 2 | 3) => void;
   removeBlock: (blockId: string) => void;
   reorderBlocks: (activeId: string, overId: string) => void;
   updateTextBlock: (blockId: string, content: string) => void;
+  updateHeadingBlock: (blockId: string, content: string) => void;
+  insertBlockAfter: (afterBlockId: string, newBlock: PageBlock) => void;
+  replaceBlock: (blockId: string, newBlock: PageBlock) => void;
 
   // Group actions (operate on group blocks)
   updateGroup: (groupId: string, patch: Partial<Pick<TodoGroup, 'name'>>) => void;
@@ -100,6 +105,26 @@ export const useTodoStore = create<TodoStore>()(
       });
     },
 
+    addDividerBlock: () => {
+      set((s) => {
+        s.todo.blocks.push({
+          type: 'divider',
+          data: { id: uuid(), order: s.todo.blocks.length },
+        });
+        s.isDirty = true;
+      });
+    },
+
+    addHeadingBlock: (level = 2) => {
+      set((s) => {
+        s.todo.blocks.push({
+          type: 'heading',
+          data: { id: uuid(), content: '', level, order: s.todo.blocks.length },
+        });
+        s.isDirty = true;
+      });
+    },
+
     removeBlock: (blockId) => {
       set((s) => {
         s.todo.blocks = s.todo.blocks.filter((b) => b.data.id !== blockId);
@@ -128,6 +153,39 @@ export const useTodoStore = create<TodoStore>()(
           block.data.content = content;
           s.isDirty = true;
         }
+      });
+    },
+
+    updateHeadingBlock: (blockId, content) => {
+      set((s) => {
+        const block = s.todo.blocks.find((b) => b.type === 'heading' && b.data.id === blockId);
+        if (block && block.type === 'heading') {
+          block.data.content = content;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    insertBlockAfter: (afterBlockId, newBlock) => {
+      set((s) => {
+        const idx = s.todo.blocks.findIndex((b) => b.data.id === afterBlockId);
+        if (idx === -1) {
+          s.todo.blocks.push(newBlock);
+        } else {
+          s.todo.blocks.splice(idx + 1, 0, newBlock);
+        }
+        s.todo.blocks.forEach((b, i) => { b.data.order = i; });
+        s.isDirty = true;
+      });
+    },
+
+    replaceBlock: (blockId, newBlock) => {
+      set((s) => {
+        const idx = s.todo.blocks.findIndex((b) => b.data.id === blockId);
+        if (idx === -1) return;
+        s.todo.blocks[idx] = newBlock;
+        s.todo.blocks.forEach((b, i) => { b.data.order = i; });
+        s.isDirty = true;
       });
     },
 
