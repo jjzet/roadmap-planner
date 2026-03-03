@@ -1,13 +1,34 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin } from 'lucide-react';
+import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar } from 'lucide-react';
 
 interface Props {
   item: TodoItem;
   groupId: string;
+}
+
+function formatDueDate(dateStr: string): { label: string; color: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dateStr + 'T00:00:00');
+  const diffMs = due.getTime() - today.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: `${Math.abs(diffDays)}d overdue`, color: 'text-red-500' };
+  } else if (diffDays === 0) {
+    return { label: 'Today', color: 'text-orange-500' };
+  } else if (diffDays === 1) {
+    return { label: 'Tomorrow', color: 'text-amber-500' };
+  } else if (diffDays <= 7) {
+    return { label: `${diffDays}d`, color: 'text-blue-500' };
+  } else {
+    const m = due.toLocaleString('default', { month: 'short' });
+    return { label: `${m} ${due.getDate()}`, color: 'text-gray-500' };
+  }
 }
 
 export function TodoItemRow({ item, groupId }: Props) {
@@ -19,6 +40,7 @@ export function TodoItemRow({ item, groupId }: Props) {
   const [editText, setEditText] = useState(item.text);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -42,6 +64,13 @@ export function TodoItemRow({ item, groupId }: Props) {
       updateItem(groupId, item.id, { link: linkValue });
     }
   };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    updateItem(groupId, item.id, { dueDate: val || undefined });
+  };
+
+  const dueInfo = item.dueDate && !item.completed ? formatDueDate(item.dueDate) : null;
 
   return (
     <div
@@ -105,6 +134,17 @@ export function TodoItemRow({ item, groupId }: Props) {
         </span>
       )}
 
+      {/* Due date badge */}
+      {dueInfo && (
+        <span
+          className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 cursor-pointer ${dueInfo.color}`}
+          onClick={() => dateInputRef.current?.showPicker()}
+          title={`Due: ${item.dueDate}`}
+        >
+          {dueInfo.label}
+        </span>
+      )}
+
       {/* Link indicator */}
       {item.link && !showLinkInput && (
         <a
@@ -130,6 +170,26 @@ export function TodoItemRow({ item, groupId }: Props) {
       ))}
 
       {/* Action buttons (visible on hover) */}
+      <button
+        onClick={() => dateInputRef.current?.showPicker()}
+        className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
+          item.dueDate
+            ? 'text-blue-400 opacity-100'
+            : 'text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100'
+        }`}
+        title="Set due date"
+      >
+        <Calendar className="w-3.5 h-3.5" />
+      </button>
+      {/* Hidden native date input */}
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={item.dueDate || ''}
+        onChange={handleDateChange}
+        className="absolute opacity-0 pointer-events-none w-0 h-0"
+        tabIndex={-1}
+      />
       <button
         onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
         className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"

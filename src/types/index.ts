@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks';
+export type ActiveView = 'roadmap' | 'tasks' | 'today';
 
 // ── Todo Types ──
 
@@ -86,6 +86,7 @@ export interface TodoItem {
   link: string;
   tags: string[];
   order: number;
+  dueDate?: string; // ISO date "YYYY-MM-DD"
 }
 
 export interface TodoGroup {
@@ -102,9 +103,23 @@ export interface TextBlock {
   order: number;
 }
 
+export interface DividerBlock {
+  id: string;
+  order: number;
+}
+
+export interface HeadingBlock {
+  id: string;
+  content: string;
+  level: 1 | 2 | 3;
+  order: number;
+}
+
 export type PageBlock =
   | { type: 'group'; data: TodoGroup }
-  | { type: 'text'; data: TextBlock };
+  | { type: 'text'; data: TextBlock }
+  | { type: 'divider'; data: DividerBlock }
+  | { type: 'heading'; data: HeadingBlock };
 
 export interface TodoData {
   groups: TodoGroup[];

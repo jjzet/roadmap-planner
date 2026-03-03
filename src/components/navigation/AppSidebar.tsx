@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, FileText, Plus, Trash2 } from 'lucide-react';
+import { Map, FileText, Plus, Trash2, Sun } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -92,6 +92,24 @@ export function AppSidebar() {
       <SidebarSeparator className="mx-0" />
 
       <SidebarContent>
+        {/* Today Briefing */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'today'}
+                  onClick={() => setActiveView('today')}
+                  tooltip="Today"
+                >
+                  <Sun className="w-4 h-4" />
+                  <span>Today</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {/* Roadmaps Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center">
