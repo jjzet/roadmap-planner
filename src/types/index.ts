@@ -61,6 +61,7 @@ export interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
+  pinned: boolean;
   link: string;
   tags: string[];
   order: number;

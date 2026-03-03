@@ -43,6 +43,7 @@ interface TodoStore {
   updateItem: (groupId: string, itemId: string, patch: Partial<TodoItem>) => void;
   removeItem: (groupId: string, itemId: string) => void;
   toggleItem: (groupId: string, itemId: string) => void;
+  togglePinItem: (groupId: string, itemId: string) => void;
   reorderItems: (groupId: string, activeId: string, overId: string) => void;
   moveItemToGroup: (fromGroupId: string, toGroupId: string, itemId: string) => void;
 
@@ -176,6 +177,7 @@ export const useTodoStore = create<TodoStore>()(
           id: newId,
           text,
           completed: false,
+          pinned: false,
           link: '',
           tags: [],
           order: group.items.length,
@@ -213,6 +215,18 @@ export const useTodoStore = create<TodoStore>()(
         const item = group.items.find((it: TodoItem) => it.id === itemId);
         if (item) {
           item.completed = !item.completed;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    togglePinItem: (groupId, itemId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (item) {
+          item.pinned = !item.pinned;
           s.isDirty = true;
         }
       });
@@ -284,6 +298,14 @@ export const useTodoStore = create<TodoStore>()(
             data: { ...g, order: i },
           }));
         }
+        // Ensure all items have the pinned field (migration for existing data)
+        blocks.forEach((b) => {
+          if (b.type === 'group') {
+            b.data.items.forEach((item) => {
+              if (item.pinned === undefined) item.pinned = false;
+            });
+          }
+        });
         set({
           currentTodoId: data.id,
           todoName: data.name,

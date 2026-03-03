@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink } from 'lucide-react';
+import { GripVertical, Link, Trash2, ExternalLink, Pin } from 'lucide-react';
 
 interface Props {
   item: TodoItem;
@@ -14,6 +14,7 @@ export function TodoItemRow({ item, groupId }: Props) {
   const updateItem = useTodoStore((s) => s.updateItem);
   const removeItem = useTodoStore((s) => s.removeItem);
   const toggleItem = useTodoStore((s) => s.toggleItem);
+  const togglePinItem = useTodoStore((s) => s.togglePinItem);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -46,7 +47,9 @@ export function TodoItemRow({ item, groupId }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 py-1.5 group/item hover:bg-gray-50 rounded-md px-1 relative"
+      className={`flex items-center gap-2 py-1.5 group/item hover:bg-gray-50 rounded-md px-1 relative ${
+        item.pinned ? 'bg-amber-50/50' : ''
+      }`}
     >
       {/* Drag handle */}
       <span
@@ -56,6 +59,19 @@ export function TodoItemRow({ item, groupId }: Props) {
       >
         <GripVertical className="w-3.5 h-3.5" />
       </span>
+
+      {/* Pin indicator (visible when pinned, or on hover) */}
+      <button
+        onClick={() => togglePinItem(groupId, item.id)}
+        className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
+          item.pinned
+            ? 'text-amber-500 opacity-100'
+            : 'text-gray-300 hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
+        }`}
+        title={item.pinned ? 'Unpin' : 'Pin to top'}
+      >
+        <Pin className={`w-3 h-3 ${item.pinned ? 'fill-amber-500' : ''}`} />
+      </button>
 
       {/* Checkbox */}
       <input

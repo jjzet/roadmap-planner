@@ -15,8 +15,9 @@ import {
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useTodoStore } from '@/store/todoStore';
 import { TodoItemRow } from './TodoItemRow';
+import { ProgressRing } from './ProgressRing';
 import type { TodoGroup } from '@/types';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronRight, GripVertical, Trash2, Plus } from 'lucide-react';
 
 interface Props {
@@ -49,6 +50,15 @@ export function TodoGroupBlock({ group }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
+
+  // Sort items: pinned first, then by order
+  const sortedItems = useMemo(() => {
+    return [...group.items].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return a.order - b.order;
+    });
+  }, [group.items]);
 
   const handleItemDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -126,11 +136,7 @@ export function TodoGroupBlock({ group }: Props) {
           </h3>
         )}
 
-        {totalCount > 0 && (
-          <span className="text-xs text-gray-400">
-            {completedCount}/{totalCount}
-          </span>
-        )}
+        <ProgressRing completed={completedCount} total={totalCount} />
 
         <button
           onClick={() => {
@@ -153,11 +159,11 @@ export function TodoGroupBlock({ group }: Props) {
           onDragEnd={handleItemDragEnd}
         >
           <SortableContext
-            items={group.items.map((it) => it.id)}
+            items={sortedItems.map((it) => it.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="ml-6">
-              {group.items.map((item) => (
+              {sortedItems.map((item) => (
                 <TodoItemRow
                   key={item.id}
                   item={item}
