@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { RoadmapData, RoadmapItem, Stream, PhaseType } from '../types';
-import { DEFAULT_SETTINGS } from '../lib/constants';
-import { hasOverlap } from '../utils/overlapDetection';
+import type { RoadmapData, RoadmapItem, Stream, Milestone, PhaseType, PhaseBar } from '../types';
+import { DEFAULT_SETTINGS, DEFAULT_PHASE_BAR_COLOR } from '../lib/constants';
+import { hasOverlap, hasPhaseBarOverlap } from '../utils/overlapDetection';
 import { supabase } from '../lib/supabase';
 import { formatDate } from '../lib/dates';
 
@@ -14,6 +14,7 @@ function emptyRoadmap(): RoadmapData {
   return {
     streams: [],
     dependencies: [],
+    milestones: [],
     settings: { ...DEFAULT_SETTINGS },
   };
 }
@@ -45,10 +46,31 @@ interface RoadmapStore {
   removeItem: (streamId: string, itemId: string) => void;
   moveItem: (streamId: string, itemId: string, newStart: string, newEnd: string) => void;
   resizeItem: (streamId: string, itemId: string, newStart: string, newEnd: string) => void;
+  toggleItemExpanded: (streamId: string, itemId: string) => void;
+
+  // Sub-item actions
+  addSubItem: (streamId: string, parentItemId: string) => void;
+  removeSubItem: (streamId: string, parentItemId: string, subItemId: string) => void;
+  updateSubItem: (streamId: string, parentItemId: string, subItemId: string, patch: Partial<RoadmapItem>) => void;
+  moveSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
+  resizeSubItem: (streamId: string, parentItemId: string, subItemId: string, newStart: string, newEnd: string) => void;
+
+  // Phase bar actions
+  toggleSubItemPhasesExpanded: (streamId: string, parentItemId: string, subItemId: string) => void;
+  addPhaseBar: (streamId: string, parentItemId: string, subItemId: string, startDate: string, endDate: string, color?: string) => void;
+  removePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string) => void;
+  updatePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, patch: Partial<PhaseBar>) => void;
+  movePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, newStart: string, newEnd: string) => void;
+  resizePhaseBar: (streamId: string, parentItemId: string, subItemId: string, phaseBarId: string, newStart: string, newEnd: string) => void;
 
   // Dependency actions
   addDependency: (fromItemId: string, toItemId: string) => void;
   removeDependency: (depId: string) => void;
+
+  // Milestone actions
+  addMilestone: (name: string, date: string, streamId: string) => void;
+  removeMilestone: (milestoneId: string) => void;
+  moveMilestone: (milestoneId: string, newDate: string) => void;
 
   // Persistence
   fetchRoadmapList: () => Promise<void>;
@@ -111,6 +133,8 @@ export const useRoadmapStore = create<RoadmapStore>()(
         s.roadmap.dependencies = s.roadmap.dependencies.filter(
           (d) => !removedItemIds.has(d.fromItemId) && !removedItemIds.has(d.toItemId)
         );
+        // Remove milestones belonging to this stream
+        s.roadmap.milestones = s.roadmap.milestones.filter((m: Milestone) => m.streamId !== streamId);
         // Reorder remaining
         s.roadmap.streams.forEach((st: Stream, i: number) => {
           st.order = i;
@@ -188,13 +212,21 @@ export const useRoadmapStore = create<RoadmapStore>()(
       set((s) => {
         const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
         if (!stream) return;
+        const item = stream.items.find((it: RoadmapItem) => it.id === itemId);
+        // Collect IDs to remove from dependencies (item + its sub-items)
+        const idsToRemove = new Set([itemId]);
+        if (item?.subItems) {
+          for (const sub of item.subItems) {
+            idsToRemove.add(sub.id);
+          }
+        }
         stream.items = stream.items.filter((it: RoadmapItem) => it.id !== itemId);
         stream.items.forEach((it: RoadmapItem, i: number) => {
           it.order = i;
         });
         // Remove associated dependencies
         s.roadmap.dependencies = s.roadmap.dependencies.filter(
-          (d) => d.fromItemId !== itemId && d.toItemId !== itemId
+          (d) => !idsToRemove.has(d.fromItemId) && !idsToRemove.has(d.toItemId)
         );
         s.isDirty = true;
       });
@@ -226,6 +258,208 @@ export const useRoadmapStore = create<RoadmapStore>()(
       });
     },
 
+    toggleItemExpanded: (streamId, itemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const item = stream.items.find((it: RoadmapItem) => it.id === itemId);
+        if (!item) return;
+        item.expanded = !item.expanded;
+        if (!item.subItems) item.subItems = [];
+        s.isDirty = true;
+      });
+    },
+
+    // ── Sub-Item Actions ──
+
+    addSubItem: (streamId, parentItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent) return;
+        if (!parent.subItems) parent.subItems = [];
+
+        // Default sub-item dates: same as parent, 2 weeks
+        const startDate = parent.startDate;
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 14);
+
+        const newSubItem: RoadmapItem = {
+          id: uuid(),
+          name: 'New Sub-task',
+          lead: '',
+          support: '',
+          startDate: formatDate(start),
+          endDate: formatDate(end),
+          phase: parent.phase,
+          notes: '',
+          order: parent.subItems.length,
+        };
+        parent.subItems.push(newSubItem);
+        parent.expanded = true;
+        s.isDirty = true;
+      });
+    },
+
+    removeSubItem: (streamId, parentItemId, subItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        parent.subItems = parent.subItems.filter((si: RoadmapItem) => si.id !== subItemId);
+        parent.subItems.forEach((si: RoadmapItem, i: number) => { si.order = i; });
+        // Remove associated dependencies
+        s.roadmap.dependencies = s.roadmap.dependencies.filter(
+          (d) => d.fromItemId !== subItemId && d.toItemId !== subItemId
+        );
+        s.isDirty = true;
+      });
+    },
+
+    updateSubItem: (streamId, parentItemId, subItemId, patch) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        Object.assign(sub, patch);
+        s.isDirty = true;
+      });
+    },
+
+    moveSubItem: (streamId, parentItemId, subItemId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.startDate = newStart;
+        sub.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    resizeSubItem: (streamId, parentItemId, subItemId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.startDate = newStart;
+        sub.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    // ── Phase Bar Actions ──
+
+    toggleSubItemPhasesExpanded: (streamId, parentItemId, subItemId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        sub.phasesExpanded = !sub.phasesExpanded;
+        if (!sub.phaseBars) sub.phaseBars = [];
+        s.isDirty = true;
+      });
+    },
+
+    addPhaseBar: (streamId, parentItemId, subItemId, startDate, endDate, color) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub) return;
+        if (!sub.phaseBars) sub.phaseBars = [];
+        if (hasPhaseBarOverlap(sub.phaseBars, '', startDate, endDate)) return;
+        sub.phaseBars.push({
+          id: uuid(),
+          name: 'New Phase',
+          startDate,
+          endDate,
+          color: color || DEFAULT_PHASE_BAR_COLOR,
+        });
+        sub.phasesExpanded = true;
+        s.isDirty = true;
+      });
+    },
+
+    removePhaseBar: (streamId, parentItemId, subItemId, phaseBarId) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        sub.phaseBars = sub.phaseBars.filter((pb: PhaseBar) => pb.id !== phaseBarId);
+        s.isDirty = true;
+      });
+    },
+
+    updatePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, patch) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        Object.assign(bar, patch);
+        s.isDirty = true;
+      });
+    },
+
+    movePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        if (hasPhaseBarOverlap(sub.phaseBars, phaseBarId, newStart, newEnd)) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        bar.startDate = newStart;
+        bar.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
+    resizePhaseBar: (streamId, parentItemId, subItemId, phaseBarId, newStart, newEnd) => {
+      set((s) => {
+        const stream = s.roadmap.streams.find((st: Stream) => st.id === streamId);
+        if (!stream) return;
+        const parent = stream.items.find((it: RoadmapItem) => it.id === parentItemId);
+        if (!parent || !parent.subItems) return;
+        const sub = parent.subItems.find((si: RoadmapItem) => si.id === subItemId);
+        if (!sub || !sub.phaseBars) return;
+        if (hasPhaseBarOverlap(sub.phaseBars, phaseBarId, newStart, newEnd)) return;
+        const bar = sub.phaseBars.find((pb: PhaseBar) => pb.id === phaseBarId);
+        if (!bar) return;
+        bar.startDate = newStart;
+        bar.endDate = newEnd;
+        s.isDirty = true;
+      });
+    },
+
     // ── Dependency Actions ──
 
     addDependency: (fromItemId, toItemId) => {
@@ -244,6 +478,32 @@ export const useRoadmapStore = create<RoadmapStore>()(
       set((s) => {
         s.roadmap.dependencies = s.roadmap.dependencies.filter((d) => d.id !== depId);
         s.isDirty = true;
+      });
+    },
+
+    // ── Milestone Actions ──
+
+    addMilestone: (name, date, streamId) => {
+      set((s) => {
+        s.roadmap.milestones.push({ id: uuid(), name, date, streamId });
+        s.isDirty = true;
+      });
+    },
+
+    removeMilestone: (milestoneId) => {
+      set((s) => {
+        s.roadmap.milestones = s.roadmap.milestones.filter((m: Milestone) => m.id !== milestoneId);
+        s.isDirty = true;
+      });
+    },
+
+    moveMilestone: (milestoneId, newDate) => {
+      set((s) => {
+        const ms = s.roadmap.milestones.find((m: Milestone) => m.id === milestoneId);
+        if (ms) {
+          ms.date = newDate;
+          s.isDirty = true;
+        }
       });
     },
 
@@ -281,6 +541,7 @@ export const useRoadmapStore = create<RoadmapStore>()(
           roadmap: {
             streams: roadmapData.streams || [],
             dependencies: roadmapData.dependencies || [],
+            milestones: roadmapData.milestones || [],
             settings: roadmapData.settings || { ...DEFAULT_SETTINGS },
           },
           isDirty: false,

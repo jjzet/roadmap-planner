@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
 import { getTimelineColumns } from '../../store/selectors';
+import { MONTH_SHADING_COLORS } from '../../lib/constants';
 
 interface TimelineGridProps {
   height: number;
@@ -10,6 +11,7 @@ interface TimelineGridProps {
 export function TimelineGrid({ height }: TimelineGridProps) {
   const settings = useRoadmapStore((s) => s.roadmap.settings);
   const zoom = useUIStore((s) => s.zoom);
+  const showMonthColors = useUIStore((s) => s.showMonthColors);
 
   const columns = useMemo(
     () => getTimelineColumns(settings.timelineStartDate, settings.timelineEndDate, zoom),
@@ -22,7 +24,12 @@ export function TimelineGrid({ height }: TimelineGridProps) {
         <div
           key={i}
           className="absolute top-0 border-r border-gray-100"
-          style={{ left: col.x, width: col.width, height }}
+          style={{
+            left: col.x,
+            width: col.width,
+            height,
+            backgroundColor: showMonthColors ? MONTH_SHADING_COLORS[col.month] : undefined,
+          }}
         />
       ))}
     </div>

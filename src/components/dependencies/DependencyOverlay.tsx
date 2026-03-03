@@ -56,7 +56,7 @@ export function DependencyOverlay({ originDate, totalHeight, timelineWidth }: De
   return (
     <svg
       className="absolute top-0 left-0 pointer-events-none"
-      style={{ width: timelineWidth, height: totalHeight }}
+      style={{ width: timelineWidth, height: totalHeight, zIndex: 8 }}
     >
       <defs>
         <marker

@@ -18,6 +18,10 @@ export function TimelineArea() {
   const isPanning = useUIStore((s) => s.isPanning);
   const dependencyMode = useUIStore((s) => s.dependencyMode);
   const exitDependencyMode = useUIStore((s) => s.exitDependencyMode);
+  const showLead = useUIStore((s) => s.showLeadColumn);
+  const showSupport = useUIStore((s) => s.showSupportColumn);
+  const showPhase = useUIStore((s) => s.showPhaseColumn);
+  const hasDetailColumns = showLead || showSupport || showPhase;
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasScrolledRef = useRef<string | null>(null);
 
@@ -74,6 +78,10 @@ export function TimelineArea() {
     >
       <div style={{ width: timelineWidth, minHeight: '100%' }}>
         <TimelineHeader />
+        {/* Spacer to match the sidebar column sub-headers row */}
+        {hasDetailColumns && (
+          <div className="border-b border-gray-200" style={{ height: 24 }} />
+        )}
         <div className="relative" style={{ height: totalHeight }}>
           <TimelineGrid height={totalHeight} />
           <TodayMarker height={totalHeight} />

@@ -10,6 +10,9 @@ import {
 import {
   STREAM_HEADER_HEIGHT,
   ITEM_ROW_HEIGHT,
+  SUB_ITEM_ROW_HEIGHT,
+  PHASE_ROW_HEIGHT,
+  PHASE_HIGHLIGHT_STRIP_HEIGHT,
   TIMELINE_BUFFER_WEEKS,
 } from '../lib/constants';
 
@@ -33,12 +36,25 @@ export function getBarRect(
 
 // ── Stream layout (Y positions) ──
 
+export interface SubItemY {
+  subItemId: string;
+  y: number;
+  phaseBarRowY?: number;
+}
+
+export interface ItemLayout {
+  itemId: string;
+  y: number;
+  subItemYs: SubItemY[];
+}
+
 export interface StreamLayout {
   streamId: string;
   y: number;
   headerY: number;
   height: number;
   itemYs: { itemId: string; y: number }[];
+  itemLayouts: ItemLayout[];
 }
 
 export function computeStreamLayouts(streams: Stream[]): StreamLayout[] {
@@ -50,10 +66,38 @@ export function computeStreamLayouts(streams: Stream[]): StreamLayout[] {
     currentY += STREAM_HEADER_HEIGHT;
 
     const itemYs: { itemId: string; y: number }[] = [];
+    const itemLayouts: ItemLayout[] = [];
     if (!stream.collapsed) {
       for (const item of stream.items) {
+        const itemY = currentY;
         itemYs.push({ itemId: item.id, y: currentY });
         currentY += ITEM_ROW_HEIGHT;
+
+        const subItemYs: SubItemY[] = [];
+        if (item.expanded && item.subItems && item.subItems.length > 0) {
+          for (const sub of item.subItems) {
+            const subY = currentY;
+            currentY += SUB_ITEM_ROW_HEIGHT;
+
+            // Highlight strip when collapsed with phase bars
+            const hasPhases = sub.phaseBars && sub.phaseBars.length > 0;
+            if (!sub.phasesExpanded && hasPhases) {
+              currentY += PHASE_HIGHLIGHT_STRIP_HEIGHT;
+            }
+
+            let phaseBarRowY: number | undefined;
+            if (sub.phasesExpanded) {
+              phaseBarRowY = currentY;
+              currentY += PHASE_ROW_HEIGHT;
+            }
+
+            subItemYs.push({ subItemId: sub.id, y: subY, phaseBarRowY });
+          }
+          // Space for "+ Add Sub-item" row
+          currentY += SUB_ITEM_ROW_HEIGHT;
+        }
+
+        itemLayouts.push({ itemId: item.id, y: itemY, subItemYs });
       }
       // Space for "+ Add Item" row
       currentY += ITEM_ROW_HEIGHT;
@@ -65,6 +109,7 @@ export function computeStreamLayouts(streams: Stream[]): StreamLayout[] {
       headerY,
       height: currentY - headerY,
       itemYs,
+      itemLayouts,
     });
   }
 

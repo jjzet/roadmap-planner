@@ -8,6 +8,7 @@ interface UIState {
   zoom: ZoomLevel;
   selectedItemId: string | null;
   selectedStreamId: string | null;
+  selectedPhaseBarId: string | null;
   editPanelOpen: boolean;
   isPanning: boolean;
   dependencyMode: boolean;
@@ -18,9 +19,13 @@ interface UIState {
   showSupportColumn: boolean;
   showPhaseColumn: boolean;
 
+  // Timeline display
+  showMonthColors: boolean;
+
   setZoom: (z: ZoomLevel) => void;
   toggleZoom: () => void;
   selectItem: (itemId: string | null, streamId?: string | null) => void;
+  selectPhaseBar: (phaseBarId: string | null) => void;
   openEditPanel: () => void;
   closeEditPanel: () => void;
   setPanning: (v: boolean) => void;
@@ -29,6 +34,7 @@ interface UIState {
   toggleLeadColumn: () => void;
   toggleSupportColumn: () => void;
   togglePhaseColumn: () => void;
+  toggleMonthColors: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -38,6 +44,7 @@ export const useUIStore = create<UIState>((set) => ({
   zoom: 'week',
   selectedItemId: null,
   selectedStreamId: null,
+  selectedPhaseBarId: null,
   editPanelOpen: false,
   isPanning: false,
   dependencyMode: false,
@@ -46,6 +53,7 @@ export const useUIStore = create<UIState>((set) => ({
   showLeadColumn: false,
   showSupportColumn: false,
   showPhaseColumn: false,
+  showMonthColors: true,
 
   setZoom: (z) => set({ zoom: z }),
   toggleZoom: () =>
@@ -55,12 +63,15 @@ export const useUIStore = create<UIState>((set) => ({
     set({
       selectedItemId: itemId,
       selectedStreamId: streamId,
+      selectedPhaseBarId: null,
       // Don't auto-open edit panel on select — only double-click opens it
     }),
 
+  selectPhaseBar: (phaseBarId) => set({ selectedPhaseBarId: phaseBarId }),
+
   openEditPanel: () => set({ editPanelOpen: true }),
   closeEditPanel: () =>
-    set({ editPanelOpen: false, selectedItemId: null, selectedStreamId: null }),
+    set({ editPanelOpen: false, selectedItemId: null, selectedStreamId: null, selectedPhaseBarId: null }),
 
   setPanning: (v) => set({ isPanning: v }),
 
@@ -73,4 +84,5 @@ export const useUIStore = create<UIState>((set) => ({
   toggleLeadColumn: () => set((s) => ({ showLeadColumn: !s.showLeadColumn })),
   toggleSupportColumn: () => set((s) => ({ showSupportColumn: !s.showSupportColumn })),
   togglePhaseColumn: () => set((s) => ({ showPhaseColumn: !s.showPhaseColumn })),
+  toggleMonthColors: () => set((s) => ({ showMonthColors: !s.showMonthColors })),
 }));
