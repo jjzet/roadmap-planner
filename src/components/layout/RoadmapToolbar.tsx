@@ -64,6 +64,13 @@ export function RoadmapToolbar() {
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Save status */}
+      <div className="text-xs text-gray-400 w-16 text-right mr-2">
+        {saveStatus === 'saving' && 'Saving...'}
+        {saveStatus === 'saved' && 'Saved'}
+        {saveStatus === 'error' && 'Error'}
+      </div>
+
       {/* Zoom toggle */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
         <button
@@ -86,13 +93,6 @@ export function RoadmapToolbar() {
         >
           Month
         </button>
-      </div>
-
-      {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && 'Saved'}
-        {saveStatus === 'error' && 'Error'}
       </div>
     </div>
   );

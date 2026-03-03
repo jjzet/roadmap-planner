@@ -82,7 +82,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="cursor-default">
-              <img src="/logo.png" alt="Logo" className="w-5 h-5 shrink-0" />
+              <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0" />
               <span className="font-semibold sr-only">Planner</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
