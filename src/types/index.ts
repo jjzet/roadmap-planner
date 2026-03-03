@@ -74,8 +74,19 @@ export interface TodoGroup {
   items: TodoItem[];
 }
 
+export interface TextBlock {
+  id: string;
+  content: string;
+  order: number;
+}
+
+export type PageBlock =
+  | { type: 'group'; data: TodoGroup }
+  | { type: 'text'; data: TextBlock };
+
 export interface TodoData {
   groups: TodoGroup[];
+  blocks: PageBlock[];
 }
 
 export interface TodoRecord {

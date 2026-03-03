@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { TodoData, TodoGroup, TodoItem } from '../types';
+import type { TodoData, TodoGroup, TodoItem, TextBlock, PageBlock } from '../types';
 import { supabase } from '../lib/supabase';
 
 function uuid(): string {
@@ -8,7 +8,7 @@ function uuid(): string {
 }
 
 function emptyTodoData(): TodoData {
-  return { groups: [] };
+  return { groups: [], blocks: [] };
 }
 
 interface TodoListItem {
@@ -25,8 +25,14 @@ interface TodoStore {
   isLoading: boolean;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
 
-  // Group actions
-  addGroup: (name: string) => void;
+  // Block actions
+  addTextBlock: () => void;
+  addGroupBlock: (name: string) => void;
+  removeBlock: (blockId: string) => void;
+  reorderBlocks: (activeId: string, overId: string) => void;
+  updateTextBlock: (blockId: string, content: string) => void;
+
+  // Group actions (operate on group blocks)
   updateGroup: (groupId: string, patch: Partial<Pick<TodoGroup, 'name'>>) => void;
   removeGroup: (groupId: string) => void;
   reorderGroups: (activeId: string, overId: string) => void;
@@ -44,15 +50,21 @@ interface TodoStore {
   fetchTodoList: () => Promise<void>;
   loadTodo: (id: string) => Promise<void>;
   createTodo: (name: string) => Promise<string | null>;
+  deleteTodo: (id: string) => Promise<void>;
   saveTodo: () => Promise<void>;
   renameTodo: (name: string) => void;
   setDirty: () => void;
 }
 
+function findGroupBlock(blocks: PageBlock[], groupId: string): TodoGroup | undefined {
+  const block = blocks.find((b) => b.type === 'group' && b.data.id === groupId);
+  return block?.type === 'group' ? block.data : undefined;
+}
+
 export const useTodoStore = create<TodoStore>()(
   immer((set, get) => ({
     currentTodoId: null,
-    todoName: 'My Tasks',
+    todoName: 'My Page',
     todo: emptyTodoData(),
     todoList: [],
     isDirty: false,
@@ -61,24 +73,68 @@ export const useTodoStore = create<TodoStore>()(
 
     setDirty: () => set({ isDirty: true }),
 
-    // ── Group Actions ──
+    // ── Block Actions ──
 
-    addGroup: (name) => {
+    addTextBlock: () => {
       set((s) => {
-        s.todo.groups.push({
-          id: uuid(),
-          name,
-          collapsed: false,
-          order: s.todo.groups.length,
-          items: [],
+        s.todo.blocks.push({
+          type: 'text',
+          data: { id: uuid(), content: '', order: s.todo.blocks.length },
         });
         s.isDirty = true;
       });
     },
 
+    addGroupBlock: (name) => {
+      set((s) => {
+        const group: TodoGroup = {
+          id: uuid(),
+          name,
+          collapsed: false,
+          order: s.todo.blocks.length,
+          items: [],
+        };
+        s.todo.blocks.push({ type: 'group', data: group });
+        s.isDirty = true;
+      });
+    },
+
+    removeBlock: (blockId) => {
+      set((s) => {
+        s.todo.blocks = s.todo.blocks.filter((b) => b.data.id !== blockId);
+        s.todo.blocks.forEach((b, i) => { b.data.order = i; });
+        s.isDirty = true;
+      });
+    },
+
+    reorderBlocks: (activeId, overId) => {
+      set((s) => {
+        const blocks = s.todo.blocks;
+        const oldIdx = blocks.findIndex((b) => b.data.id === activeId);
+        const newIdx = blocks.findIndex((b) => b.data.id === overId);
+        if (oldIdx === -1 || newIdx === -1) return;
+        const [moved] = blocks.splice(oldIdx, 1);
+        blocks.splice(newIdx, 0, moved);
+        blocks.forEach((b, i) => { b.data.order = i; });
+        s.isDirty = true;
+      });
+    },
+
+    updateTextBlock: (blockId, content) => {
+      set((s) => {
+        const block = s.todo.blocks.find((b) => b.type === 'text' && b.data.id === blockId);
+        if (block && block.type === 'text') {
+          block.data.content = content;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    // ── Group Actions (backward compat + blocks) ──
+
     updateGroup: (groupId, patch) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (group) {
           Object.assign(group, patch);
           s.isDirty = true;
@@ -88,32 +144,20 @@ export const useTodoStore = create<TodoStore>()(
 
     removeGroup: (groupId) => {
       set((s) => {
-        s.todo.groups = s.todo.groups.filter((g: TodoGroup) => g.id !== groupId);
-        s.todo.groups.forEach((g: TodoGroup, i: number) => {
-          g.order = i;
-        });
+        s.todo.blocks = s.todo.blocks.filter((b) => !(b.type === 'group' && b.data.id === groupId));
+        s.todo.blocks.forEach((b, i) => { b.data.order = i; });
         s.isDirty = true;
       });
     },
 
     reorderGroups: (activeId, overId) => {
-      set((s) => {
-        const groups = s.todo.groups;
-        const oldIdx = groups.findIndex((g: TodoGroup) => g.id === activeId);
-        const newIdx = groups.findIndex((g: TodoGroup) => g.id === overId);
-        if (oldIdx === -1 || newIdx === -1) return;
-        const [moved] = groups.splice(oldIdx, 1);
-        groups.splice(newIdx, 0, moved);
-        groups.forEach((g: TodoGroup, i: number) => {
-          g.order = i;
-        });
-        s.isDirty = true;
-      });
+      // Delegate to block reorder
+      get().reorderBlocks(activeId, overId);
     },
 
     toggleGroupCollapse: (groupId) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (group) {
           group.collapsed = !group.collapsed;
           s.isDirty = true;
@@ -126,7 +170,7 @@ export const useTodoStore = create<TodoStore>()(
     addItem: (groupId, text = '') => {
       const newId = uuid();
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (!group) return;
         group.items.push({
           id: newId,
@@ -143,7 +187,7 @@ export const useTodoStore = create<TodoStore>()(
 
     updateItem: (groupId, itemId, patch) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (!group) return;
         const item = group.items.find((it: TodoItem) => it.id === itemId);
         if (!item) return;
@@ -154,19 +198,17 @@ export const useTodoStore = create<TodoStore>()(
 
     removeItem: (groupId, itemId) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (!group) return;
         group.items = group.items.filter((it: TodoItem) => it.id !== itemId);
-        group.items.forEach((it: TodoItem, i: number) => {
-          it.order = i;
-        });
+        group.items.forEach((it: TodoItem, i: number) => { it.order = i; });
         s.isDirty = true;
       });
     },
 
     toggleItem: (groupId, itemId) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (!group) return;
         const item = group.items.find((it: TodoItem) => it.id === itemId);
         if (item) {
@@ -178,7 +220,7 @@ export const useTodoStore = create<TodoStore>()(
 
     reorderItems: (groupId, activeId, overId) => {
       set((s) => {
-        const group = s.todo.groups.find((g: TodoGroup) => g.id === groupId);
+        const group = findGroupBlock(s.todo.blocks, groupId);
         if (!group) return;
         const items = group.items;
         const oldIdx = items.findIndex((it: TodoItem) => it.id === activeId);
@@ -186,26 +228,22 @@ export const useTodoStore = create<TodoStore>()(
         if (oldIdx === -1 || newIdx === -1) return;
         const [moved] = items.splice(oldIdx, 1);
         items.splice(newIdx, 0, moved);
-        items.forEach((it: TodoItem, i: number) => {
-          it.order = i;
-        });
+        items.forEach((it: TodoItem, i: number) => { it.order = i; });
         s.isDirty = true;
       });
     },
 
     moveItemToGroup: (fromGroupId, toGroupId, itemId) => {
       set((s) => {
-        const from = s.todo.groups.find((g: TodoGroup) => g.id === fromGroupId);
-        const to = s.todo.groups.find((g: TodoGroup) => g.id === toGroupId);
+        const from = findGroupBlock(s.todo.blocks, fromGroupId);
+        const to = findGroupBlock(s.todo.blocks, toGroupId);
         if (!from || !to) return;
         const idx = from.items.findIndex((it: TodoItem) => it.id === itemId);
         if (idx === -1) return;
         const [item] = from.items.splice(idx, 1);
         item.order = to.items.length;
         to.items.push(item);
-        from.items.forEach((it: TodoItem, i: number) => {
-          it.order = i;
-        });
+        from.items.forEach((it: TodoItem, i: number) => { it.order = i; });
         s.isDirty = true;
       });
     },
@@ -238,10 +276,18 @@ export const useTodoStore = create<TodoStore>()(
       }
       if (data) {
         const todoData = data.data as TodoData;
+        // Migrate legacy data: if blocks is missing, convert groups to blocks
+        let blocks = todoData.blocks || [];
+        if (blocks.length === 0 && todoData.groups && todoData.groups.length > 0) {
+          blocks = todoData.groups.map((g, i) => ({
+            type: 'group' as const,
+            data: { ...g, order: i },
+          }));
+        }
         set({
           currentTodoId: data.id,
           todoName: data.name,
-          todo: { groups: todoData.groups || [] },
+          todo: { groups: [], blocks },
           isDirty: false,
           isLoading: false,
         });
@@ -267,6 +313,24 @@ export const useTodoStore = create<TodoStore>()(
       });
       get().fetchTodoList();
       return data.id;
+    },
+
+    deleteTodo: async (id) => {
+      const { error } = await supabase.from('todo_lists').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete todo list:', error);
+        return;
+      }
+      const { currentTodoId } = get();
+      if (currentTodoId === id) {
+        set({
+          currentTodoId: null,
+          todoName: 'My Page',
+          todo: emptyTodoData(),
+          isDirty: false,
+        });
+      }
+      get().fetchTodoList();
     },
 
     saveTodo: async () => {

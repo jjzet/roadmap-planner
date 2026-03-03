@@ -12,7 +12,7 @@ export function TasksView() {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-gray-500 text-sm">Loading tasks...</div>
+        <div className="text-gray-500 text-sm">Loading page...</div>
       </div>
     );
   }
@@ -23,7 +23,7 @@ export function TasksView() {
         <TasksToolbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-500 text-sm">
-            Select or create a task list from the sidebar.
+            Select or create a page from the sidebar.
           </div>
         </div>
       </>

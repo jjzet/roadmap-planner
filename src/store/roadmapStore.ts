@@ -54,6 +54,7 @@ interface RoadmapStore {
   fetchRoadmapList: () => Promise<void>;
   loadRoadmap: (id: string) => Promise<void>;
   createRoadmap: (name: string) => Promise<string | null>;
+  deleteRoadmap: (id: string) => Promise<void>;
   saveRoadmap: () => Promise<void>;
   renameRoadmap: (name: string) => void;
   setDirty: () => void;
@@ -308,6 +309,24 @@ export const useRoadmapStore = create<RoadmapStore>()(
       // Refresh list
       get().fetchRoadmapList();
       return data.id;
+    },
+
+    deleteRoadmap: async (id) => {
+      const { error } = await supabase.from('roadmaps').delete().eq('id', id);
+      if (error) {
+        console.error('Failed to delete roadmap:', error);
+        return;
+      }
+      const { currentRoadmapId } = get();
+      if (currentRoadmapId === id) {
+        set({
+          currentRoadmapId: null,
+          roadmapName: 'New Roadmap',
+          roadmap: emptyRoadmap(),
+          isDirty: false,
+        });
+      }
+      get().fetchRoadmapList();
     },
 
     saveRoadmap: async () => {
