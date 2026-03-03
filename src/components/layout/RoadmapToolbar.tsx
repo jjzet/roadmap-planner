@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useRoadmapStore } from '../../store/roadmapStore';
 import { useUIStore } from '../../store/uiStore';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { TOOLBAR_HEIGHT } from '../../lib/constants';
 import { formatDate } from '../../lib/dates';
 
-export function Toolbar() {
+export function RoadmapToolbar() {
   const roadmapName = useRoadmapStore((s) => s.roadmapName);
   const renameRoadmap = useRoadmapStore((s) => s.renameRoadmap);
-  const roadmapList = useRoadmapStore((s) => s.roadmapList);
-  const currentRoadmapId = useRoadmapStore((s) => s.currentRoadmapId);
-  const loadRoadmap = useRoadmapStore((s) => s.loadRoadmap);
-  const createRoadmap = useRoadmapStore((s) => s.createRoadmap);
   const saveStatus = useRoadmapStore((s) => s.saveStatus);
   const streams = useRoadmapStore((s) => s.roadmap.streams);
   const addMilestone = useRoadmapStore((s) => s.addMilestone);
@@ -42,18 +40,6 @@ export function Toolbar() {
     }
   };
 
-  const handleRoadmapChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
-    if (id) loadRoadmap(id);
-  };
-
-  const handleNewRoadmap = async () => {
-    const name = prompt('Enter roadmap name:');
-    if (name?.trim()) {
-      await createRoadmap(name.trim());
-    }
-  };
-
   const handleOpenMilestoneForm = () => {
     if (streams.length === 0) {
       alert('Add a stream first before creating a milestone.');
@@ -74,9 +60,14 @@ export function Toolbar() {
 
   return (
     <div
-      className="flex items-center gap-4 px-4 border-b border-gray-200 bg-white relative"
-      style={{ height: 52 }}
+      className="flex items-center gap-3 px-4 border-b border-gray-200 bg-white relative"
+      style={{ height: TOOLBAR_HEIGHT }}
     >
+      <SidebarTrigger />
+
+      {/* Divider */}
+      <div className="h-6 w-px bg-gray-200" />
+
       {/* Roadmap name */}
       {isEditing ? (
         <input
@@ -97,29 +88,6 @@ export function Toolbar() {
         </h1>
       )}
 
-      {/* Divider */}
-      <div className="h-6 w-px bg-gray-300" />
-
-      {/* Roadmap selector */}
-      <select
-        className="text-sm border border-gray-300 rounded px-2 py-1.5 bg-white"
-        value={currentRoadmapId || ''}
-        onChange={handleRoadmapChange}
-      >
-        {roadmapList.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.name}
-          </option>
-        ))}
-      </select>
-
-      <button
-        onClick={handleNewRoadmap}
-        className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 border-none"
-      >
-        + New
-      </button>
-
       {/* Milestone button */}
       <button
         onClick={handleOpenMilestoneForm}
@@ -133,10 +101,10 @@ export function Toolbar() {
       <div className="flex-1" />
 
       {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right">
+      <div className="text-xs text-gray-400 w-16 text-right mr-2">
         {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && '\u2713 Saved'}
-        {saveStatus === 'error' && '\u2717 Error'}
+        {saveStatus === 'saved' && '✓ Saved'}
+        {saveStatus === 'error' && '✗ Error'}
       </div>
 
       {/* Month colors toggle */}

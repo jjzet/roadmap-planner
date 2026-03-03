@@ -1,7 +1,10 @@
 import { create } from 'zustand';
-import type { ZoomLevel } from '../types';
+import type { ActiveView, ZoomLevel } from '../types';
 
 interface UIState {
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
+
   zoom: ZoomLevel;
   selectedItemId: string | null;
   selectedStreamId: string | null;
@@ -35,6 +38,9 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
+  activeView: 'roadmap',
+  setActiveView: (view) => set({ activeView: view }),
+
   zoom: 'week',
   selectedItemId: null,
   selectedStreamId: null,
