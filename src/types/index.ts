@@ -87,6 +87,8 @@ export interface TodoItem {
   tags: string[];
   order: number;
   dueDate?: string; // ISO date "YYYY-MM-DD"
+  notes?: string;
+  expanded?: boolean;
 }
 
 export interface TodoGroup {
