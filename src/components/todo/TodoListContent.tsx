@@ -70,7 +70,7 @@ export function TodoListContent() {
   };
 
   return (
-    <div className="max-w-3xl px-8 py-6">
+    <div className="w-full px-8 py-6">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

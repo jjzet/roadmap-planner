@@ -49,6 +49,7 @@ interface TodoStore {
   removeItem: (groupId: string, itemId: string) => void;
   toggleItem: (groupId: string, itemId: string) => void;
   togglePinItem: (groupId: string, itemId: string) => void;
+  toggleItemExpand: (groupId: string, itemId: string) => void;
   reorderItems: (groupId: string, activeId: string, overId: string) => void;
   moveItemToGroup: (fromGroupId: string, toGroupId: string, itemId: string) => void;
 
@@ -239,6 +240,8 @@ export const useTodoStore = create<TodoStore>()(
           link: '',
           tags: [],
           order: group.items.length,
+          notes: '',
+          expanded: false,
         });
         s.isDirty = true;
       });
@@ -285,6 +288,18 @@ export const useTodoStore = create<TodoStore>()(
         const item = group.items.find((it: TodoItem) => it.id === itemId);
         if (item) {
           item.pinned = !item.pinned;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    toggleItemExpand: (groupId, itemId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (item) {
+          item.expanded = !item.expanded;
           s.isDirty = true;
         }
       });
@@ -356,11 +371,13 @@ export const useTodoStore = create<TodoStore>()(
             data: { ...g, order: i },
           }));
         }
-        // Ensure all items have the pinned field (migration for existing data)
+        // Ensure all items have required fields (migration for existing data)
         blocks.forEach((b) => {
           if (b.type === 'group') {
             b.data.items.forEach((item) => {
               if (item.pinned === undefined) item.pinned = false;
+              if (item.notes === undefined) item.notes = '';
+              if (item.expanded === undefined) item.expanded = false;
             });
           }
         });
