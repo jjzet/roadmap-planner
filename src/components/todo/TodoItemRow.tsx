@@ -3,11 +3,12 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight } from 'lucide-react';
+import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore } from 'lucide-react';
 
 interface Props {
   item: TodoItem;
   groupId: string;
+  isArchived?: boolean;
 }
 
 function formatDueDate(dateStr: string): { label: string; color: string } {
@@ -31,12 +32,14 @@ function formatDueDate(dateStr: string): { label: string; color: string } {
   }
 }
 
-export function TodoItemRow({ item, groupId }: Props) {
+export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const updateItem = useTodoStore((s) => s.updateItem);
   const removeItem = useTodoStore((s) => s.removeItem);
   const toggleItem = useTodoStore((s) => s.toggleItem);
   const togglePinItem = useTodoStore((s) => s.togglePinItem);
   const toggleItemExpand = useTodoStore((s) => s.toggleItemExpand);
+  const archiveItem = useTodoStore((s) => s.archiveItem);
+  const unarchiveItem = useTodoStore((s) => s.unarchiveItem);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -197,58 +200,86 @@ export function TodoItemRow({ item, groupId }: Props) {
           </span>
         ))}
 
-        {/* Action buttons (visible on hover) */}
-        <button
-          onClick={() => dateInputRef.current?.showPicker()}
-          className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
-            item.dueDate
-              ? 'text-blue-400 opacity-100'
-              : 'text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100'
-          }`}
-          title="Set due date"
-        >
-          <Calendar className="w-3.5 h-3.5" />
-        </button>
-        {/* Hidden native date input */}
-        <input
-          ref={dateInputRef}
-          type="date"
-          value={item.dueDate || ''}
-          onChange={handleDateChange}
-          className="absolute opacity-0 pointer-events-none w-0 h-0"
-          tabIndex={-1}
-        />
-        <button
-          onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-          className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-          title="Add link"
-        >
-          <Link className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => removeItem(groupId, item.id)}
-          className="text-gray-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-          title="Delete item"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Link input popover */}
-        {showLinkInput && (
-          <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+        {/* Action buttons */}
+        {isArchived ? (
+          <>
+            <button
+              onClick={() => unarchiveItem(groupId, item.id)}
+              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              title="Restore item"
+            >
+              <ArchiveRestore className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => removeItem(groupId, item.id)}
+              className="text-gray-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              title="Delete item"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => dateInputRef.current?.showPicker()}
+              className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
+                item.dueDate
+                  ? 'text-blue-400 opacity-100'
+                  : 'text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100'
+              }`}
+              title="Set due date"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+            </button>
+            {/* Hidden native date input */}
             <input
-              className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-400"
-              placeholder="Paste JIRA link or URL..."
-              value={linkValue}
-              onChange={(e) => setLinkValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleLinkSave();
-                if (e.key === 'Escape') setShowLinkInput(false);
-              }}
-              onBlur={handleLinkSave}
-              autoFocus
+              ref={dateInputRef}
+              type="date"
+              value={item.dueDate || ''}
+              onChange={handleDateChange}
+              className="absolute opacity-0 pointer-events-none w-0 h-0"
+              tabIndex={-1}
             />
-          </div>
+            <button
+              onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
+              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              title="Add link"
+            >
+              <Link className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => archiveItem(groupId, item.id)}
+              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              title="Archive item"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => removeItem(groupId, item.id)}
+              className="text-gray-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              title="Delete item"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Link input popover */}
+            {showLinkInput && (
+              <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+                <input
+                  className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-400"
+                  placeholder="Paste JIRA link or URL..."
+                  value={linkValue}
+                  onChange={(e) => setLinkValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleLinkSave();
+                    if (e.key === 'Escape') setShowLinkInput(false);
+                  }}
+                  onBlur={handleLinkSave}
+                  autoFocus
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 

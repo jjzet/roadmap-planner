@@ -50,6 +50,9 @@ interface TodoStore {
   toggleItem: (groupId: string, itemId: string) => void;
   togglePinItem: (groupId: string, itemId: string) => void;
   toggleItemExpand: (groupId: string, itemId: string) => void;
+  archiveItem: (groupId: string, itemId: string) => void;
+  unarchiveItem: (groupId: string, itemId: string) => void;
+  archiveCompletedItems: (groupId: string) => void;
   reorderItems: (groupId: string, activeId: string, overId: string) => void;
   moveItemToGroup: (fromGroupId: string, toGroupId: string, itemId: string) => void;
 
@@ -242,6 +245,7 @@ export const useTodoStore = create<TodoStore>()(
           order: group.items.length,
           notes: '',
           expanded: false,
+          archived: false,
         });
         s.isDirty = true;
       });
@@ -302,6 +306,43 @@ export const useTodoStore = create<TodoStore>()(
           item.expanded = !item.expanded;
           s.isDirty = true;
         }
+      });
+    },
+
+    archiveItem: (groupId, itemId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (item) {
+          item.archived = true;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    unarchiveItem: (groupId, itemId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (item) {
+          item.archived = false;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    archiveCompletedItems: (groupId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        group.items.forEach((item: TodoItem) => {
+          if (item.completed && !item.archived) {
+            item.archived = true;
+          }
+        });
+        s.isDirty = true;
       });
     },
 
@@ -378,6 +419,7 @@ export const useTodoStore = create<TodoStore>()(
               if (item.pinned === undefined) item.pinned = false;
               if (item.notes === undefined) item.notes = '';
               if (item.expanded === undefined) item.expanded = false;
+              if (item.archived === undefined) item.archived = false;
             });
           }
         });

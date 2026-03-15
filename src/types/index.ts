@@ -89,6 +89,7 @@ export interface TodoItem {
   dueDate?: string; // ISO date "YYYY-MM-DD"
   notes?: string;
   expanded?: boolean;
+  archived?: boolean;
 }
 
 export interface TodoGroup {

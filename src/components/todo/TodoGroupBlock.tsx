@@ -18,7 +18,7 @@ import { TodoItemRow } from './TodoItemRow';
 import { ProgressRing } from './ProgressRing';
 import type { TodoGroup } from '@/types';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { ChevronRight, GripVertical, Trash2, Plus } from 'lucide-react';
+import { ChevronRight, GripVertical, Trash2, Plus, Archive } from 'lucide-react';
 
 interface Props {
   group: TodoGroup;
@@ -30,10 +30,12 @@ export function TodoGroupBlock({ group }: Props) {
   const removeGroup = useTodoStore((s) => s.removeGroup);
   const addItem = useTodoStore((s) => s.addItem);
   const reorderItems = useTodoStore((s) => s.reorderItems);
+  const archiveCompletedItems = useTodoStore((s) => s.archiveCompletedItems);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemText, setNewItemText] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(group.name);
+  const [showArchived, setShowArchived] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Sortable for the group itself
@@ -51,13 +53,16 @@ export function TodoGroupBlock({ group }: Props) {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Sort items: pinned first, then by order
-  const sortedItems = useMemo(() => {
-    return [...group.items].sort((a, b) => {
+  // Split items into active and archived, sort active: pinned first, then by order
+  const { activeItems, archivedItems } = useMemo(() => {
+    const active = group.items.filter((i) => !i.archived);
+    const archived = group.items.filter((i) => i.archived);
+    active.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
       return a.order - b.order;
     });
+    return { activeItems: active, archivedItems: archived };
   }, [group.items]);
 
   const handleItemDragEnd = (event: DragEndEvent) => {
@@ -91,8 +96,9 @@ export function TodoGroupBlock({ group }: Props) {
     }
   }, [isEditingName]);
 
-  const completedCount = group.items.filter((i) => i.completed).length;
-  const totalCount = group.items.length;
+  const completedCount = activeItems.filter((i) => i.completed).length;
+  const totalCount = activeItems.length;
+  const hasCompletedItems = activeItems.some((i) => i.completed);
 
   return (
     <div ref={setNodeRef} style={style} className="mb-6">
@@ -138,6 +144,16 @@ export function TodoGroupBlock({ group }: Props) {
 
         <ProgressRing completed={completedCount} total={totalCount} />
 
+        {hasCompletedItems && (
+          <button
+            onClick={() => archiveCompletedItems(group.id)}
+            className="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
+            title="Archive completed items"
+          >
+            <Archive className="w-3.5 h-3.5" />
+          </button>
+        )}
+
         <button
           onClick={() => {
             if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
@@ -159,11 +175,11 @@ export function TodoGroupBlock({ group }: Props) {
           onDragEnd={handleItemDragEnd}
         >
           <SortableContext
-            items={sortedItems.map((it) => it.id)}
+            items={activeItems.map((it) => it.id)}
             strategy={verticalListSortingStrategy}
           >
             <div className="ml-6">
-              {sortedItems.map((item) => (
+              {activeItems.map((item) => (
                 <TodoItemRow
                   key={item.id}
                   item={item}
@@ -199,6 +215,33 @@ export function TodoGroupBlock({ group }: Props) {
                   <Plus className="w-3.5 h-3.5" />
                   Add item
                 </button>
+              )}
+
+              {/* Archived section */}
+              {archivedItems.length > 0 && (
+                <div className="mt-2 border-t border-gray-100 pt-2">
+                  <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent py-1 pl-6"
+                  >
+                    <ChevronRight
+                      className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
+                    />
+                    Archived ({archivedItems.length})
+                  </button>
+                  {showArchived && (
+                    <div className="opacity-60">
+                      {archivedItems.map((item) => (
+                        <TodoItemRow
+                          key={item.id}
+                          item={item}
+                          groupId={group.id}
+                          isArchived
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </SortableContext>
