@@ -3,7 +3,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore } from 'lucide-react';
+import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X } from 'lucide-react';
+import { parseDateExpression, formatDatePreview } from '@/lib/dates';
 
 interface Props {
   item: TodoItem;
@@ -40,12 +41,19 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const toggleItemExpand = useTodoStore((s) => s.toggleItemExpand);
   const archiveItem = useTodoStore((s) => s.archiveItem);
   const unarchiveItem = useTodoStore((s) => s.unarchiveItem);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(item.text);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
   const [notesValue, setNotesValue] = useState(item.notes || '');
-  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Smart date input state
+  const [showDateInput, setShowDateInput] = useState(false);
+  const [dateInputValue, setDateInputValue] = useState('');
+  const [datePreview, setDatePreview] = useState('');
+
+  const dateTextRef = useRef<HTMLInputElement>(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -76,13 +84,56 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     }
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Smart date input handlers ──
+
+  const openDateInput = () => {
+    const initial = item.dueDate || '';
+    setDateInputValue(initial);
+    setDatePreview(initial ? formatDatePreview(initial) : '');
+    setShowDateInput(true);
+  };
+
+  const commitDateInput = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      // Empty → clear date
+      updateItem(groupId, item.id, { dueDate: undefined });
+    } else {
+      const parsed = parseDateExpression(trimmed);
+      if (parsed) {
+        updateItem(groupId, item.id, { dueDate: parsed });
+      }
+    }
+    setShowDateInput(false);
+    setDateInputValue('');
+    setDatePreview('');
+  };
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    updateItem(groupId, item.id, { dueDate: val || undefined });
+    setDateInputValue(val);
+    const parsed = parseDateExpression(val);
+    setDatePreview(parsed ? formatDatePreview(parsed) : '');
+  };
+
+  const handleDateInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitDateInput(dateInputValue);
+    }
+    if (e.key === 'Escape') {
+      setShowDateInput(false);
+      setDateInputValue('');
+      setDatePreview('');
+    }
+  };
+
+  const handleDateInputBlur = () => {
+    // Small delay so clicking the X button doesn't race with blur
+    setTimeout(() => commitDateInput(dateInputValue), 100);
   };
 
   const dueInfo = item.dueDate && !item.completed ? formatDueDate(item.dueDate) : null;
-
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
 
@@ -90,12 +141,11 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item rounded-md relative ${
-        item.pinned ? 'bg-amber-50/50' : ''
-      }`}
+      className={`group/item rounded-md relative ${item.pinned ? 'bg-amber-50/50' : ''}`}
     >
       {/* Main row */}
-      <div className="flex items-center gap-2 py-1.5 px-1 hover:bg-gray-50 rounded-md">
+      <div className="flex items-center gap-1.5 py-1.5 px-1 hover:bg-gray-50 rounded-md">
+
         {/* Drag handle */}
         <span
           className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
@@ -120,7 +170,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           />
         </button>
 
-        {/* Pin indicator (visible when pinned, or on hover) */}
+        {/* Pin indicator */}
         <button
           onClick={() => togglePinItem(groupId, item.id)}
           className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
@@ -141,145 +191,189 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
         />
 
-        {/* Text */}
-        {isEditing ? (
-          <input
-            className="flex-1 text-sm border-none outline-none bg-transparent"
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            onBlur={handleTextBlur}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              if (e.key === 'Escape') { setEditText(item.text); setIsEditing(false); }
-            }}
-            autoFocus
-          />
-        ) : (
-          <span
-            className={`flex-1 text-sm cursor-text min-w-0 ${
-              item.completed ? 'line-through text-gray-400' : 'text-gray-700'
-            }`}
-            onClick={() => { setEditText(item.text); setIsEditing(true); }}
-          >
-            {item.text || <span className="text-gray-300 italic">Untitled</span>}
-          </span>
-        )}
+        {/* ── Content area: text + inline actions + spacer + metadata ── */}
+        <div className="flex items-center gap-1 flex-1 min-w-0">
 
-        {/* Due date badge */}
-        {dueInfo && (
-          <span
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 cursor-pointer ${dueInfo.color}`}
-            onClick={() => dateInputRef.current?.showPicker()}
-            title={`Due: ${item.dueDate}`}
-          >
-            {dueInfo.label}
-          </span>
-        )}
-
-        {/* Link indicator */}
-        {item.link && !showLinkInput && (
-          <a
-            href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-600 flex-shrink-0"
-            title={item.link}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        )}
-
-        {/* Tags */}
-        {item.tags.map((tag) => (
-          <span
-            key={tag}
-            className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0"
-          >
-            {tag}
-          </span>
-        ))}
-
-        {/* Action buttons */}
-        {isArchived ? (
-          <>
-            <button
-              onClick={() => unarchiveItem(groupId, item.id)}
-              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-              title="Restore item"
-            >
-              <ArchiveRestore className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => removeItem(groupId, item.id)}
-              className="text-gray-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-              title="Delete item"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => dateInputRef.current?.showPicker()}
-              className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
-                item.dueDate
-                  ? 'text-blue-400 opacity-100'
-                  : 'text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100'
+          {/* Auto-sizing text / input */}
+          {isEditing ? (
+            <div className="inline-grid text-sm">
+              {/* Hidden sizer span — dictates the input's width */}
+              <span
+                aria-hidden
+                className="invisible whitespace-pre col-start-1 row-start-1 text-sm px-0 min-w-[4ch]"
+              >
+                {editText + '\u00a0'}
+              </span>
+              <input
+                className="col-start-1 row-start-1 text-sm border-none outline-none bg-transparent w-full"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onBlur={handleTextBlur}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                  if (e.key === 'Escape') { setEditText(item.text); setIsEditing(false); }
+                }}
+                autoFocus
+              />
+            </div>
+          ) : (
+            <span
+              className={`text-sm cursor-text whitespace-nowrap ${
+                item.completed ? 'line-through text-gray-400' : 'text-gray-700'
               }`}
-              title="Set due date"
+              onClick={() => { setEditText(item.text); setIsEditing(true); }}
             >
-              <Calendar className="w-3.5 h-3.5" />
-            </button>
-            {/* Hidden native date input */}
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={item.dueDate || ''}
-              onChange={handleDateChange}
-              className="absolute opacity-0 pointer-events-none w-0 h-0"
-              tabIndex={-1}
-            />
-            <button
-              onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-              title="Add link"
-            >
-              <Link className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => archiveItem(groupId, item.id)}
-              className="text-gray-300 hover:text-blue-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-              title="Archive item"
-            >
-              <Archive className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => removeItem(groupId, item.id)}
-              className="text-gray-300 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
-              title="Delete item"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+              {item.text || <span className="text-gray-300 italic">Untitled</span>}
+            </span>
+          )}
 
-            {/* Link input popover */}
-            {showLinkInput && (
-              <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+          {/* ── Inline action buttons (normal items) ── */}
+          {!isArchived && (
+            showDateInput ? (
+              /* Smart date input — replaces calendar button */
+              <div className="flex items-center gap-1 flex-shrink-0 ml-1">
                 <input
-                  className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-400"
-                  placeholder="Paste JIRA link or URL..."
-                  value={linkValue}
-                  onChange={(e) => setLinkValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleLinkSave();
-                    if (e.key === 'Escape') setShowLinkInput(false);
-                  }}
-                  onBlur={handleLinkSave}
+                  ref={dateTextRef}
+                  className="text-xs border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-400 w-28 bg-white"
+                  placeholder="tomorrow, +3d, fri…"
+                  value={dateInputValue}
+                  onChange={handleDateInputChange}
+                  onKeyDown={handleDateInputKeyDown}
+                  onBlur={handleDateInputBlur}
                   autoFocus
                 />
+                {datePreview && (
+                  <span className="text-[10px] text-blue-500 whitespace-nowrap">{datePreview}</span>
+                )}
+                <button
+                  onMouseDown={(e) => {
+                    // Prevent blur from firing before click
+                    e.preventDefault();
+                    setShowDateInput(false);
+                    setDateInputValue('');
+                    setDatePreview('');
+                  }}
+                  className="text-gray-300 hover:text-gray-500 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+                  title="Cancel"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-            )}
-          </>
+            ) : (
+              <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-1">
+                <button
+                  onClick={openDateInput}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${
+                    item.dueDate
+                      ? 'text-blue-400 opacity-100'
+                      : 'text-gray-300 hover:text-blue-500'
+                  }`}
+                  title="Set due date"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
+                  className="text-gray-300 hover:text-blue-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                  title="Add link"
+                >
+                  <Link className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => archiveItem(groupId, item.id)}
+                  className="text-gray-300 hover:text-blue-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                  title="Archive item"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => removeItem(groupId, item.id)}
+                  className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                  title="Delete item"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          )}
+
+          {/* ── Inline action buttons (archived items) ── */}
+          {isArchived && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-1">
+              <button
+                onClick={() => unarchiveItem(groupId, item.id)}
+                className="text-gray-300 hover:text-blue-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                title="Restore item"
+              >
+                <ArchiveRestore className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => removeItem(groupId, item.id)}
+                className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                title="Delete item"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Spacer — pushes metadata to the right */}
+          <div className="flex-1" />
+
+          {/* ── Metadata (always at far right) ── */}
+
+          {/* Due date badge */}
+          {dueInfo && (
+            <span
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 cursor-pointer ${dueInfo.color}`}
+              onClick={openDateInput}
+              title={`Due: ${item.dueDate} — click to edit`}
+            >
+              {dueInfo.label}
+            </span>
+          )}
+
+          {/* External link */}
+          {item.link && !showLinkInput && (
+            <a
+              href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-600 flex-shrink-0"
+              title={item.link}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+
+          {/* Tags */}
+          {item.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        {/* Link input popover */}
+        {showLinkInput && (
+          <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+            <input
+              className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-400"
+              placeholder="Paste JIRA link or URL..."
+              value={linkValue}
+              onChange={(e) => setLinkValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleLinkSave();
+                if (e.key === 'Escape') setShowLinkInput(false);
+              }}
+              onBlur={handleLinkSave}
+              autoFocus
+            />
+          </div>
         )}
       </div>
 
