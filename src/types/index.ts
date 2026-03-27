@@ -82,6 +82,7 @@ export interface TodoItem {
   id: string;
   text: string;
   completed: boolean;
+  completedAt?: string; // ISO timestamp set when completed, cleared when uncompleted
   pinned: boolean;
   link: string;
   tags: string[];
