@@ -1,4 +1,5 @@
-import { useDashboardData, type BriefingTask } from '../../hooks/useDashboardData';
+import { useState } from 'react';
+import { useDashboardData, type BriefingTask, type TimeRange } from '../../hooks/useDashboardData';
 import { useTodoStore } from '../../store/todoStore';
 import { useUIStore } from '../../store/uiStore';
 import { ProgressRing } from '../todo/ProgressRing';
@@ -119,6 +120,7 @@ export function TodayView() {
   const { data, isLoading, refresh } = useDashboardData();
   const loadTodo = useTodoStore((s) => s.loadTodo);
   const setActiveView = useUIStore((s) => s.setActiveView);
+  const [timeRange, setTimeRange] = useState<TimeRange>('daily');
 
   const handleNavigate = (pageId: string) => {
     loadTodo(pageId);
@@ -193,10 +195,14 @@ export function TodayView() {
             {/* ── Row 1: Trend (2/3) + Velocity (1/3) ── */}
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2">
-                <CompletionTrendChart data={data.completionTrend} />
+                <CompletionTrendChart
+                  data={data.trends[timeRange]}
+                  timeRange={timeRange}
+                  onTimeRangeChange={setTimeRange}
+                />
               </div>
               <div>
-                <VelocityWidget velocity={data.velocity} />
+                <VelocityWidget velocity={data.velocity[timeRange]} />
               </div>
             </div>
 

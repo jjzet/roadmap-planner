@@ -1,37 +1,37 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { DashboardData } from '@/hooks/useDashboardData';
+import type { VelocityData } from '@/hooks/useDashboardData';
 
 interface Props {
-  velocity: DashboardData['velocity'];
+  velocity: VelocityData;
 }
 
 export function VelocityWidget({ velocity }: Props) {
-  const { thisWeek, lastWeek, delta } = velocity;
+  const { current, previous, delta, currentLabel, previousLabel } = velocity;
 
   const deltaDisplay =
     delta === null
       ? { label: 'New this period', icon: <TrendingUp className="w-4 h-4" />, color: 'text-emerald-500' }
       : delta > 0
-      ? { label: `+${delta}% vs last 7d`, icon: <TrendingUp className="w-4 h-4" />, color: 'text-emerald-500' }
+      ? { label: `+${delta}%`, icon: <TrendingUp className="w-4 h-4" />, color: 'text-emerald-500' }
       : delta < 0
-      ? { label: `${delta}% vs last 7d`, icon: <TrendingDown className="w-4 h-4" />, color: 'text-red-400' }
-      : { label: 'Same as last 7d', icon: <Minus className="w-4 h-4" />, color: 'text-gray-400' };
+      ? { label: `${delta}%`, icon: <TrendingDown className="w-4 h-4" />, color: 'text-red-400' }
+      : { label: 'No change', icon: <Minus className="w-4 h-4" />, color: 'text-gray-400' };
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col justify-between h-full">
       <div>
         <h3 className="text-sm font-semibold text-gray-800">Velocity</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Rolling 7-day windows</p>
+        <p className="text-xs text-gray-400 mt-0.5">{currentLabel} vs {previousLabel.toLowerCase()}</p>
       </div>
 
       <div className="mt-4 flex items-end gap-6">
         <div>
-          <p className="text-3xl font-bold text-gray-900 tabular-nums">{thisWeek}</p>
-          <p className="text-xs text-gray-400 mt-0.5">This 7 days</p>
+          <p className="text-3xl font-bold text-gray-900 tabular-nums">{current}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{currentLabel}</p>
         </div>
         <div className="mb-1">
-          <p className="text-xl font-semibold text-gray-300 tabular-nums">{lastWeek}</p>
-          <p className="text-xs text-gray-400 mt-0.5">Prior 7 days</p>
+          <p className="text-xl font-semibold text-gray-300 tabular-nums">{previous}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{previousLabel}</p>
         </div>
       </div>
 
@@ -40,10 +40,10 @@ export function VelocityWidget({ velocity }: Props) {
         {deltaDisplay.label}
       </div>
 
-      {/* Mini sparkline-style bar */}
+      {/* Mini comparison bar */}
       <div className="mt-3 flex items-end gap-1 h-8">
-        {[lastWeek, thisWeek].map((val, i) => {
-          const maxVal = Math.max(lastWeek, thisWeek, 1);
+        {[previous, current].map((val, i) => {
+          const maxVal = Math.max(previous, current, 1);
           const height = Math.max((val / maxVal) * 100, 8);
           return (
             <div
@@ -58,8 +58,8 @@ export function VelocityWidget({ velocity }: Props) {
         })}
       </div>
       <div className="flex gap-1 mt-1">
-        <p className="flex-1 text-center text-[10px] text-gray-300">−7d</p>
-        <p className="flex-1 text-center text-[10px] text-blue-400">now</p>
+        <p className="flex-1 text-center text-[10px] text-gray-300">{previousLabel}</p>
+        <p className="flex-1 text-center text-[10px] text-blue-400">{currentLabel}</p>
       </div>
     </div>
   );
