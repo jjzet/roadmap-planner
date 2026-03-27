@@ -280,6 +280,7 @@ export const useTodoStore = create<TodoStore>()(
         const item = group.items.find((it: TodoItem) => it.id === itemId);
         if (item) {
           item.completed = !item.completed;
+          item.completedAt = item.completed ? new Date().toISOString() : undefined;
           s.isDirty = true;
         }
       });

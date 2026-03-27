@@ -13,6 +13,7 @@ import {
   Pin,
   ArrowRight,
 } from 'lucide-react';
+import { formatRelativeTime } from '@/lib/dates';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -82,6 +83,14 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
                 }`}
               >
                 {task.item.dueDate}
+              </span>
+            )}
+            {task.item.completedAt && (
+              <span
+                className="text-[10px] text-gray-400 flex-shrink-0"
+                title={new Date(task.item.completedAt).toLocaleString()}
+              >
+                {formatRelativeTime(task.item.completedAt)}
               </span>
             )}
             <button

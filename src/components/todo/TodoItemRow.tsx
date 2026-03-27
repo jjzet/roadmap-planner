@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem } from '@/types';
 import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X } from 'lucide-react';
-import { parseDateExpression, formatDatePreview } from '@/lib/dates';
+import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 
 interface Props {
   item: TodoItem;
@@ -321,6 +321,16 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           <div className="flex-1" />
 
           {/* ── Metadata (always at far right) ── */}
+
+          {/* Completed-at timestamp */}
+          {item.completed && item.completedAt && (
+            <span
+              className="text-[10px] text-gray-300 flex-shrink-0"
+              title={new Date(item.completedAt).toLocaleString()}
+            >
+              {formatRelativeTime(item.completedAt)}
+            </span>
+          )}
 
           {/* Due date badge */}
           {dueInfo && (

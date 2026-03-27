@@ -87,16 +87,13 @@ export function useTodayData() {
           totalTasks++;
           if (item.completed) {
             completedTasks++;
-            // Show recently completed (completed items from active pages)
-            if (recentlyCompleted.length < 10) {
-              recentlyCompleted.push({
-                item,
-                groupName: group.name,
-                pageName: row.name,
-                pageId: row.id,
-                groupId: group.id,
-              });
-            }
+            recentlyCompleted.push({
+              item,
+              groupName: group.name,
+              pageName: row.name,
+              pageId: row.id,
+              groupId: group.id,
+            });
             continue;
           }
 
@@ -125,6 +122,18 @@ export function useTodayData() {
         }
       }
     }
+
+    // Sort recently completed: items with completedAt first (most recent first),
+    // then items without completedAt (legacy data), capped at 10
+    recentlyCompleted.sort((a, b) => {
+      const aT = a.item.completedAt || '';
+      const bT = b.item.completedAt || '';
+      if (aT && bT) return bT.localeCompare(aT);
+      if (aT) return -1;
+      if (bT) return 1;
+      return 0;
+    });
+    recentlyCompleted.splice(10);
 
     // Sort overdue by date ascending (oldest first)
     overdue.sort((a, b) => (a.item.dueDate || '').localeCompare(b.item.dueDate || ''));
