@@ -43,7 +43,7 @@ export function PinnedItemsWidget({ items }: Props) {
         <p className="text-xs text-gray-400">No pinned tasks — pin important items to surface them here</p>
       ) : (
         <div className="space-y-1">
-          {items.map(({ item, groupName, pageName, pageId }) => {
+          {items.map(({ item, groupName, pageId }) => {
             const dueInfo = item.dueDate ? formatDueDate(item.dueDate) : null;
             return (
               <div
