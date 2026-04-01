@@ -7,9 +7,10 @@ import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, 
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
-  dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',  next: 'pr' },
-  pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-600 hover:bg-blue-200',     next: 'merged' },
-  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200', next: undefined },
+  dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
+  test:   { label: 'test',   className: 'bg-purple-100 text-purple-700 hover:bg-purple-200', next: 'pr' },
+  pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-600 hover:bg-blue-200',       next: 'merged' },
+  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200',   next: undefined },
 };
 
 interface Props {
