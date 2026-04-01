@@ -78,6 +78,8 @@ export type ActiveView = 'roadmap' | 'tasks' | 'today';
 
 // ── Todo Types ──
 
+export type DevStatus = 'dev' | 'pr' | 'merged';
+
 export interface TodoItem {
   id: string;
   text: string;
@@ -91,6 +93,7 @@ export interface TodoItem {
   notes?: string;
   expanded?: boolean;
   archived?: boolean;
+  devStatus?: DevStatus;
 }
 
 export interface TodoGroup {

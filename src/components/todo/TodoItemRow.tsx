@@ -2,9 +2,15 @@ import { useState, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
-import type { TodoItem } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X } from 'lucide-react';
+import type { TodoItem, DevStatus } from '@/types';
+import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X, Code2 } from 'lucide-react';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
+
+const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
+  dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',  next: 'pr' },
+  pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-600 hover:bg-blue-200',     next: 'merged' },
+  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200', next: undefined },
+};
 
 interface Props {
   item: TodoItem;
@@ -133,6 +139,15 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     setTimeout(() => commitDateInput(dateInputValue), 100);
   };
 
+  const cycleDevStatus = () => {
+    if (!item.devStatus) {
+      updateItem(groupId, item.id, { devStatus: 'dev' });
+    } else {
+      const next = DEV_STATUS_CONFIG[item.devStatus].next;
+      updateItem(groupId, item.id, { devStatus: next });
+    }
+  };
+
   const dueInfo = item.dueDate && !item.completed ? formatDueDate(item.dueDate) : null;
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
@@ -227,6 +242,17 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             </span>
           )}
 
+          {/* Dev status badge — visible when set, click to advance cycle */}
+          {item.devStatus && (
+            <button
+              onClick={cycleDevStatus}
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DEV_STATUS_CONFIG[item.devStatus].className}`}
+              title={`Status: ${item.devStatus} — click to advance`}
+            >
+              {DEV_STATUS_CONFIG[item.devStatus].label}
+            </button>
+          )}
+
           {/* ── Inline action buttons (normal items) ── */}
           {!isArchived && (
             showDateInput ? (
@@ -247,7 +273,6 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
                 )}
                 <button
                   onMouseDown={(e) => {
-                    // Prevent blur from firing before click
                     e.preventDefault();
                     setShowDateInput(false);
                     setDateInputValue('');
@@ -278,6 +303,17 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
                   title="Add link"
                 >
                   <Link className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={cycleDevStatus}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${
+                    item.devStatus
+                      ? 'text-amber-500 opacity-100'
+                      : 'text-gray-300 hover:text-amber-500'
+                  }`}
+                  title="Set dev status"
+                >
+                  <Code2 className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => archiveItem(groupId, item.id)}
@@ -317,22 +353,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             </div>
           )}
 
-          {/* Spacer — pushes metadata to the right */}
-          <div className="flex-1" />
-
-          {/* ── Metadata (always at far right) ── */}
-
-          {/* Completed-at timestamp */}
-          {item.completed && item.completedAt && (
-            <span
-              className="text-[10px] text-gray-300 flex-shrink-0"
-              title={new Date(item.completedAt).toLocaleString()}
-            >
-              {formatRelativeTime(item.completedAt)}
-            </span>
-          )}
-
-          {/* Due date badge */}
+          {/* Due date badge — near text, not far right */}
           {dueInfo && (
             <span
               className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 cursor-pointer ${dueInfo.color}`}
@@ -343,7 +364,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             </span>
           )}
 
-          {/* External link */}
+          {/* External link — near text, not far right */}
           {item.link && !showLinkInput && (
             <a
               href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
@@ -366,6 +387,19 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
               {tag}
             </span>
           ))}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Completed-at timestamp — only thing at far right */}
+          {item.completed && item.completedAt && (
+            <span
+              className="text-[10px] text-gray-300 flex-shrink-0"
+              title={new Date(item.completedAt).toLocaleString()}
+            >
+              {formatRelativeTime(item.completedAt)}
+            </span>
+          )}
         </div>
 
         {/* Link input popover */}
