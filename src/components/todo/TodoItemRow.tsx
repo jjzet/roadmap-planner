@@ -288,17 +288,6 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             ) : (
               <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-1">
                 <button
-                  onClick={openDateInput}
-                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${
-                    item.dueDate
-                      ? 'text-blue-400 opacity-100'
-                      : 'text-gray-300 hover:text-blue-500'
-                  }`}
-                  title="Set due date"
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                </button>
-                <button
                   onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
                   className="text-gray-300 hover:text-blue-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
                   title="Add link"
@@ -315,6 +304,17 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
                   title="Set dev status"
                 >
                   <Code2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={openDateInput}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${
+                    item.dueDate
+                      ? 'text-blue-400 opacity-100'
+                      : 'text-gray-300 hover:text-blue-500'
+                  }`}
+                  title="Set due date"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => archiveItem(groupId, item.id)}
