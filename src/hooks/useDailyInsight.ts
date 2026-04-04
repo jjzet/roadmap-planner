@@ -66,8 +66,7 @@ async function generate(date: string): Promise<DailyInsight> {
 
   const response = await client.messages.create({
     model: 'claude-opus-4-6',
-    max_tokens: 1024,
-    thinking: { type: 'adaptive' },
+    max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -97,11 +96,27 @@ Return a single JSON object:
     ],
   });
 
-  // Extract text block (thinking blocks are separate)
+  // Find the text block (skip any thinking blocks)
   const textBlock = response.content.find((b) => b.type === 'text');
-  const raw = textBlock?.type === 'text' ? textBlock.text : '{}';
-  const cleaned = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-  return JSON.parse(cleaned) as DailyInsight;
+  if (!textBlock || textBlock.type !== 'text' || !textBlock.text.trim()) {
+    throw new Error(`No text content in response (blocks: ${response.content.map((b) => b.type).join(', ')})`);
+  }
+
+  const cleaned = textBlock.text
+    .replace(/^```(?:json)?\n?/m, '')
+    .replace(/\n?```$/m, '')
+    .trim();
+
+  const parsed = JSON.parse(cleaned) as DailyInsight;
+
+  // Validate required fields — never cache a partial response
+  const required: (keyof DailyInsight)[] = ['book', 'author', 'category', 'concept', 'lesson'];
+  const missing = required.filter((k) => !parsed[k]);
+  if (missing.length > 0) {
+    throw new Error(`Insight missing required fields: ${missing.join(', ')}`);
+  }
+
+  return parsed;
 }
 
 export function useDailyInsight() {
