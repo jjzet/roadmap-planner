@@ -105,16 +105,20 @@ Return a single JSON object:
     .replace(/\n?```$/m, '')
     .trim();
 
-  const parsed = JSON.parse(cleaned) as DailyInsight;
+  const parsed = JSON.parse(cleaned) as Partial<DailyInsight>;
 
-  // Validate required fields — never cache a partial response
-  const required: (keyof DailyInsight)[] = ['book', 'author', 'category', 'concept', 'lesson'];
+  // Fill in category from our computed value if the model omitted it
+  // (the model sometimes skips it since it's told the value in the prompt)
+  if (!parsed.category) parsed.category = category;
+
+  // Only hard-fail on fields that are essential to display
+  const required: (keyof DailyInsight)[] = ['book', 'concept', 'lesson'];
   const missing = required.filter((k) => !parsed[k]);
   if (missing.length > 0) {
     throw new Error(`Insight missing required fields: ${missing.join(', ')}`);
   }
 
-  return parsed;
+  return parsed as DailyInsight;
 }
 
 export function useDailyInsight() {
