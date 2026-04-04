@@ -36,7 +36,7 @@ export function DailyInsightWidget() {
 
   if (error) return null;
 
-  const style = insight
+  const style = insight?.category
     ? (CATEGORY_STYLES[insight.category.toLowerCase()] ?? DEFAULT_STYLE)
     : DEFAULT_STYLE;
 
@@ -70,33 +70,43 @@ export function DailyInsightWidget() {
             <div className="flex-1 min-w-0">
               {/* Meta: category pill + book + author */}
               <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.pill}`}>
-                  {insight.category}
-                </span>
-                <span className="text-xs font-semibold text-gray-700 truncate">{insight.book}</span>
-                <span className="text-xs text-gray-300">·</span>
-                <span className="text-xs text-gray-400 italic">{insight.author}</span>
+                {insight.category && (
+                  <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.pill}`}>
+                    {insight.category}
+                  </span>
+                )}
+                {insight.book && <span className="text-xs font-semibold text-gray-700 truncate">{insight.book}</span>}
+                {insight.book && insight.author && <span className="text-xs text-gray-300">·</span>}
+                {insight.author && <span className="text-xs text-gray-400 italic">{insight.author}</span>}
               </div>
 
               {/* Concept — larger, bolder headline */}
-              <p className="text-[15px] font-bold text-gray-800 leading-snug mb-2 tracking-tight">
-                {insight.concept}
-              </p>
+              {insight.concept && (
+                <p className="text-[15px] font-bold text-gray-800 leading-snug mb-2 tracking-tight">
+                  {insight.concept}
+                </p>
+              )}
 
               {/* Lesson — the key actionable line */}
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {insight.lesson}
-              </p>
+              {insight.lesson && (
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {insight.lesson}
+                </p>
+              )}
 
               {/* Expanded detail */}
               {expanded && (
                 <div className="mt-4 pt-4 border-t border-gray-100/80 space-y-3">
-                  <p className="text-sm text-gray-700 leading-relaxed font-medium">
-                    {insight.why_it_matters}
-                  </p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    {insight.long_summary}
-                  </p>
+                  {insight.why_it_matters && (
+                    <p className="text-sm text-gray-700 leading-relaxed font-medium">
+                      {insight.why_it_matters}
+                    </p>
+                  )}
+                  {insight.long_summary && (
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {insight.long_summary}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
