@@ -1,105 +1,137 @@
 import { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { useDailyInsight } from '@/hooks/useDailyInsight';
 
-const CATEGORY_STYLES: Record<string, { pill: string; icon: string }> = {
-  'leadership':             { pill: 'bg-blue-50 text-blue-700 border-blue-100',     icon: 'text-blue-400' },
-  'communication':          { pill: 'bg-purple-50 text-purple-700 border-purple-100', icon: 'text-purple-400' },
-  'design thinking':        { pill: 'bg-teal-50 text-teal-700 border-teal-100',     icon: 'text-teal-400' },
-  'performance':            { pill: 'bg-green-50 text-green-700 border-green-100',  icon: 'text-green-400' },
-  'decision making':        { pill: 'bg-amber-50 text-amber-700 border-amber-100',  icon: 'text-amber-400' },
-  'negotiation':            { pill: 'bg-rose-50 text-rose-700 border-rose-100',     icon: 'text-rose-400' },
-  'biohacking':             { pill: 'bg-orange-50 text-orange-700 border-orange-100', icon: 'text-orange-400' },
-  'systems thinking':       { pill: 'bg-indigo-50 text-indigo-700 border-indigo-100', icon: 'text-indigo-400' },
-  'habits':                 { pill: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: 'text-emerald-400' },
-  'creativity':             { pill: 'bg-pink-50 text-pink-700 border-pink-100',     icon: 'text-pink-400' },
-  'organisational culture': { pill: 'bg-cyan-50 text-cyan-700 border-cyan-100',     icon: 'text-cyan-400' },
+// Notion-style: just a subtle text colour per category, no heavy backgrounds
+const CATEGORY_COLOURS: Record<string, string> = {
+  'leadership':             'text-blue-500',
+  'communication':          'text-violet-500',
+  'design thinking':        'text-teal-500',
+  'performance':            'text-green-500',
+  'decision making':        'text-amber-500',
+  'negotiation':            'text-rose-500',
+  'biohacking':             'text-orange-500',
+  'systems thinking':       'text-indigo-500',
+  'habits':                 'text-emerald-500',
+  'creativity':             'text-pink-500',
+  'organisational culture': 'text-cyan-500',
 };
 
-const DEFAULT_STYLE = { pill: 'bg-gray-50 text-gray-600 border-gray-100', icon: 'text-gray-400' };
+const DEFAULT_COLOUR = 'text-gray-400';
 
 export function DailyInsightWidget() {
-  const { insight, isLoading, error } = useDailyInsight();
+  const { insight, isLoading, isRefreshing, error, refresh } = useDailyInsight();
   const [expanded, setExpanded] = useState(false);
 
-  // Silent fail — never break surrounding layout
-  if (error) return null;
+  const categoryColour = insight?.category
+    ? (CATEGORY_COLOURS[insight.category.toLowerCase()] ?? DEFAULT_COLOUR)
+    : DEFAULT_COLOUR;
 
-  const style = insight
-    ? (CATEGORY_STYLES[insight.category.toLowerCase()] ?? DEFAULT_STYLE)
-    : DEFAULT_STYLE;
+  const busy = isLoading || isRefreshing;
+
+  if (error) {
+    return (
+      <div className="flex items-center gap-2.5 px-1 py-3 mb-4">
+        <BookOpen className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+        <p className="text-xs text-gray-400 flex-1">
+          {error.includes('VITE_ANTHROPIC_API_KEY')
+            ? 'Add VITE_ANTHROPIC_API_KEY to your environment to enable daily insights.'
+            : `Could not load insight — ${error}`}
+        </p>
+        <button
+          onClick={refresh}
+          disabled={isRefreshing}
+          className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5 rounded"
+          title="Retry"
+        >
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden mb-6">
-      {isLoading ? (
-        <div className="flex items-center gap-4 px-5 py-4">
-          <div className="w-9 h-9 rounded-lg bg-gray-100 animate-pulse flex-shrink-0" />
-          <div className="flex-1 space-y-2.5">
-            <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-24" />
-            <div className="h-3 bg-gray-100 rounded-full animate-pulse w-2/3" />
+    <div className="rounded-lg border border-gray-100 bg-white mb-6 overflow-hidden">
+      {busy ? (
+        /* Loading skeleton — same card shape, no colour */
+        <div className="flex items-start gap-3 px-4 py-3.5">
+          <div className="w-3.5 h-3.5 rounded bg-gray-100 animate-pulse flex-shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-2 pt-0.5">
+            <div className="h-2 bg-gray-100 rounded-full animate-pulse w-20" />
+            <div className="h-3 bg-gray-100 rounded-full animate-pulse w-3/4" />
             <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-1/2" />
           </div>
         </div>
       ) : insight ? (
-        <div>
-          <div className="flex items-start gap-4 px-5 py-4">
-            {/* Book icon */}
-            <div className={`flex-shrink-0 mt-0.5 w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center ${style.icon}`}>
-              <BookOpen className="w-4 h-4" />
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              {/* Meta row */}
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.pill}`}>
+        <div className="px-4 py-3.5">
+          {/* Top row: category · book · author + controls */}
+          <div className="flex items-center gap-0 mb-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
+              {insight.category && (
+                <span className={`text-[11px] font-medium ${categoryColour} capitalize`}>
                   {insight.category}
                 </span>
-                <span className="text-xs font-medium text-gray-600 truncate">{insight.book}</span>
-                <span className="text-xs text-gray-300">·</span>
-                <span className="text-xs text-gray-400">{insight.author}</span>
-              </div>
-
-              {/* Concept — headline */}
-              <p className="text-sm font-semibold text-gray-800 leading-snug mb-1.5">
-                {insight.concept}
-              </p>
-
-              {/* Lesson — always visible */}
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {insight.lesson}
-              </p>
-
-              {/* Expanded content */}
-              {expanded && (
-                <div className="mt-3 pt-3 border-t border-gray-50 space-y-2.5">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {insight.why_it_matters}
-                  </p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    {insight.long_summary}
-                  </p>
-                </div>
+              )}
+              {insight.category && insight.book && (
+                <span className="text-gray-200 text-[11px]">·</span>
+              )}
+              {insight.book && (
+                <span className="text-[11px] text-gray-500 font-medium truncate">{insight.book}</span>
+              )}
+              {insight.author && (
+                <span className="text-[11px] text-gray-400 italic truncate">{insight.author}</span>
               )}
             </div>
 
-            {/* Right controls */}
-            <div className="flex-shrink-0 flex flex-col items-end gap-2 mt-0.5">
-              <span className="flex items-center gap-1 text-[10px] text-gray-300">
-                <Sparkles className="w-3 h-3" />
-                Daily insight
-              </span>
+            {/* Controls — ghost, far right */}
+            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+              <button
+                onClick={refresh}
+                disabled={isRefreshing}
+                className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-1 rounded disabled:opacity-40"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-1 rounded"
                 title={expanded ? 'Show less' : 'Read more'}
               >
-                {expanded
-                  ? <ChevronUp className="w-4 h-4" />
-                  : <ChevronDown className="w-4 h-4" />}
+                {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
+
+          {/* Concept headline */}
+          {insight.concept && (
+            <p className="text-[13.5px] font-semibold text-gray-800 leading-snug mb-1.5 tracking-tight">
+              {insight.concept}
+            </p>
+          )}
+
+          {/* Lesson — the one-liner takeaway */}
+          {insight.lesson && (
+            <p className="text-[12.5px] text-gray-500 leading-relaxed">
+              {insight.lesson}
+            </p>
+          )}
+
+          {/* Expanded detail */}
+          {expanded && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+              {insight.why_it_matters && (
+                <p className="text-[12.5px] text-gray-600 leading-relaxed">
+                  {insight.why_it_matters}
+                </p>
+              )}
+              {insight.long_summary && (
+                <p className="text-[12px] text-gray-400 leading-relaxed">
+                  {insight.long_summary}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       ) : null}
     </div>
