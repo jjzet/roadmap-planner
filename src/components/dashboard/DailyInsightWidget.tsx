@@ -34,7 +34,29 @@ export function DailyInsightWidget() {
   const { insight, isLoading, isRefreshing, error, refresh } = useDailyInsight();
   const [expanded, setExpanded] = useState(false);
 
-  if (error) return null;
+  if (error) {
+    return (
+      <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+        <div className="h-1 w-full bg-gray-200" />
+        <div className="flex items-center gap-3 px-5 py-4 bg-white">
+          <BookOpen className="w-4 h-4 text-gray-300 flex-shrink-0" />
+          <p className="text-xs text-gray-400 flex-1">
+            {error.includes('VITE_ANTHROPIC_API_KEY')
+              ? 'Add VITE_ANTHROPIC_API_KEY to your Vercel environment variables to enable daily insights.'
+              : `Could not load insight — ${error}`}
+          </p>
+          <button
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5 rounded"
+            title="Retry"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const style = insight?.category
     ? (CATEGORY_STYLES[insight.category.toLowerCase()] ?? DEFAULT_STYLE)
