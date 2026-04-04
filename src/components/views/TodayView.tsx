@@ -8,6 +8,7 @@ import { VelocityWidget } from '../dashboard/VelocityWidget';
 import { GroupHealthWidget } from '../dashboard/GroupHealthWidget';
 import { PinnedItemsWidget } from '../dashboard/PinnedItemsWidget';
 import { UpcomingMilestonesWidget } from '../dashboard/UpcomingMilestonesWidget';
+import { DailyInsightWidget } from '../dashboard/DailyInsightWidget';
 import { TOOLBAR_HEIGHT } from '@/lib/constants';
 import {
   AlertTriangle,
@@ -158,6 +159,9 @@ export function TodayView() {
           <div className="py-16 text-center text-gray-400 text-sm">Loading dashboard…</div>
         ) : data ? (
           <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+
+            {/* ── Daily book insight ── */}
+            <DailyInsightWidget />
 
             {/* ── Greeting + summary stats ── */}
             <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
