@@ -2,6 +2,7 @@ import { TasksToolbar } from '../layout/TasksToolbar';
 import { TodoListContent } from '../todo/TodoListContent';
 import { useTodoAutoSave } from '../../hooks/useTodoAutoSave';
 import { useTodoStore } from '../../store/todoStore';
+import { DailyInsightWidget } from '../dashboard/DailyInsightWidget';
 
 export function TasksView() {
   useTodoAutoSave();
@@ -34,6 +35,9 @@ export function TasksView() {
     <>
       <TasksToolbar />
       <div className="flex-1 overflow-y-auto">
+        <div className="px-6 pt-5 pb-0">
+          <DailyInsightWidget />
+        </div>
         <TodoListContent />
       </div>
     </>
