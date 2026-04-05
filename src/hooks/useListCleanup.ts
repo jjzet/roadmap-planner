@@ -33,7 +33,7 @@ const SuggestionSchema = z.object({
   groupId: z.string(),
   itemId: z.string(),
   reason: z.string(),
-  patch: z.record(z.unknown()),
+  patch: z.record(z.string(), z.unknown()),
   displayBefore: z.string().optional(),
   displayAfter: z.string().optional(),
 });
