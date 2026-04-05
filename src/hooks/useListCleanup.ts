@@ -183,17 +183,45 @@ Be selective. Only suggest changes that are clearly worthwhile.`,
       const toApply = suggestions.filter((s) => selectedIds.has(s.id));
 
       for (const s of toApply) {
+        console.log('[cleanup] applying:', s.type, {
+          newText: s.newText,
+          newDevStatus: s.newDevStatus,
+          newDueDate: s.newDueDate,
+          newTags: s.newTags,
+          displayBefore: s.displayBefore,
+          displayAfter: s.displayAfter,
+        });
+
         if (s.type === 'archive') {
           archiveItem(s.groupId, s.itemId);
         } else {
-          // Build patch explicitly from typed fields — no dynamic casting
           const patch: Partial<TodoItem> = {};
-          if (s.type === 'rename' && s.newText) patch.text = s.newText;
-          if (s.type === 'set_dev_status' && s.newDevStatus) patch.devStatus = s.newDevStatus;
-          if (s.type === 'set_due_date' && s.newDueDate) patch.dueDate = s.newDueDate;
-          if (s.type === 'add_tags' && s.newTags) patch.tags = s.newTags;
+
+          if (s.type === 'rename') {
+            // Fall back to displayAfter if newText wasn't populated by the model
+            const text = s.newText || s.displayAfter;
+            if (text) patch.text = text;
+          }
+
+          if (s.type === 'set_dev_status') {
+            // Fall back to displayAfter if newDevStatus wasn't populated
+            const status = (s.newDevStatus || s.displayAfter) as TodoItem['devStatus'];
+            if (status) patch.devStatus = status;
+          }
+
+          if (s.type === 'set_due_date') {
+            const date = s.newDueDate || s.displayAfter;
+            if (date) patch.dueDate = date;
+          }
+
+          if (s.type === 'add_tags' && s.newTags?.length) {
+            patch.tags = s.newTags;
+          }
+
           if (Object.keys(patch).length > 0) {
             updateItem(s.groupId, s.itemId, patch);
+          } else {
+            console.warn('[cleanup] no patch built for suggestion:', s.type, s.id);
           }
         }
       }
