@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Archive,
   Calendar,
+  ChevronDown,
+  ChevronUp,
   Clock,
   GitBranch,
   Pencil,
-  Sparkles,
   Tag,
   X,
   ArrowRight,
@@ -21,16 +22,13 @@ interface Props {
   onDismiss: () => void;
 }
 
-const TYPE_META: Record<
-  SuggestionType,
-  { label: string; Icon: React.ElementType; colour: string }
-> = {
-  archive:        { label: 'Archive',      Icon: Archive,    colour: 'text-gray-400' },
-  set_dev_status: { label: 'Dev status',   Icon: GitBranch,  colour: 'text-blue-400' },
-  set_due_date:   { label: 'Due dates',    Icon: Calendar,   colour: 'text-amber-400' },
-  add_tags:       { label: 'Tags',         Icon: Tag,        colour: 'text-violet-400' },
-  rename:         { label: 'Rename',       Icon: Pencil,     colour: 'text-teal-400' },
-  flag_stale:     { label: 'Review',       Icon: Clock,      colour: 'text-rose-400' },
+const TYPE_META: Record<SuggestionType, { label: string; Icon: React.ElementType; colour: string }> = {
+  archive:        { label: 'Archive',    Icon: Archive,   colour: 'text-gray-400' },
+  set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-blue-400' },
+  set_due_date:   { label: 'Due dates',  Icon: Calendar,  colour: 'text-amber-400' },
+  add_tags:       { label: 'Tags',       Icon: Tag,       colour: 'text-violet-400' },
+  rename:         { label: 'Rename',     Icon: Pencil,    colour: 'text-teal-400' },
+  flag_stale:     { label: 'Review',     Icon: Clock,     colour: 'text-rose-400' },
 };
 
 const DEV_STATUS_LABELS: Record<string, string> = {
@@ -47,22 +45,19 @@ function SuggestionRow({
   onToggle: () => void;
 }) {
   const renderDiff = () => {
-    if (suggestion.type === 'rename' && suggestion.displayBefore && suggestion.displayAfter) {
+    if (suggestion.type === 'rename' && suggestion.newText) {
       return (
         <div className="flex items-start gap-1.5 mt-1 flex-wrap">
           <span className="text-[11px] text-gray-400 line-through leading-relaxed">
-            {suggestion.displayBefore}
+            {suggestion.displayBefore ?? suggestion.itemText}
           </span>
           <ArrowRight className="w-3 h-3 text-gray-300 flex-shrink-0 mt-0.5" />
-          <span className="text-[11px] text-gray-600 leading-relaxed">
-            {suggestion.displayAfter}
-          </span>
+          <span className="text-[11px] text-gray-600 leading-relaxed">{suggestion.newText}</span>
         </div>
       );
     }
 
-    if (suggestion.type === 'set_dev_status' && suggestion.displayAfter) {
-      const label = DEV_STATUS_LABELS[suggestion.displayAfter] ?? suggestion.displayAfter;
+    if (suggestion.type === 'set_dev_status' && suggestion.newDevStatus) {
       return (
         <div className="flex items-center gap-1.5 mt-1">
           {suggestion.displayBefore && (
@@ -74,20 +69,20 @@ function SuggestionRow({
             </>
           )}
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">
-            {label}
+            {DEV_STATUS_LABELS[suggestion.newDevStatus] ?? suggestion.newDevStatus}
           </span>
         </div>
       );
     }
 
-    if (suggestion.type === 'set_due_date' && suggestion.displayAfter) {
+    if (suggestion.type === 'set_due_date' && suggestion.newDueDate) {
       const formatted = (() => {
         try {
-          return new Date(suggestion.displayAfter).toLocaleDateString('en-AU', {
+          return new Date(suggestion.newDueDate).toLocaleDateString('en-AU', {
             weekday: 'short', day: 'numeric', month: 'short',
           });
         } catch {
-          return suggestion.displayAfter;
+          return suggestion.newDueDate;
         }
       })();
       return (
@@ -99,15 +94,11 @@ function SuggestionRow({
       );
     }
 
-    if (suggestion.type === 'add_tags' && suggestion.displayAfter) {
-      const tags = suggestion.displayAfter.split(',').map((t) => t.trim()).filter(Boolean);
+    if (suggestion.type === 'add_tags' && suggestion.newTags?.length) {
       return (
         <div className="flex items-center gap-1 mt-1 flex-wrap">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600"
-            >
+          {suggestion.newTags.map((tag) => (
+            <span key={tag} className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600">
               {tag}
             </span>
           ))}
@@ -119,7 +110,7 @@ function SuggestionRow({
   };
 
   return (
-    <label className="flex items-start gap-3 py-2.5 cursor-pointer group">
+    <label className="flex items-start gap-3 py-2.5 cursor-pointer">
       <div className="flex-shrink-0 mt-0.5">
         <input
           type="checkbox"
@@ -141,12 +132,14 @@ function SuggestionRow({
 }
 
 export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply, onDismiss }: Props) {
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(suggestions.map((s) => s.id)));
+  const [expanded, setExpanded] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isApplying, setIsApplying] = useState(false);
 
-  // Keep selection in sync when suggestions change (initial load)
-  useMemo(() => {
+  // Sync selection when suggestions arrive — useEffect, not useMemo
+  useEffect(() => {
     setSelected(new Set(suggestions.map((s) => s.id)));
+    if (suggestions.length > 0) setExpanded(false); // start collapsed on new results
   }, [suggestions]);
 
   const grouped = useMemo(() => {
@@ -187,52 +180,38 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
     }
   };
 
-  // ── Loading skeleton ──
+  // ── Loading ──
   if (isAnalysing) {
     return (
-      <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-4">
-        <div className="flex items-center gap-2.5 mb-4">
-          <Sparkles className="w-3.5 h-3.5 text-gray-300 animate-pulse" />
-          <span className="text-[12px] text-gray-400">Analysing your list…</span>
+      <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-center gap-2.5">
+        <div className="flex gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce [animation-delay:0ms]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce [animation-delay:150ms]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce [animation-delay:300ms]" />
         </div>
-        <div className="space-y-3">
-          {[80, 65, 90, 55].map((w, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-3.5 h-3.5 rounded bg-gray-100 animate-pulse flex-shrink-0" />
-              <div className={`h-2.5 bg-gray-100 rounded-full animate-pulse`} style={{ width: `${w}%` }} />
-            </div>
-          ))}
-        </div>
+        <span className="text-[12px] text-gray-400">Reviewing your list…</span>
       </div>
     );
   }
 
-  // ── Error state ──
+  // ── Error ──
   if (error) {
     return (
       <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-start gap-3">
-        <Sparkles className="w-3.5 h-3.5 text-gray-300 flex-shrink-0 mt-0.5" />
         <p className="text-[12px] text-gray-400 flex-1 leading-relaxed">{error}</p>
-        <button
-          onClick={onDismiss}
-          className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5"
-        >
+        <button onClick={onDismiss} className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
     );
   }
 
-  // ── Empty state ──
+  // ── Empty ──
   if (isDone && suggestions.length === 0) {
     return (
       <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-center gap-3">
-        <Sparkles className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
         <p className="text-[12px] text-gray-500 flex-1">Your list looks clean — no suggestions.</p>
-        <button
-          onClick={onDismiss}
-          className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5"
-        >
+        <button onClick={onDismiss} className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -241,85 +220,97 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
 
   if (!isDone) return null;
 
-  // ── Suggestions panel ──
+  // ── Collapsed summary row ──
+  const summaryLine = (
+    <div
+      className="flex items-center gap-2.5 px-4 py-3 cursor-pointer select-none"
+      onClick={() => setExpanded((v) => !v)}
+    >
+      <span className="text-[12.5px] font-medium text-gray-600 flex-1">
+        Review
+        <span className="ml-2 text-[12px] font-normal text-gray-400">
+          {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
+          {selected.size < suggestions.length && selected.size > 0
+            ? ` · ${selected.size} selected`
+            : ''}
+        </span>
+      </span>
+      <button
+        onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+        className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5 rounded"
+        title="Dismiss"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+      {expanded
+        ? <ChevronUp className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+        : <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
+    </div>
+  );
+
   return (
     <div className="rounded-lg border border-gray-100 bg-white mb-5 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2.5 border-b border-gray-100">
-        <Sparkles className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-        <span className="text-[12.5px] font-medium text-gray-600 flex-1">
-          {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}
-        </span>
-        <button
-          onClick={onDismiss}
-          className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5 rounded"
-          title="Dismiss"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {summaryLine}
 
-      {/* Grouped suggestions */}
-      <div className="divide-y divide-gray-50">
-        {Array.from(grouped.entries()).map(([type, items]) => {
-          const meta = TYPE_META[type];
-          const ids = items.map((s) => s.id);
-          const allChecked = ids.every((id) => selected.has(id));
-          const someChecked = ids.some((id) => selected.has(id));
+      {expanded && (
+        <>
+          <div className="border-t border-gray-100 divide-y divide-gray-50">
+            {Array.from(grouped.entries()).map(([type, items]) => {
+              const meta = TYPE_META[type];
+              const ids = items.map((s) => s.id);
+              const allChecked = ids.every((id) => selected.has(id));
 
-          return (
-            <div key={type} className="px-4 py-1">
-              {/* Section header */}
-              <div className="flex items-center gap-2 py-2">
-                <meta.Icon className={`w-3 h-3 flex-shrink-0 ${meta.colour}`} />
-                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide flex-1">
-                  {meta.label}
-                  <span className="ml-1.5 font-normal normal-case tracking-normal text-gray-300">
-                    {items.length}
-                  </span>
-                </span>
-                <button
-                  onClick={() => toggleGroup(ids)}
-                  className="text-[11px] text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer"
-                >
-                  {allChecked || someChecked ? 'Deselect all' : 'Select all'}
-                </button>
-              </div>
+              return (
+                <div key={type} className="px-4 py-1">
+                  <div className="flex items-center gap-2 py-2">
+                    <meta.Icon className={`w-3 h-3 flex-shrink-0 ${meta.colour}`} />
+                    <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide flex-1">
+                      {meta.label}
+                      <span className="ml-1.5 font-normal normal-case tracking-normal text-gray-300">
+                        {items.length}
+                      </span>
+                    </span>
+                    <button
+                      onClick={() => toggleGroup(ids)}
+                      className="text-[11px] text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer"
+                    >
+                      {allChecked ? 'Deselect all' : 'Select all'}
+                    </button>
+                  </div>
+                  <div className="divide-y divide-gray-50/80">
+                    {items.map((s) => (
+                      <SuggestionRow
+                        key={s.id}
+                        suggestion={s}
+                        checked={selected.has(s.id)}
+                        onToggle={() => toggleOne(s.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-              {/* Items */}
-              <div className="divide-y divide-gray-50/80">
-                {items.map((s) => (
-                  <SuggestionRow
-                    key={s.id}
-                    suggestion={s}
-                    checked={selected.has(s.id)}
-                    onToggle={() => toggleOne(s.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer actions */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
-        <button
-          onClick={onDismiss}
-          className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors border-none bg-transparent cursor-pointer"
-        >
-          Dismiss
-        </button>
-        <button
-          onClick={handleApply}
-          disabled={selected.size === 0 || isApplying}
-          className="text-[12px] font-medium px-3.5 py-1.5 rounded-md bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none cursor-pointer"
-        >
-          {isApplying
-            ? 'Applying…'
-            : `Apply ${selected.size} change${selected.size !== 1 ? 's' : ''}`}
-        </button>
-      </div>
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50/50">
+            <button
+              onClick={onDismiss}
+              className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors border-none bg-transparent cursor-pointer"
+            >
+              Dismiss
+            </button>
+            <button
+              onClick={handleApply}
+              disabled={selected.size === 0 || isApplying}
+              className="text-[12px] font-medium px-3.5 py-1.5 rounded-md bg-gray-800 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none cursor-pointer"
+            >
+              {isApplying
+                ? 'Applying…'
+                : `Apply ${selected.size} change${selected.size !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

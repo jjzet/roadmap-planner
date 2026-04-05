@@ -21,19 +21,26 @@ export interface CleanupSuggestion {
   itemText: string;
   groupName: string;
   reason: string;
-  patch: Partial<TodoItem>;
+  // Explicit patch fields — no dynamic record casting
+  newText?: string;
+  newDevStatus?: 'dev' | 'test' | 'pr' | 'merged';
+  newDueDate?: string;
+  newTags?: string[];
   displayBefore?: string;
   displayAfter?: string;
 }
 
-// ── Zod schema — constrained decoding enforces this shape at the API level ──
+// ── Zod schema — explicit fields per suggestion type, no z.record ──
 
 const SuggestionSchema = z.object({
   type: z.enum(['archive', 'set_dev_status', 'set_due_date', 'add_tags', 'rename', 'flag_stale']),
   groupId: z.string(),
   itemId: z.string(),
   reason: z.string(),
-  patch: z.record(z.string(), z.unknown()),
+  newText: z.string().optional(),
+  newDevStatus: z.enum(['dev', 'test', 'pr', 'merged']).optional(),
+  newDueDate: z.string().optional(),
+  newTags: z.array(z.string()).optional(),
   displayBefore: z.string().optional(),
   displayAfter: z.string().optional(),
 });
@@ -46,20 +53,20 @@ const CleanupResponseSchema = z.object({
 
 const SYSTEM_PROMPT = `You are a personal productivity assistant helping a senior technical leader tidy up their work todo list.
 
-Analyse the list and suggest specific, concrete improvements. Be selective — only flag things that are clearly worthwhile. Do not pad with low-value suggestions.
+Analyse the list and suggest specific, concrete improvements. Be selective — only flag things that are clearly worthwhile.
 
-Suggestion types:
-- "archive": Item is completed and completedAt is more than 3 days ago (or completed with no date set). Safe to archive. patch must be {}.
-- "set_dev_status": Item text clearly implies a dev stage (e.g. "in review", "raised PR", "testing", "deployed", "merged") but devStatus doesn't reflect it. patch must include { "devStatus": "dev"|"test"|"pr"|"merged" }.
-- "set_due_date": Item text mentions a concrete timeframe ("this week", "by Friday", "end of month", "EOD") but has no dueDate. Suggest an ISO date (YYYY-MM-DD). patch must include { "dueDate": "YYYY-MM-DD" }.
-- "add_tags": Item clearly belongs to a topic cluster with other items. Suggest 1-2 short lowercase tags. patch must include { "tags": ["tag1"] }.
-- "rename": Item text is vague, ambiguous, or longer than 12 words. Suggest a cleaner rewrite (max 12 words). patch must include { "text": "new text" }.
-- "flag_stale": Item is incomplete, has no due date, no tags, no devStatus, and appears untouched. Worth reviewing. patch must be {}.
+Suggestion types and required fields:
+- "archive": Item is completed and completedAt is more than 3 days ago, or completed with no date. No extra fields needed.
+- "set_dev_status": Item text clearly implies a dev stage ("in review", "raised PR", "testing", "deployed", "merged") but devStatus doesn't match. Set newDevStatus to one of: dev, test, pr, merged.
+- "set_due_date": Item mentions a concrete timeframe ("this week", "by Friday", "end of month") but has no dueDate. Set newDueDate as YYYY-MM-DD based on today's date.
+- "add_tags": Item belongs to a clear topic cluster with other items. Set newTags as an array of 1-2 short lowercase strings.
+- "rename": Item text is vague, ambiguous, or longer than 12 words. Set newText to a cleaner rewrite (max 12 words).
+- "flag_stale": Item is incomplete, has no due date, no tags, no devStatus, and appears untouched for a long time. No extra fields needed.
 
 Rules:
 - reason: plain English, max 15 words, direct and specific
-- displayBefore: current value as a short string (for renames, status changes)
-- displayAfter: proposed value as a short string
+- displayBefore: current value as a short string (e.g. current text, current devStatus)
+- displayAfter: proposed value as a short string (e.g. new text, new devStatus)
 - Be selective. Return an empty suggestions array if the list looks clean.`;
 
 export function useListCleanup() {
@@ -145,16 +152,19 @@ Be selective. Only suggest changes that are clearly worthwhile.`,
           const group = groups.find((g) => g.id === s.groupId)!;
           const item = group.items.find((it) => it.id === s.itemId)!;
           return {
+            id: `suggestion-${i}`,
             type: s.type,
             groupId: s.groupId,
             itemId: s.itemId,
-            reason: s.reason,
-            patch: s.patch as Partial<TodoItem>,
-            displayBefore: s.displayBefore,
-            displayAfter: s.displayAfter,
-            id: `suggestion-${i}`,
             itemText: item.text,
             groupName: group.name,
+            reason: s.reason,
+            newText: s.newText,
+            newDevStatus: s.newDevStatus,
+            newDueDate: s.newDueDate,
+            newTags: s.newTags,
+            displayBefore: s.displayBefore,
+            displayAfter: s.displayAfter,
           };
         });
 
@@ -171,13 +181,23 @@ Be selective. Only suggest changes that are clearly worthwhile.`,
   const applySelected = useCallback(
     async (selectedIds: Set<string>) => {
       const toApply = suggestions.filter((s) => selectedIds.has(s.id));
+
       for (const s of toApply) {
         if (s.type === 'archive') {
           archiveItem(s.groupId, s.itemId);
-        } else if (Object.keys(s.patch).length > 0) {
-          updateItem(s.groupId, s.itemId, s.patch);
+        } else {
+          // Build patch explicitly from typed fields — no dynamic casting
+          const patch: Partial<TodoItem> = {};
+          if (s.type === 'rename' && s.newText) patch.text = s.newText;
+          if (s.type === 'set_dev_status' && s.newDevStatus) patch.devStatus = s.newDevStatus;
+          if (s.type === 'set_due_date' && s.newDueDate) patch.dueDate = s.newDueDate;
+          if (s.type === 'add_tags' && s.newTags) patch.tags = s.newTags;
+          if (Object.keys(patch).length > 0) {
+            updateItem(s.groupId, s.itemId, patch);
+          }
         }
       }
+
       await saveTodo();
       setSuggestions([]);
       setIsDone(false);
