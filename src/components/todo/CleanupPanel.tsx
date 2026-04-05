@@ -46,8 +46,6 @@ function SuggestionRow({
   checked: boolean;
   onToggle: () => void;
 }) {
-  const meta = TYPE_META[suggestion.type];
-
   const renderDiff = () => {
     if (suggestion.type === 'rename' && suggestion.displayBefore && suggestion.displayAfter) {
       return (
