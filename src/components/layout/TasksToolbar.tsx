@@ -1,9 +1,16 @@
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useTodoStore } from '../../store/todoStore';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { TOOLBAR_HEIGHT } from '../../lib/constants';
 
-export function TasksToolbar() {
+interface Props {
+  onCleanup?: () => void;
+  isAnalysing?: boolean;
+  cleanupVisible?: boolean;
+}
+
+export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) {
   const todoName = useTodoStore((s) => s.todoName);
   const renameTodo = useTodoStore((s) => s.renameTodo);
   const saveStatus = useTodoStore((s) => s.saveStatus);
@@ -60,6 +67,19 @@ export function TasksToolbar() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Tidy up button */}
+      {onCleanup && (
+        <button
+          onClick={onCleanup}
+          disabled={isAnalysing || cleanupVisible}
+          title="Tidy up — AI list cleanup"
+          className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none bg-transparent cursor-pointer px-2 py-1 rounded hover:bg-gray-50"
+        >
+          <Sparkles className={`w-3.5 h-3.5 ${isAnalysing ? 'animate-pulse' : ''}`} />
+          <span className="hidden sm:inline">{isAnalysing ? 'Analysing…' : 'Tidy up'}</span>
+        </button>
+      )}
 
       {/* Save status */}
       <div className="text-xs text-gray-400 w-16 text-right">
