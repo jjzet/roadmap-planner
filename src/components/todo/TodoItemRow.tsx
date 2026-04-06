@@ -347,15 +347,19 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             </div>
           )}
 
-          {/* Tags */}
-          {item.tags.map((tag) => (
-            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">
-              {tag}
-            </span>
-          ))}
-
           {/* Spacer */}
           <div className="flex-1" />
+
+          {/* Tags — right-aligned */}
+          {item.tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {item.tags.map((tag) => (
+                <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Completed-at timestamp */}
           {item.completed && item.completedAt && (
