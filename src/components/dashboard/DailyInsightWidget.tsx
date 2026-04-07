@@ -34,9 +34,7 @@ export function DailyInsightWidget() {
       <div className="flex items-center gap-2.5 px-1 py-3 mb-4">
         <BookOpen className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
         <p className="text-xs text-gray-400 flex-1">
-          {error.includes('VITE_ANTHROPIC_API_KEY')
-            ? 'Add VITE_ANTHROPIC_API_KEY to your environment to enable daily insights.'
-            : `Could not load insight — ${error}`}
+          {`Could not load insight — ${error}`}
         </p>
         <button
           onClick={refresh}
