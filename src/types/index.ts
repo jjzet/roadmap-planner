@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks' | 'today';
+export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals';
 
 // ── Todo Types ──
 
@@ -122,11 +122,18 @@ export interface HeadingBlock {
   order: number;
 }
 
+export interface GoalCardBlockData {
+  id: string;
+  goalId: string;
+  order: number;
+}
+
 export type PageBlock =
   | { type: 'group'; data: TodoGroup }
   | { type: 'text'; data: TextBlock }
   | { type: 'divider'; data: DividerBlock }
-  | { type: 'heading'; data: HeadingBlock };
+  | { type: 'heading'; data: HeadingBlock }
+  | { type: 'goal_card'; data: GoalCardBlockData };
 
 export interface TodoData {
   groups: TodoGroup[];
@@ -139,4 +146,34 @@ export interface TodoRecord {
   data: TodoData;
   created_at: string;
   updated_at: string;
+}
+
+// ── Insight Types ──
+
+export interface DailyInsight {
+  book: string;
+  author: string;
+  category: string;
+  concept: string;
+  lesson: string;
+  why_it_matters: string;
+  long_summary: string;
+}
+
+export interface FavouriteInsight {
+  id: string;
+  date: string;
+  insight_data: DailyInsight;
+  favourited_at: string;
+}
+
+// ── Goal Types ──
+
+export interface GoalRecord {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  archived: boolean;
 }

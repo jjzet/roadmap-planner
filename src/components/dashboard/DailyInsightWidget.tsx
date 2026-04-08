@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, RefreshCw, Heart } from 'lucide-react';
 import { useDailyInsight } from '@/hooks/useDailyInsight';
+import { useInsightStore } from '@/store/insightStore';
 
 // Notion-style: just a subtle text colour per category, no heavy backgrounds
 const CATEGORY_COLOURS: Record<string, string> = {
@@ -21,7 +22,12 @@ const DEFAULT_COLOUR = 'text-gray-400';
 
 export function DailyInsightWidget() {
   const { insight, isLoading, isRefreshing, error, refresh } = useDailyInsight();
+  const toggleFavourite = useInsightStore((s) => s.toggleFavourite);
+  const isFavourited = useInsightStore((s) => s.isFavourited);
   const [expanded, setExpanded] = useState(false);
+
+  const todayDate = new Date().toISOString().split('T')[0];
+  const isFav = isFavourited(todayDate);
 
   const categoryColour = insight?.category
     ? (CATEGORY_COLOURS[insight.category.toLowerCase()] ?? DEFAULT_COLOUR)
@@ -83,6 +89,19 @@ export function DailyInsightWidget() {
 
             {/* Controls — ghost, far right */}
             <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+              {insight && (
+                <button
+                  onClick={() => toggleFavourite(todayDate, insight)}
+                  className={`border-none bg-transparent cursor-pointer p-1 rounded transition-all ${
+                    isFav
+                      ? 'text-red-400 hover:text-red-500'
+                      : 'text-gray-300 hover:text-red-300'
+                  }`}
+                  title={isFav ? 'Remove from favourites' : 'Save to favourites'}
+                >
+                  <Heart className={`w-3 h-3 ${isFav ? 'fill-red-400' : ''}`} />
+                </button>
+              )}
               <button
                 onClick={refresh}
                 disabled={isRefreshing}

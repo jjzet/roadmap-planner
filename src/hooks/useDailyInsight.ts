@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import type { DailyInsight } from '@/types';
 
-export interface DailyInsight {
-  book: string;
-  author: string;
-  category: string;
-  concept: string;
-  lesson: string;
-  why_it_matters: string;
-  long_summary: string;
-}
+export type { DailyInsight };
 
 function todayKey(): string {
   return new Date().toISOString().split('T')[0];
