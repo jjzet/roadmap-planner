@@ -123,7 +123,7 @@ export function InsightsView() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-8 py-8">
+      <div className="w-full px-8 py-6">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Insights</h1>
@@ -137,7 +137,7 @@ export function InsightsView() {
               <Heart className="w-3.5 h-3.5 text-red-400 fill-red-400" />
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Favourites</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-3">
               {favourites.map((f) => (
                 <InsightCard
                   key={f.id}
@@ -172,7 +172,7 @@ export function InsightsView() {
               <p className="text-xs text-gray-300 mt-1">Insights appear here as they're generated each day.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {validInsights.map((item) => (
                 <InsightCard
                   key={item.date}

@@ -131,18 +131,28 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
 
-  // Left accent bar + row tint for urgency (Options 2 + 3)
-  const urgencyRowClass =
-    dueInfo?.urgency === 'overdue' ? 'border-l-2 border-l-red-300 bg-red-50/25' :
-    dueInfo?.urgency === 'today'   ? 'border-l-2 border-l-orange-300 bg-orange-50/25' :
-    'border-l-2 border-l-transparent';
+  // Left accent bar + row tint for urgency — straight vertical bar, no rounded corners
+  const urgencyAccent =
+    dueInfo?.urgency === 'overdue' ? 'bg-red-400' :
+    dueInfo?.urgency === 'today'   ? 'bg-orange-400' :
+    null;
+  const urgencyTint =
+    dueInfo?.urgency === 'overdue' ? 'bg-red-50/25' :
+    dueInfo?.urgency === 'today'   ? 'bg-orange-50/25' :
+    '';
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item rounded-md relative ${urgencyRowClass} ${item.pinned ? 'bg-amber-50/50' : ''}`}
+      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''}`}
     >
+      {urgencyAccent && (
+        <span
+          className={`absolute left-0 top-0 bottom-0 w-[2px] ${urgencyAccent} pointer-events-none`}
+          aria-hidden
+        />
+      )}
       {/* Main row */}
       <div className="flex items-center gap-1.5 py-1.5 px-1 hover:bg-gray-50/70 rounded-md">
 

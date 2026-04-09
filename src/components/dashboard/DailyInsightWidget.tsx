@@ -23,11 +23,12 @@ const DEFAULT_COLOUR = 'text-gray-400';
 export function DailyInsightWidget() {
   const { insight, isLoading, isRefreshing, error, refresh } = useDailyInsight();
   const toggleFavourite = useInsightStore((s) => s.toggleFavourite);
-  const isFavourited = useInsightStore((s) => s.isFavourited);
+  // Subscribe to favourites directly so the heart updates reactively on first click.
+  const favourites = useInsightStore((s) => s.favourites);
   const [expanded, setExpanded] = useState(false);
 
   const todayDate = new Date().toISOString().split('T')[0];
-  const isFav = isFavourited(todayDate);
+  const isFav = favourites.some((f) => f.date === todayDate);
 
   const categoryColour = insight?.category
     ? (CATEGORY_COLOURS[insight.category.toLowerCase()] ?? DEFAULT_COLOUR)
