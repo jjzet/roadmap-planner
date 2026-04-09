@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, FileText, Plus, Trash2, Sun } from 'lucide-react';
+import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -104,6 +104,26 @@ export function AppSidebar() {
                 >
                   <Sun className="w-4 h-4" />
                   <span>Today</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'insights'}
+                  onClick={() => setActiveView('insights')}
+                  tooltip="Insights"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Insights</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'goals'}
+                  onClick={() => setActiveView('goals')}
+                  tooltip="Goals"
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Goals</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

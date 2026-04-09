@@ -5,6 +5,7 @@ import type { TextBlock, PageBlock } from '@/types';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu';
+import { GoalPickerModal } from './GoalPickerModal';
 
 interface Props {
   block: TextBlock;
@@ -24,6 +25,7 @@ export function TextBlockRow({ block }: Props) {
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id });
@@ -110,12 +112,31 @@ export function TextBlockRow({ block }: Props) {
         replaceBlock(block.id, newBlock);
         break;
       }
+      case 'goal_card': {
+        // Show goal picker — block stays alive until a goal is selected
+        setShowGoalPicker(true);
+        updateTextBlock(block.id, '');
+        break;
+      }
     }
   };
 
   const handleSlashClose = () => {
     setShowSlashMenu(false);
     setSlashQuery('');
+  };
+
+  const handleGoalSelect = (goalId: string) => {
+    setShowGoalPicker(false);
+    const newBlock: PageBlock = {
+      type: 'goal_card',
+      data: { id: uuid(), goalId, order: 0 },
+    };
+    replaceBlock(block.id, newBlock);
+  };
+
+  const handleGoalPickerClose = () => {
+    setShowGoalPicker(false);
   };
 
   return (
@@ -153,7 +174,15 @@ export function TextBlockRow({ block }: Props) {
             query={slashQuery}
             onSelect={handleSlashSelect}
             onClose={handleSlashClose}
+          />
+        </div>
+      )}
 
+      {showGoalPicker && (
+        <div className="ml-6">
+          <GoalPickerModal
+            onSelect={handleGoalSelect}
+            onClose={handleGoalPickerClose}
           />
         </div>
       )}

@@ -16,6 +16,7 @@ import { TodoGroupBlock } from './TodoGroupBlock';
 import { TextBlockRow } from './TextBlockRow';
 import { DividerBlockRow } from './DividerBlockRow';
 import { HeadingBlockRow } from './HeadingBlockRow';
+import { GoalCardBlock } from './GoalCardBlock';
 import { useState } from 'react';
 import { Plus, Type, ListChecks, Minus, Heading2 } from 'lucide-react';
 
@@ -91,6 +92,8 @@ export function TodoListContent() {
                 return <DividerBlockRow key={block.data.id} block={block.data} />;
               case 'heading':
                 return <HeadingBlockRow key={block.data.id} block={block.data} />;
+              case 'goal_card':
+                return <GoalCardBlock key={block.data.id} block={block.data} />;
               default:
                 return null;
             }

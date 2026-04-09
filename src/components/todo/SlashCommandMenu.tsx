@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Type, ListChecks, Minus, Heading1, Heading2, Heading3 } from 'lucide-react';
+import { Type, ListChecks, Minus, Heading1, Heading2, Heading3, Target } from 'lucide-react';
 
 export interface SlashCommand {
   id: string;
@@ -51,6 +51,13 @@ const COMMANDS: SlashCommand[] = [
     description: 'Horizontal separator line',
     icon: <Minus className="w-4 h-4" />,
     keywords: ['divider', 'separator', 'line', 'hr'],
+  },
+  {
+    id: 'goal_card',
+    label: 'Goal Card',
+    description: 'Embed a goal from your goals page',
+    icon: <Target className="w-4 h-4" />,
+    keywords: ['goal', 'card', 'objective', 'target', 'embed'],
   },
 ];
 
