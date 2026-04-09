@@ -100,7 +100,8 @@ export function RichTextEditor({
     <div className={`rte-root ${className}`}>
       <BubbleMenu
         editor={editor}
-        options={{ placement: 'top' }}
+        shouldShow={({ editor }) => editor.isEditable && editor.isFocused}
+        options={{ placement: 'bottom-start', offset: 8 }}
       >
         <div className="flex items-center gap-0.5 rounded-lg bg-white border border-gray-200 shadow-lg px-1 py-1">
           <button
