@@ -67,9 +67,10 @@ export function GoalCardBlock({ block }: Props) {
               {goal.title || <span className="text-amber-700/60 italic font-normal">Untitled goal</span>}
             </p>
             {goal.body && (
-              <p className="text-xs text-amber-800/70 mt-1 line-clamp-2 leading-relaxed">
-                {goal.body}
-              </p>
+              <div
+                className="text-xs text-amber-800/70 mt-1 line-clamp-2 leading-relaxed [&_p]:m-0 [&_*]:inline [&_br]:hidden"
+                dangerouslySetInnerHTML={{ __html: goal.body }}
+              />
             )}
           </div>
         </div>

@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem, DevStatus } from '@/types';
 import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X, Code2 } from 'lucide-react';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import { RichTextEditor } from '../editor/RichTextEditor';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
@@ -58,7 +58,6 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
   const [notesValue, setNotesValue] = useState(item.notes || '');
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
 
   const [showDateInput, setShowDateInput] = useState(false);
   const [dateInputValue, setDateInputValue] = useState('');
@@ -81,8 +80,9 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     if (linkValue !== item.link) updateItem(groupId, item.id, { link: linkValue });
   };
 
-  const handleNotesBlur = () => {
-    if (notesValue !== (item.notes || '')) updateItem(groupId, item.id, { notes: notesValue });
+  const handleNotesSave = (html: string) => {
+    setNotesValue(html);
+    if (html !== (item.notes || '')) updateItem(groupId, item.id, { notes: html });
   };
 
   const openDateInput = () => {
@@ -406,29 +406,13 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
       {/* Expandable notes area */}
       {isExpanded && (
         <div className="ml-[4.5rem] mr-2 pb-2">
-          {isEditingNotes || !notesValue.trim() ? (
-            <div>
-              <textarea
-                className="w-full text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-300 focus:bg-white resize-none placeholder:text-gray-400"
-                placeholder="Add a note... (Markdown supported)"
-                value={notesValue}
-                onChange={(e) => setNotesValue(e.target.value)}
-                onBlur={() => { handleNotesBlur(); setIsEditingNotes(false); }}
-                rows={3}
-                autoFocus={isEditingNotes}
-              />
-              {notesValue.trim() && (
-                <p className="text-[10px] text-gray-300 mt-1 ml-1">Markdown supported</p>
-              )}
-            </div>
-          ) : (
-            <div
-              className="cursor-text hover:bg-gray-50/50 rounded-md px-3 py-2 transition-colors"
-              onClick={() => setIsEditingNotes(true)}
-            >
-              <MarkdownRenderer content={notesValue} />
-            </div>
-          )}
+          <div className="cursor-text rounded-md px-3 py-1.5 hover:bg-gray-50/40 transition-colors">
+            <RichTextEditor
+              content={notesValue}
+              onBlur={handleNotesSave}
+              placeholder="Add a note… select text to format"
+            />
+          </div>
         </div>
       )}
     </div>
