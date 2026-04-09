@@ -56,7 +56,7 @@ export function DailyInsightWidget() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-white mb-6 overflow-hidden">
+    <div className="rounded-lg border border-gray-100 bg-white overflow-hidden">
       {busy ? (
         /* Loading skeleton — same card shape, no colour */
         <div className="flex items-start gap-3 px-4 py-3.5">
