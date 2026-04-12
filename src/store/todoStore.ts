@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import type { TodoData, TodoGroup, TodoItem, PageBlock } from '../types';
+import type { TodoData, TodoGroup, TodoItem, SubGroup, PageBlock } from '../types';
 import { supabase } from '../lib/supabase';
 
 function uuid(): string {
@@ -16,6 +16,18 @@ interface TodoListItem {
   name: string;
 }
 
+// Default sub-group colour palette
+export const SUBGROUP_COLORS = [
+  '#3B82F6', // blue
+  '#10B981', // emerald
+  '#F59E0B', // amber
+  '#EF4444', // red
+  '#8B5CF6', // violet
+  '#EC4899', // pink
+  '#06B6D4', // cyan
+  '#F97316', // orange
+];
+
 interface TodoStore {
   currentTodoId: string | null;
   todoName: string;
@@ -24,6 +36,12 @@ interface TodoStore {
   isDirty: boolean;
   isLoading: boolean;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
+
+  // Selection state (transient — not persisted)
+  selectedItemIds: string[];
+  selectedGroupId: string | null;
+  toggleItemSelection: (groupId: string, itemId: string) => void;
+  clearSelection: () => void;
 
   // Block actions
   addTextBlock: () => void;
@@ -42,6 +60,14 @@ interface TodoStore {
   removeGroup: (groupId: string) => void;
   reorderGroups: (activeId: string, overId: string) => void;
   toggleGroupCollapse: (groupId: string) => void;
+
+  // Sub-group actions
+  createSubGroup: (groupId: string, itemIds: string[], color?: string) => string;
+  updateSubGroup: (groupId: string, subGroupId: string, patch: Partial<Pick<SubGroup, 'name' | 'color'>>) => void;
+  removeSubGroup: (groupId: string, subGroupId: string) => void;
+  moveItemToSubGroup: (groupId: string, itemId: string, subGroupId: string) => void;
+  removeItemFromSubGroup: (groupId: string, itemId: string) => void;
+  reorderWithinSubGroup: (groupId: string, subGroupId: string, activeId: string, overId: string) => void;
 
   // Item actions
   addItem: (groupId: string, text?: string) => string;
@@ -80,8 +106,33 @@ export const useTodoStore = create<TodoStore>()(
     isDirty: false,
     isLoading: false,
     saveStatus: 'idle' as const,
+    selectedItemIds: [],
+    selectedGroupId: null,
 
     setDirty: () => set({ isDirty: true }),
+
+    // ── Selection (transient) ──
+
+    toggleItemSelection: (groupId, itemId) => {
+      set((s) => {
+        // If selecting in a different group, reset
+        if (s.selectedGroupId && s.selectedGroupId !== groupId) {
+          s.selectedItemIds = [];
+        }
+        s.selectedGroupId = groupId;
+        const idx = s.selectedItemIds.indexOf(itemId);
+        if (idx >= 0) {
+          s.selectedItemIds.splice(idx, 1);
+          if (s.selectedItemIds.length === 0) s.selectedGroupId = null;
+        } else {
+          s.selectedItemIds.push(itemId);
+        }
+      });
+    },
+
+    clearSelection: () => {
+      set({ selectedItemIds: [], selectedGroupId: null });
+    },
 
     // ── Block Actions ──
 
@@ -225,6 +276,118 @@ export const useTodoStore = create<TodoStore>()(
           group.collapsed = !group.collapsed;
           s.isDirty = true;
         }
+      });
+    },
+
+    // ── Sub-Group Actions ──
+
+    createSubGroup: (groupId, itemIds, color) => {
+      const sgId = uuid();
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        if (!group.subGroups) group.subGroups = [];
+        // Compute order: use the minimum order among the selected items
+        const minOrder = Math.min(
+          ...itemIds.map((id) => {
+            const item = group.items.find((it: TodoItem) => it.id === id);
+            return item ? item.order : Infinity;
+          })
+        );
+        const sg: SubGroup = {
+          id: sgId,
+          name: '',
+          color: color || SUBGROUP_COLORS[group.subGroups.length % SUBGROUP_COLORS.length],
+          order: minOrder,
+        };
+        group.subGroups.push(sg);
+        // Assign items to the sub-group
+        itemIds.forEach((id) => {
+          const item = group.items.find((it: TodoItem) => it.id === id);
+          if (item) item.subGroupId = sg.id;
+        });
+        s.isDirty = true;
+      });
+      return sgId;
+    },
+
+    updateSubGroup: (groupId, subGroupId, patch) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group?.subGroups) return;
+        const sg = group.subGroups.find((g: SubGroup) => g.id === subGroupId);
+        if (sg) {
+          Object.assign(sg, patch);
+          s.isDirty = true;
+        }
+      });
+    },
+
+    removeSubGroup: (groupId, subGroupId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group?.subGroups) return;
+        // Clear subGroupId on all member items
+        group.items.forEach((item: TodoItem) => {
+          if (item.subGroupId === subGroupId) item.subGroupId = undefined;
+        });
+        group.subGroups = group.subGroups.filter((g: SubGroup) => g.id !== subGroupId);
+        s.isDirty = true;
+      });
+    },
+
+    moveItemToSubGroup: (groupId, itemId, subGroupId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (item) {
+          item.subGroupId = subGroupId;
+          s.isDirty = true;
+        }
+      });
+    },
+
+    removeItemFromSubGroup: (groupId, itemId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        const item = group.items.find((it: TodoItem) => it.id === itemId);
+        if (!item) return;
+        const prevSgId = item.subGroupId;
+        item.subGroupId = undefined;
+        // Auto-dissolve empty sub-groups
+        if (prevSgId && group.subGroups) {
+          const remaining = group.items.filter(
+            (it: TodoItem) => it.subGroupId === prevSgId && !it.archived
+          );
+          if (remaining.length === 0) {
+            group.subGroups = group.subGroups.filter((g: SubGroup) => g.id !== prevSgId);
+          }
+        }
+        s.isDirty = true;
+      });
+    },
+
+    reorderWithinSubGroup: (groupId, subGroupId, activeId, overId) => {
+      set((s) => {
+        const group = findGroupBlock(s.todo.blocks, groupId);
+        if (!group) return;
+        // Get all items in this sub-group, sorted by order
+        const sgItems = group.items
+          .filter((it: TodoItem) => it.subGroupId === subGroupId && !it.archived)
+          .sort((a: TodoItem, b: TodoItem) => a.order - b.order);
+        const oldIdx = sgItems.findIndex((it: TodoItem) => it.id === activeId);
+        const newIdx = sgItems.findIndex((it: TodoItem) => it.id === overId);
+        if (oldIdx === -1 || newIdx === -1) return;
+        const [moved] = sgItems.splice(oldIdx, 1);
+        sgItems.splice(newIdx, 0, moved);
+        // Reassign order values for items in this sub-group
+        sgItems.forEach((it: TodoItem, i: number) => {
+          const real = group.items.find((r: TodoItem) => r.id === it.id);
+          if (real) real.order = i;
+        });
+        s.isDirty = true;
       });
     },
 
@@ -416,6 +579,7 @@ export const useTodoStore = create<TodoStore>()(
         // Ensure all items have required fields (migration for existing data)
         blocks.forEach((b) => {
           if (b.type === 'group') {
+            if (!b.data.subGroups) b.data.subGroups = [];
             b.data.items.forEach((item) => {
               if (item.pinned === undefined) item.pinned = false;
               if (item.notes === undefined) item.notes = '';

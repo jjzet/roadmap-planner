@@ -127,6 +127,10 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     }
   };
 
+  const toggleItemSelection = useTodoStore((s) => s.toggleItemSelection);
+  const selectedItemIds = useTodoStore((s) => s.selectedItemIds);
+  const isSelected = selectedItemIds.includes(item.id);
+
   const dueInfo = item.dueDate && !item.completed ? formatDueDate(item.dueDate) : null;
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
@@ -141,11 +145,19 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
     dueInfo?.urgency === 'today'   ? 'bg-orange-50/25' :
     '';
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    if (e.shiftKey || e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      toggleItemSelection(groupId, item.id);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''}`}
+      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''} ${isSelected ? 'ring-1 ring-blue-300 bg-blue-50/30 rounded-md' : ''}`}
+      onClick={handleRowClick}
     >
       {urgencyAccent && (
         <span
