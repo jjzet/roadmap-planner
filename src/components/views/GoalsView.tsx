@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, Archive, Trash2, Target } from 'lucide-react';
 import { useGoalStore } from '@/store/goalStore';
-import { MarkdownRenderer } from '@/components/todo/MarkdownRenderer';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
 
 function formatRelativeTime(dateStr: string): string {
   const now = Date.now();
@@ -23,33 +23,19 @@ function GoalCard({ goal }: { goal: { id: string; title: string; body: string; u
   const deleteGoal = useGoalStore((s) => s.deleteGoal);
 
   const [title, setTitle] = useState(goal.title);
-  const [body, setBody] = useState(goal.body);
-  const [isEditingBody, setIsEditingBody] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setTitle(goal.title);
-    setBody(goal.body);
-  }, [goal.title, goal.body]);
+  }, [goal.title]);
 
   const handleTitleBlur = () => {
     if (title !== goal.title) updateGoal(goal.id, { title });
   };
 
-  const handleBodyBlur = () => {
-    setIsEditingBody(false);
-    if (body !== goal.body) updateGoal(goal.id, { body });
+  const handleBodySave = (html: string) => {
+    if (html !== (goal.body || '')) updateGoal(goal.id, { body: html });
   };
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (isEditingBody && bodyRef.current) {
-      const el = bodyRef.current;
-      el.style.height = 'auto';
-      el.style.height = el.scrollHeight + 'px';
-    }
-  }, [isEditingBody, body]);
 
   const handleDelete = () => {
     if (window.confirm(`Delete "${goal.title || 'Untitled goal'}"? This cannot be undone.`)) {
@@ -90,35 +76,14 @@ function GoalCard({ goal }: { goal: { id: string; title: string; body: string; u
           </div>
         </div>
 
-        {/* Body */}
-        {isEditingBody ? (
-          <div>
-            <textarea
-              ref={bodyRef}
-              className="w-full text-sm text-gray-600 bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-300 focus:bg-white resize-none placeholder:text-gray-300 min-h-[60px]"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onBlur={handleBodyBlur}
-              placeholder="Write about this goal..."
-              autoFocus
-            />
-            <p className="text-[10px] text-gray-300 mt-1">Markdown supported</p>
-          </div>
-        ) : body ? (
-          <div
-            className="cursor-text hover:bg-gray-50/50 rounded-lg px-1 -ml-1 py-1 transition-colors min-h-[40px]"
-            onClick={() => setIsEditingBody(true)}
-          >
-            <MarkdownRenderer content={body} />
-          </div>
-        ) : (
-          <div
-            className="cursor-text hover:bg-gray-50/50 rounded-lg px-1 -ml-1 py-1 transition-colors"
-            onClick={() => setIsEditingBody(true)}
-          >
-            <p className="text-sm text-gray-300 italic">Write about this goal...</p>
-          </div>
-        )}
+        {/* Body — rich text */}
+        <div className="cursor-text rounded-lg px-1 -ml-1 py-1 min-h-[40px]">
+          <RichTextEditor
+            content={goal.body || ''}
+            onBlur={handleBodySave}
+            placeholder="Write about this goal… select text to format"
+          />
+        </div>
 
         {/* Footer */}
         <p className="text-[10px] text-gray-300 mt-3">
@@ -140,7 +105,7 @@ export function GoalsView() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-8 py-8">
+      <div className="w-full px-8 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -158,7 +123,7 @@ export function GoalsView() {
 
         {/* Content */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {[1, 2].map((i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-100 p-5">
                 <div className="h-5 bg-gray-100 rounded-full animate-pulse w-32 mb-3" />
@@ -181,7 +146,7 @@ export function GoalsView() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3">
             {goals.map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}
