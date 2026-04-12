@@ -77,14 +77,18 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
       className="group/sg mb-2 rounded-lg relative"
     >
       <div
-        className="rounded-lg border border-dashed border-gray-300 overflow-hidden"
+        className="relative rounded-lg border border-dashed border-gray-300 overflow-hidden"
         style={{
-          borderLeftWidth: '3px',
-          borderLeftStyle: 'solid',
-          borderLeftColor: subGroup.color,
+          borderLeftColor: 'transparent',
           backgroundColor: hexToRgba(subGroup.color, 0.04),
         }}
       >
+        {/* Straight colour bar on the left */}
+        <span
+          className="absolute left-0 top-0 bottom-0 w-[3px] pointer-events-none"
+          style={{ backgroundColor: subGroup.color }}
+          aria-hidden
+        />
         {/* Header */}
         <div className="flex items-center gap-1.5 px-2 py-1.5 group/sgheader">
           <span
