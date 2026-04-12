@@ -194,10 +194,11 @@ export function TodoGroupBlock({ group }: Props) {
     const bothLoose = !activeSg && !overSg && !isSgHeader(activeId) && !isSgHeader(overId);
 
     if (bothLoose && mergeTargetId !== overId) {
+      // Reset timer when target changes — requires 1.5s of sustained hover
       if (mergeTimerRef.current) clearTimeout(mergeTimerRef.current);
       mergeTimerRef.current = setTimeout(() => {
         setMergeTargetId(overId);
-      }, 500);
+      }, 1500);
     } else if (!bothLoose) {
       if (mergeTimerRef.current) clearTimeout(mergeTimerRef.current);
       setMergeTargetId(null);
