@@ -16,6 +16,14 @@ body {
   color: #1a1a2e;
 }
 
+/* Form elements default to system fonts — force Inter inheritance. */
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+}
+
 /* Custom scrollbar */
 .timeline-scroll::-webkit-scrollbar {
   width: 8px;
@@ -43,6 +51,7 @@ body {
 }
 
 @theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

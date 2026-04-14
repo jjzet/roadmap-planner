@@ -10,9 +10,9 @@ interface Props {
 }
 
 const HEADING_STYLES: Record<number, string> = {
-  1: 'text-2xl font-bold text-gray-900',
-  2: 'text-xl font-semibold text-gray-800',
-  3: 'text-lg font-medium text-gray-700',
+  1: 'text-2xl font-semibold text-gray-900 tracking-tight',
+  2: 'text-lg font-semibold text-gray-800 tracking-tight',
+  3: 'text-base font-semibold text-gray-700 tracking-tight',
 };
 
 const PLACEHOLDER: Record<number, string> = {
