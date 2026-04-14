@@ -178,6 +178,30 @@ body {
   font-feature-settings: 'tnum';
 }
 
+/* ── Sidebar active-item cyan accent ──────────────────────────
+   The shadcn sidebar applies bg-sidebar-accent on data-active=true;
+   we override active items here to get the WorldView-style cyan
+   highlight + left bar without touching every menu button. */
+[data-sidebar="menu-button"][data-active="true"],
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background: rgba(6, 182, 212, 0.08) !important;
+  color: #0e7490 !important;
+  box-shadow: inset 2px 0 0 0 #06B6D4;
+  border-radius: 0.25rem;
+}
+[data-sidebar="menu-button"][data-active="true"] svg,
+[data-sidebar="menu-sub-button"][data-active="true"] svg {
+  color: #06B6D4;
+}
+
+/* Sidebar group labels — mono uppercase tech style */
+[data-sidebar="group-label"] {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px !important;
+}
+
 /* ── Rich text editor (TipTap) ─────────────────────────────── */
 .rte-root .ProseMirror {
   min-height: 1.5em;

@@ -72,17 +72,17 @@ export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) 
         <button
           onClick={onCleanup}
           disabled={isAnalysing || cleanupVisible}
-          className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none bg-transparent cursor-pointer px-2 py-1 rounded hover:bg-gray-50"
+          className="text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none bg-transparent cursor-pointer px-2 py-1 rounded-sm hover:bg-cyan-50/40"
         >
           {isAnalysing ? 'Reviewing…' : 'Review'}
         </button>
       )}
 
       {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && 'Saved'}
-        {saveStatus === 'error' && 'Error'}
+      <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 w-20 text-right">
+        {saveStatus === 'saving' && 'saving…'}
+        {saveStatus === 'saved' && 'saved'}
+        {saveStatus === 'error' && 'error'}
       </div>
     </div>
   );

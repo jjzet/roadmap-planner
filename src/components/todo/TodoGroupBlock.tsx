@@ -336,7 +336,7 @@ export function TodoGroupBlock({ group }: Props) {
         {isEditingName ? (
           <input
             ref={nameInputRef}
-            className="text-sm font-semibold text-gray-800 uppercase tracking-wide flex-1 border-none outline-none bg-transparent px-0 py-0"
+            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] flex-1 border-none outline-none bg-transparent px-0 py-0"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onBlur={handleNameBlur}
@@ -347,7 +347,7 @@ export function TodoGroupBlock({ group }: Props) {
           />
         ) : (
           <h3
-            className="text-sm font-semibold text-gray-800 uppercase tracking-wide flex-1 cursor-pointer"
+            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] flex-1 cursor-pointer"
             onClick={() => toggleGroupCollapse(group.id)}
             onDoubleClick={() => { setNameInput(group.name); setIsEditingName(true); }}
           >

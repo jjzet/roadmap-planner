@@ -91,7 +91,7 @@ export function RoadmapToolbar() {
       {/* Milestone button */}
       <button
         onClick={handleOpenMilestoneForm}
-        className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 border border-gray-300"
+        className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-white text-gray-600 rounded-sm hover:bg-cyan-50/40 hover:text-cyan-700 border border-gray-200 hover:border-cyan-300 transition-colors"
         title="Add a milestone marker to a stream"
       >
         + Milestone
@@ -101,18 +101,18 @@ export function RoadmapToolbar() {
       <div className="flex-1" />
 
       {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right mr-2">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && '✓ Saved'}
-        {saveStatus === 'error' && '✗ Error'}
+      <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 w-20 text-right mr-2">
+        {saveStatus === 'saving' && 'saving…'}
+        {saveStatus === 'saved' && '✓ saved'}
+        {saveStatus === 'error' && '✗ error'}
       </div>
 
       {/* Month colors toggle */}
       <button
         onClick={toggleMonthColors}
-        className={`text-sm px-3 py-1 rounded-md border transition-colors ${
+        className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border transition-colors ${
           showMonthColors
-            ? 'bg-blue-50 text-blue-600 border-blue-200'
+            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
             : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-gray-700'
         }`}
         title={showMonthColors ? 'Hide month colors' : 'Show month colors'}
@@ -121,12 +121,12 @@ export function RoadmapToolbar() {
       </button>
 
       {/* Zoom toggle */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+      <div className="flex items-center gap-1 bg-gray-100 rounded-sm p-0.5">
         <button
           onClick={() => setZoom('week')}
-          className={`text-sm px-3 py-1 rounded-md border-none transition-colors ${
+          className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'week'
-              ? 'bg-white shadow-sm text-gray-900 font-medium'
+              ? 'bg-white shadow-sm text-cyan-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -134,9 +134,9 @@ export function RoadmapToolbar() {
         </button>
         <button
           onClick={() => setZoom('month')}
-          className={`text-sm px-3 py-1 rounded-md border-none transition-colors ${
+          className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'month'
-              ? 'bg-white shadow-sm text-gray-900 font-medium'
+              ? 'bg-white shadow-sm text-cyan-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >

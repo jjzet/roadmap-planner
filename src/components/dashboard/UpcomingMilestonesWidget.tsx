@@ -20,11 +20,11 @@ function daysLabel(daysUntil: number): string {
 
 export function UpcomingMilestonesWidget({ milestones }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+    <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-3">
         <Flag className="w-3.5 h-3.5 text-indigo-500" />
-        <h3 className="text-sm font-semibold text-gray-800">Upcoming Milestones</h3>
-        <span className="text-xs text-gray-400 ml-1">next 30 days</span>
+        <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700">Upcoming Milestones</h3>
+        <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 ml-1">next 30 days</span>
       </div>
 
       {milestones.length === 0 ? (
@@ -34,13 +34,13 @@ export function UpcomingMilestonesWidget({ milestones }: Props) {
           {milestones.map((m) => (
             <div key={m.id} className="flex items-center gap-3 py-1">
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 tabular-nums ${urgencyStyle(m.daysUntil)}`}
+                className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full flex-shrink-0 tabular-nums ${urgencyStyle(m.daysUntil)}`}
               >
                 {daysLabel(m.daysUntil)}
               </span>
               <span className="flex-1 text-sm text-gray-700 truncate">{m.name}</span>
               <span className="text-[10px] text-gray-400 flex-shrink-0">{m.roadmapName}</span>
-              <span className="text-[10px] text-gray-300 flex-shrink-0 tabular-nums">
+              <span className="text-[10px] font-mono text-gray-300 flex-shrink-0 tabular-nums">
                 {new Date(m.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </div>

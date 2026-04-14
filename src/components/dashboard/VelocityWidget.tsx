@@ -18,10 +18,10 @@ export function VelocityWidget({ velocity }: Props) {
       : { label: 'No change', icon: <Minus className="w-4 h-4" />, color: 'text-gray-400' };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col justify-between h-full">
+    <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm flex flex-col justify-between h-full">
       <div>
-        <h3 className="text-sm font-semibold text-gray-800">Velocity</h3>
-        <p className="text-xs text-gray-400 mt-0.5">{currentLabel} vs {previousLabel.toLowerCase()}</p>
+        <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700">Velocity</h3>
+        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">{currentLabel} vs {previousLabel.toLowerCase()}</p>
       </div>
 
       <div className="mt-4 flex items-end gap-6">

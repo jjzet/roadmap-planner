@@ -8,18 +8,18 @@ interface Props {
 export function GroupHealthWidget({ groups }: Props) {
   if (groups.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-800 mb-1">Group Health</h3>
+      <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
+        <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700 mb-1">Group Health</h3>
         <p className="text-xs text-gray-400">No groups found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+    <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">Group Health</h3>
-        <span className="text-xs text-gray-400">{groups.length} groups</span>
+        <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700">Group Health</h3>
+        <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 tabular-nums">{groups.length} groups</span>
       </div>
 
       <div className="space-y-3">

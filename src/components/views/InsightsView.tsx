@@ -34,7 +34,7 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
     : 'bg-gray-50 text-gray-500 border-gray-100';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-200 overflow-hidden group/card">
+    <div className="bg-white rounded-md border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden group/card">
       <div className="p-4">
         {/* Header row */}
         <div className="flex items-start justify-between gap-2 mb-2.5">
@@ -126,8 +126,12 @@ export function InsightsView() {
       <div className="w-full px-8 py-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Insights</h1>
-          <p className="text-sm text-gray-400 mt-1">Your daily book insights — favourite the ones worth revisiting.</p>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+            <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Insights</h1>
+          </div>
+          <p className="text-2xl font-bold text-gray-800 tracking-tight mt-2">Daily book insights</p>
+          <p className="text-sm text-gray-400 mt-1">Favourite the ones worth revisiting.</p>
         </div>
 
         {/* Favourites section */}
@@ -135,7 +139,7 @@ export function InsightsView() {
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Heart className="w-3.5 h-3.5 text-red-400 fill-red-400" />
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Favourites</h2>
+              <h2 className="text-[11px] font-mono font-semibold text-gray-500 uppercase tracking-[0.15em]">Favourites</h2>
             </div>
             <div className="flex flex-col gap-3">
               {favourites.map((f) => (
@@ -153,12 +157,12 @@ export function InsightsView() {
 
         {/* History section */}
         <div>
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">History</h2>
+          <h2 className="text-[11px] font-mono font-semibold text-gray-500 uppercase tracking-[0.15em] mb-4">History</h2>
 
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-100 p-4">
+                <div key={i} className="bg-white rounded-md border border-gray-200 p-4">
                   <div className="h-3 bg-gray-100 rounded-full animate-pulse w-24 mb-2" />
                   <div className="h-4 bg-gray-100 rounded-full animate-pulse w-3/4 mb-1.5" />
                   <div className="h-3 bg-gray-100 rounded-full animate-pulse w-1/2" />
