@@ -24,7 +24,7 @@ interface Props {
 
 const TYPE_META: Record<SuggestionType, { label: string; Icon: React.ElementType; colour: string }> = {
   archive:        { label: 'Archive',    Icon: Archive,   colour: 'text-gray-400' },
-  set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-blue-400' },
+  set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-cyan-500' },
   set_due_date:   { label: 'Due dates',  Icon: Calendar,  colour: 'text-amber-400' },
   add_tags:       { label: 'Tags',       Icon: Tag,       colour: 'text-violet-400' },
   rename:         { label: 'Rename',     Icon: Pencil,    colour: 'text-teal-400' },
@@ -68,7 +68,7 @@ function SuggestionRow({
               <ArrowRight className="w-3 h-3 text-gray-300 flex-shrink-0" />
             </>
           )}
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">
+          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-sm bg-cyan-50 text-cyan-600">
             {DEV_STATUS_LABELS[suggestion.newDevStatus] ?? suggestion.newDevStatus}
           </span>
         </div>
@@ -183,7 +183,7 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
   // ── Loading ──
   if (isAnalysing) {
     return (
-      <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-center gap-2.5">
+      <div className="rounded-md border border-gray-200 bg-white mb-5 px-4 py-3.5 flex items-center gap-2.5">
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce [animation-delay:0ms]" />
           <span className="w-1.5 h-1.5 rounded-full bg-gray-300 animate-bounce [animation-delay:150ms]" />
@@ -197,7 +197,7 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
   // ── Error ──
   if (error) {
     return (
-      <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-start gap-3">
+      <div className="rounded-md border border-gray-200 bg-white mb-5 px-4 py-3.5 flex items-start gap-3">
         <p className="text-[12px] text-gray-400 flex-1 leading-relaxed">{error}</p>
         <button onClick={onDismiss} className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5">
           <X className="w-3.5 h-3.5" />
@@ -209,7 +209,7 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
   // ── Empty ──
   if (isDone && suggestions.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-100 bg-white mb-5 px-4 py-3.5 flex items-center gap-3">
+      <div className="rounded-md border border-gray-200 bg-white mb-5 px-4 py-3.5 flex items-center gap-3">
         <p className="text-[12px] text-gray-500 flex-1">Your list looks clean — no suggestions.</p>
         <button onClick={onDismiss} className="text-gray-300 hover:text-gray-500 transition-colors border-none bg-transparent cursor-pointer p-0.5">
           <X className="w-3.5 h-3.5" />
@@ -249,7 +249,7 @@ export function CleanupPanel({ suggestions, isAnalysing, error, isDone, onApply,
   );
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-white mb-5 overflow-hidden">
+    <div className="rounded-md border border-gray-200 bg-white mb-5 overflow-hidden">
       {summaryLine}
 
       {expanded && (

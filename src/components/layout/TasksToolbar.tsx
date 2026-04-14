@@ -45,24 +45,28 @@ export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) 
       <div className="h-6 w-px bg-gray-200" />
 
       {/* Todo list name */}
-      {isEditing ? (
-        <input
-          className="text-lg font-semibold px-2 py-1 border border-blue-400 rounded outline-none"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          onBlur={handleNameBlur}
-          onKeyDown={handleNameKeyDown}
-          autoFocus
-        />
-      ) : (
-        <h1
-          className="text-lg font-semibold cursor-pointer hover:text-blue-600 truncate max-w-64"
-          onClick={handleNameClick}
-          title="Click to rename"
-        >
-          {todoName}
-        </h1>
-      )}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow flex-shrink-0" />
+        <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-400 flex-shrink-0">Page</span>
+        {isEditing ? (
+          <input
+            className="text-base font-semibold px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onBlur={handleNameBlur}
+            onKeyDown={handleNameKeyDown}
+            autoFocus
+          />
+        ) : (
+          <h1
+            className="text-base font-semibold text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
+            onClick={handleNameClick}
+            title="Click to rename"
+          >
+            {todoName}
+          </h1>
+        )}
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />

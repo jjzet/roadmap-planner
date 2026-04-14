@@ -170,7 +170,7 @@ export function Sidebar() {
       {showAddStream ? (
         <div className="p-2 border-t border-gray-200">
           <input
-            className="w-full text-sm border border-gray-300 rounded px-2 py-1 mb-2 outline-none focus:border-blue-400"
+            className="w-full text-sm border border-gray-300 rounded px-2 py-1 mb-2 outline-none focus:border-cyan-500"
             placeholder="Stream name..."
             value={newStreamName}
             onChange={(e) => setNewStreamName(e.target.value)}
@@ -181,7 +181,7 @@ export function Sidebar() {
           <div className="flex gap-1 mt-2">
             <button
               onClick={handleAddStream}
-              className="text-xs px-2 py-1 bg-blue-500 text-white rounded border-none cursor-pointer hover:bg-blue-600"
+              className="text-xs px-2 py-1 bg-cyan-500 text-white rounded border-none cursor-pointer hover:bg-cyan-700"
             >
               Add
             </button>
@@ -195,7 +195,7 @@ export function Sidebar() {
         </div>
       ) : (
         <div
-          className="flex items-center px-3 text-sm text-gray-400 hover:text-blue-500 cursor-pointer border-t border-gray-200"
+          className="flex items-center px-3 text-sm text-gray-400 hover:text-cyan-600 cursor-pointer border-t border-gray-200"
           style={{ height: STREAM_HEADER_HEIGHT }}
           onClick={() => setShowAddStream(true)}
         >
@@ -315,7 +315,7 @@ function SortableStreamBlock({
               <div
                 className={`flex items-center px-2 border-b border-gray-50 cursor-pointer group/item ${
                   selectedItemId === item.id
-                    ? 'bg-blue-50 text-blue-700'
+                    ? 'bg-cyan-50 text-cyan-700'
                     : 'hover:bg-gray-50 text-gray-600'
                 }`}
                 style={{ height: ITEM_ROW_HEIGHT }}
@@ -365,7 +365,7 @@ function SortableStreamBlock({
                     <div
                       className={`flex items-center px-2 border-b border-gray-50 cursor-pointer group/sub ${
                         selectedItemId === sub.id
-                          ? 'bg-blue-50 text-blue-700'
+                          ? 'bg-cyan-50 text-cyan-700'
                           : 'hover:bg-gray-50 text-gray-500'
                       }`}
                       style={{ height: SUB_ITEM_ROW_HEIGHT + (!sub.phasesExpanded && hasPhases ? PHASE_HIGHLIGHT_STRIP_HEIGHT : 0) }}
@@ -438,7 +438,7 @@ function SortableStreamBlock({
               {/* Add sub-item row */}
               {item.expanded && (
                 <div
-                  className="flex items-center px-2 pl-12 text-xs text-gray-300 hover:text-blue-500 cursor-pointer border-b border-gray-50"
+                  className="flex items-center px-2 pl-12 text-xs text-gray-300 hover:text-cyan-600 cursor-pointer border-b border-gray-50"
                   style={{ height: SUB_ITEM_ROW_HEIGHT }}
                   onClick={() => onAddSubItem(stream.id, item.id)}
                 >
@@ -448,7 +448,7 @@ function SortableStreamBlock({
             </div>
           ))}
           <div
-            className="flex items-center px-2 pl-8 text-sm text-gray-400 hover:text-blue-500 cursor-pointer border-b border-gray-50"
+            className="flex items-center px-2 pl-8 text-sm text-gray-400 hover:text-cyan-600 cursor-pointer border-b border-gray-50"
             style={{ height: ITEM_ROW_HEIGHT }}
             onClick={() => onAddItem(stream.id)}
           >
@@ -476,7 +476,7 @@ function ColumnToggle({
       onClick={onClick}
       className={`text-[10px] px-1.5 py-0.5 rounded border cursor-pointer transition-colors ml-1 ${
         active
-          ? 'bg-blue-50 text-blue-600 border-blue-200'
+          ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
           : 'bg-gray-50 text-gray-400 border-gray-200 hover:text-gray-600'
       }`}
       title={`${active ? 'Hide' : 'Show'} ${label} column`}

@@ -9,7 +9,7 @@ interface Props {
 }
 
 const chartConfig = {
-  count: { label: 'Tasks completed', color: 'hsl(221 83% 53%)' },
+  count: { label: 'Tasks completed', color: 'hsl(189 94% 43%)' },
 };
 
 const rangeLabels: Record<TimeRange, { title: string; subtitle: string }> = {
@@ -87,7 +87,7 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
               {data.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={entry.count > 0 ? 'hsl(221 83% 53%)' : '#e5e7eb'}
+                  fill={entry.count > 0 ? 'hsl(189 94% 43%)' : '#e5e7eb'}
                   fillOpacity={entry.count > 0 ? 0.85 + (entry.count / maxCount) * 0.15 : 1}
                 />
               ))}

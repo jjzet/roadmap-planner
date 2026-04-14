@@ -4,7 +4,7 @@ import { useInsightStore } from '@/store/insightStore';
 import type { DailyInsight } from '@/types';
 
 const CATEGORY_BG: Record<string, string> = {
-  'leadership': 'bg-blue-50 text-blue-600 border-blue-100',
+  'leadership': 'bg-cyan-50 text-cyan-700 border-cyan-100',
   'communication': 'bg-violet-50 text-violet-600 border-violet-100',
   'design thinking': 'bg-teal-50 text-teal-600 border-teal-100',
   'performance': 'bg-green-50 text-green-600 border-green-100',

@@ -117,7 +117,7 @@ export function TodoListContent() {
             </button>
             <button
               onClick={() => setShowAddGroup(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 border-none cursor-pointer text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-700 border-none cursor-pointer text-sm"
             >
               <ListChecks className="w-4 h-4" />
               Group
@@ -130,7 +130,7 @@ export function TodoListContent() {
       {showAddGroup && (
         <div className="mt-4">
           <input
-            className="w-full text-sm font-semibold border-b-2 border-gray-300 px-1 py-2 outline-none focus:border-blue-400 bg-transparent"
+            className="w-full text-sm font-semibold border-b-2 border-gray-300 px-1 py-2 outline-none focus:border-cyan-500 bg-transparent"
             placeholder="Group name..."
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
@@ -151,7 +151,7 @@ export function TodoListContent() {
         <div className="mt-6 relative">
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-500 cursor-pointer border-none bg-transparent px-0"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-600 cursor-pointer border-none bg-transparent px-0"
           >
             <Plus className="w-3.5 h-3.5" />
             Add block

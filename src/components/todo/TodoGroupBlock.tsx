@@ -360,7 +360,7 @@ export function TodoGroupBlock({ group }: Props) {
         {hasCompletedItems && (
           <button
             onClick={() => archiveCompletedItems(group.id)}
-            className="text-gray-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
+            className="text-gray-300 hover:text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
             title="Archive completed items"
           >
             <Archive className="w-3.5 h-3.5" />
@@ -411,7 +411,7 @@ export function TodoGroupBlock({ group }: Props) {
                     key={slot.item.id}
                     className={
                       mergeTargetId === slot.item.id
-                        ? 'rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 transition-all'
+                        ? 'rounded-lg border-2 border-dashed border-cyan-300 bg-cyan-50/30 transition-all'
                         : ''
                     }
                   >
@@ -446,7 +446,7 @@ export function TodoGroupBlock({ group }: Props) {
               ) : (
                 <button
                   onClick={() => setIsAddingItem(true)}
-                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-500 cursor-pointer border-none bg-transparent py-1.5 pl-6"
+                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-600 cursor-pointer border-none bg-transparent py-1.5 pl-6"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add item
@@ -455,13 +455,13 @@ export function TodoGroupBlock({ group }: Props) {
 
               {/* Multi-select action bar */}
               {showSelectionBar && (
-                <div className="flex items-center gap-3 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                  <span className="text-xs font-medium text-blue-600">
+                <div className="flex items-center gap-3 mt-2 px-4 py-2.5 bg-cyan-50 border border-cyan-200 rounded-lg">
+                  <span className="text-xs font-medium text-cyan-700">
                     {selectedItemIds.length} items selected
                   </span>
                   <button
                     onClick={handleGroupSelected}
-                    className="text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded-md border-none cursor-pointer transition-colors"
+                    className="text-xs font-medium text-white bg-cyan-500 hover:bg-cyan-700 px-3 py-1 rounded-md border-none cursor-pointer transition-colors"
                   >
                     Group
                   </button>

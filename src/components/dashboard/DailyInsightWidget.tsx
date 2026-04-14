@@ -5,7 +5,7 @@ import { useInsightStore } from '@/store/insightStore';
 
 // Notion-style: just a subtle text colour per category, no heavy backgrounds
 const CATEGORY_COLOURS: Record<string, string> = {
-  'leadership':             'text-blue-500',
+  'leadership':             'text-sky-500',
   'communication':          'text-violet-500',
   'design thinking':        'text-teal-500',
   'performance':            'text-green-500',
@@ -56,7 +56,7 @@ export function DailyInsightWidget() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-white overflow-hidden">
+    <div className="rounded-md border border-gray-200 bg-white overflow-hidden">
       {busy ? (
         /* Loading skeleton — same card shape, no colour */
         <div className="flex items-start gap-3 px-4 py-3.5">

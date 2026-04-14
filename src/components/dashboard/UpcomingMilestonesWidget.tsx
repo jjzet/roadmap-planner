@@ -9,7 +9,7 @@ function urgencyStyle(daysUntil: number): string {
   if (daysUntil === 0) return 'text-orange-500 bg-orange-50';
   if (daysUntil <= 3) return 'text-red-500 bg-red-50';
   if (daysUntil <= 7) return 'text-amber-500 bg-amber-50';
-  return 'text-blue-500 bg-blue-50';
+  return 'text-cyan-600 bg-cyan-50';
 }
 
 function daysLabel(daysUntil: number): string {

@@ -15,7 +15,7 @@ function formatDueDate(dateStr: string): { label: string; color: string } {
   if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, color: 'text-red-500' };
   if (diffDays === 0) return { label: 'Today', color: 'text-orange-500' };
   if (diffDays === 1) return { label: 'Tomorrow', color: 'text-amber-500' };
-  if (diffDays <= 7) return { label: `${diffDays}d`, color: 'text-blue-500' };
+  if (diffDays <= 7) return { label: `${diffDays}d`, color: 'text-cyan-600' };
   const m = due.toLocaleString('default', { month: 'short' });
   return { label: `${m} ${due.getDate()}`, color: 'text-gray-400' };
 }
@@ -53,7 +53,7 @@ export function PinnedItemsWidget({ items }: Props) {
               >
                 <Pin className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
                 <span className="flex-1 text-sm text-gray-700 truncate">{item.text || 'Untitled'}</span>
-                <span className="text-[10px] text-gray-400 flex-shrink-0">{groupName}</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 flex-shrink-0">{groupName}</span>
                 {dueInfo && (
                   <span className={`text-[10px] font-mono font-medium tabular-nums flex-shrink-0 flex items-center gap-0.5 ${dueInfo.color}`}>
                     <Calendar className="w-2.5 h-2.5" />
@@ -65,7 +65,7 @@ export function PinnedItemsWidget({ items }: Props) {
                     href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 flex-shrink-0"
+                    className="text-cyan-500 flex-shrink-0"
                     onClick={(e) => e.stopPropagation()}
                     title={item.link}
                   >

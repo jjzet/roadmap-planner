@@ -51,15 +51,15 @@ export function VelocityWidget({ velocity }: Props) {
               className="flex-1 rounded-sm transition-all"
               style={{
                 height: `${height}%`,
-                backgroundColor: i === 1 ? 'hsl(221 83% 53%)' : '#e5e7eb',
+                backgroundColor: i === 1 ? 'hsl(189 94% 43%)' : '#e5e7eb',
               }}
             />
           );
         })}
       </div>
       <div className="flex gap-1 mt-1">
-        <p className="flex-1 text-center text-[10px] text-gray-300">{previousLabel}</p>
-        <p className="flex-1 text-center text-[10px] text-blue-400">{currentLabel}</p>
+        <p className="flex-1 text-center text-[10px] font-mono uppercase tracking-wider text-gray-300">{previousLabel}</p>
+        <p className="flex-1 text-center text-[10px] font-mono uppercase tracking-wider text-cyan-600">{currentLabel}</p>
       </div>
     </div>
   );

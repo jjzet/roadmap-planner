@@ -102,7 +102,7 @@ export function EditPanel() {
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
           <input
-            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500"
             value={item.name}
             onChange={(e) => handleChange('name', e.target.value)}
           />
@@ -146,7 +146,7 @@ export function EditPanel() {
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Lead</label>
           <input
-            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500"
             value={item.lead}
             onChange={(e) => handleChange('lead', e.target.value)}
           />
@@ -156,7 +156,7 @@ export function EditPanel() {
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Support</label>
           <input
-            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500"
             value={item.support}
             onChange={(e) => handleChange('support', e.target.value)}
           />
@@ -166,7 +166,7 @@ export function EditPanel() {
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Phase</label>
           <select
-            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400 bg-white"
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500 bg-white"
             value={item.phase}
             onChange={(e) => handleChange('phase', e.target.value)}
           >
@@ -184,7 +184,7 @@ export function EditPanel() {
             <label className="block text-xs font-medium text-gray-500 mb-1">Start</label>
             <input
               type="date"
-              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500"
               value={item.startDate}
               onChange={(e) => handleChange('startDate', e.target.value)}
             />
@@ -193,7 +193,7 @@ export function EditPanel() {
             <label className="block text-xs font-medium text-gray-500 mb-1">End</label>
             <input
               type="date"
-              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500"
               value={item.endDate}
               onChange={(e) => handleChange('endDate', e.target.value)}
             />
@@ -204,7 +204,7 @@ export function EditPanel() {
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
           <textarea
-            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400 min-h-20 resize-y"
+            className="w-full text-sm border border-gray-300 rounded px-3 py-2 outline-none focus:border-cyan-500 min-h-20 resize-y"
             value={item.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
             rows={3}
@@ -223,7 +223,7 @@ export function EditPanel() {
                 >
                   <div className="flex items-center gap-1.5">
                     <input
-                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 outline-none focus:border-blue-400"
+                      className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 outline-none focus:border-cyan-500"
                       value={bar.name}
                       onChange={(e) =>
                         updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { name: e.target.value })
@@ -263,7 +263,7 @@ export function EditPanel() {
                   <div className="grid grid-cols-2 gap-1.5">
                     <input
                       type="date"
-                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-blue-400"
+                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-cyan-500"
                       value={bar.startDate}
                       onChange={(e) =>
                         updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { startDate: e.target.value })
@@ -271,7 +271,7 @@ export function EditPanel() {
                     />
                     <input
                       type="date"
-                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-blue-400"
+                      className="text-[10px] border border-gray-300 rounded px-1.5 py-0.5 outline-none focus:border-cyan-500"
                       value={bar.endDate}
                       onChange={(e) =>
                         updatePhaseBar(selectedStreamId, parentItemId!, item.id, bar.id, { endDate: e.target.value })

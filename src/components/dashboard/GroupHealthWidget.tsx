@@ -49,7 +49,7 @@ export function GroupHealthWidget({ groups }: Props) {
                       style={{
                         width: `${pct}%`,
                         backgroundColor:
-                          pct === 100 ? '#10b981' : group.overdue > 0 ? '#ef4444' : 'hsl(221 83% 53%)',
+                          pct === 100 ? '#10b981' : group.overdue > 0 ? '#ef4444' : 'hsl(189 94% 43%)',
                       }}
                     />
                   </div>

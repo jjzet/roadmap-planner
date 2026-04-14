@@ -175,7 +175,7 @@ export function SubItemBar({ subItem, parentItemId, streamId, streamColor, origi
   return (
     <div
       className={`absolute rounded cursor-pointer group select-none ${
-        isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+        isSelected ? 'ring-2 ring-cyan-500 ring-offset-1' : ''
       } ${isDragging ? 'opacity-80 shadow-md' : ''}`}
       style={{
         left: displayX,

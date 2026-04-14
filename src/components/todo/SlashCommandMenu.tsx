@@ -134,7 +134,7 @@ export function SlashCommandMenu({ query, onSelect, onClose }: Props) {
     return (
       <div
         ref={menuRef}
-        className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-2 px-3 z-50 min-w-[220px]"
+        className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-xl py-2 px-3 z-50 min-w-[220px]"
       >
         <p className="text-sm text-gray-400">No matching commands</p>
       </div>
@@ -144,10 +144,10 @@ export function SlashCommandMenu({ query, onSelect, onClose }: Props) {
   return (
     <div
       ref={menuRef}
-      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 z-50 min-w-[240px] max-h-[280px] overflow-y-auto"
+      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-xl py-1 z-50 min-w-[240px] max-h-[280px] overflow-y-auto"
     >
       <div className="px-3 py-1.5">
-        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Blocks</p>
+        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-semibold">Blocks</p>
       </div>
       {filtered.map((cmd, i) => (
         <button
@@ -157,14 +157,14 @@ export function SlashCommandMenu({ query, onSelect, onClose }: Props) {
           onMouseEnter={() => setActiveIndex(i)}
           className={`flex items-center gap-3 w-full px-3 py-2 text-left border-none cursor-pointer transition-colors ${
             i === activeIndex
-              ? 'bg-blue-50 text-blue-700'
+              ? 'bg-cyan-50 text-cyan-700'
               : 'bg-transparent text-gray-700 hover:bg-gray-50'
           }`}
         >
           <span
-            className={`flex items-center justify-center w-8 h-8 rounded-md border ${
+            className={`flex items-center justify-center w-8 h-8 rounded-sm border ${
               i === activeIndex
-                ? 'bg-blue-100 border-blue-200 text-blue-600'
+                ? 'bg-cyan-100 border-cyan-200 text-cyan-600'
                 : 'bg-gray-50 border-gray-200 text-gray-500'
             }`}
           >
