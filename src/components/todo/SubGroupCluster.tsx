@@ -74,10 +74,10 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="group/sg mb-2 rounded-lg relative"
+      className="group/sg mb-2 rounded-sm relative"
     >
       <div
-        className="relative rounded-lg overflow-hidden"
+        className="relative rounded-sm overflow-hidden"
         style={{
           backgroundColor: hexToRgba(subGroup.color, 0.04),
         }}

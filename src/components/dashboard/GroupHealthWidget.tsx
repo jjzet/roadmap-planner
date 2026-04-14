@@ -35,7 +35,7 @@ export function GroupHealthWidget({ groups }: Props) {
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium text-gray-700 truncate">{group.name}</span>
                   {group.overdue > 0 && (
-                    <span className="text-[10px] font-medium text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                    <span className="text-[10px] font-mono font-medium tabular-nums text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
                       {group.overdue} overdue
                     </span>
                   )}
@@ -53,13 +53,13 @@ export function GroupHealthWidget({ groups }: Props) {
                       }}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 tabular-nums flex-shrink-0">
+                  <span className="text-[10px] text-gray-400 font-mono tabular-nums flex-shrink-0">
                     {active} left
                   </span>
                 </div>
               </div>
 
-              <span className="text-xs font-semibold text-gray-400 tabular-nums flex-shrink-0">
+              <span className="text-xs font-mono font-semibold text-gray-400 tabular-nums flex-shrink-0">
                 {pct}%
               </span>
             </div>

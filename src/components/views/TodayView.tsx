@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useDashboardData, type BriefingTask, type TimeRange } from '../../hooks/useDashboardData';
+import { useDashboardDataContext } from '../../hooks/DashboardDataContext';
+import type { BriefingTask, TimeRange } from '../../hooks/useDashboardData';
 import { useTodoStore } from '../../store/todoStore';
 import { useUIStore } from '../../store/uiStore';
 import { ProgressRing } from '../todo/ProgressRing';
@@ -118,7 +119,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
 // ── Main view ──────────────────────────────────────────────────────────────
 
 export function TodayView() {
-  const { data, isLoading, refresh } = useDashboardData();
+  const { data, isLoading, refresh } = useDashboardDataContext();
   const loadTodo = useTodoStore((s) => s.loadTodo);
   const setActiveView = useUIStore((s) => s.setActiveView);
   const [timeRange, setTimeRange] = useState<TimeRange>('daily');
@@ -174,7 +175,7 @@ export function TodayView() {
                   <div className="flex items-center gap-2">
                     <ProgressRing completed={data.completedTasks} total={data.totalTasks} size={36} />
                     <div>
-                      <p className="text-sm font-semibold text-gray-700">
+                      <p className="text-sm font-mono font-semibold tabular-nums text-gray-700">
                         {data.completedTasks}/{data.totalTasks}
                       </p>
                       <p className="text-xs text-gray-400">tasks done</p>
@@ -183,13 +184,13 @@ export function TodayView() {
                   {data.overdue.length > 0 && (
                     <div className="flex items-center gap-1.5 text-red-500 bg-red-50 px-3 py-1.5 rounded-full">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">{data.overdue.length} overdue</span>
+                      <span className="text-xs font-mono font-medium tabular-nums">{data.overdue.length} overdue</span>
                     </div>
                   )}
                   {data.dueToday.length > 0 && (
                     <div className="flex items-center gap-1.5 text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full">
                       <Sun className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">{data.dueToday.length} due today</span>
+                      <span className="text-xs font-mono font-medium tabular-nums">{data.dueToday.length} due today</span>
                     </div>
                   )}
                 </div>

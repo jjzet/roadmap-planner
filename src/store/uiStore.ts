@@ -22,6 +22,9 @@ interface UIState {
   // Timeline display
   showMonthColors: boolean;
 
+  // Slide-up dashboard panel (from BottomStatsStrip)
+  dashboardPanelOpen: boolean;
+
   setZoom: (z: ZoomLevel) => void;
   toggleZoom: () => void;
   selectItem: (itemId: string | null, streamId?: string | null) => void;
@@ -35,6 +38,10 @@ interface UIState {
   toggleSupportColumn: () => void;
   togglePhaseColumn: () => void;
   toggleMonthColors: () => void;
+
+  toggleDashboardPanel: () => void;
+  openDashboardPanel: () => void;
+  closeDashboardPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -54,6 +61,8 @@ export const useUIStore = create<UIState>((set) => ({
   showSupportColumn: false,
   showPhaseColumn: false,
   showMonthColors: true,
+
+  dashboardPanelOpen: false,
 
   setZoom: (z) => set({ zoom: z }),
   toggleZoom: () =>
@@ -85,4 +94,8 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSupportColumn: () => set((s) => ({ showSupportColumn: !s.showSupportColumn })),
   togglePhaseColumn: () => set((s) => ({ showPhaseColumn: !s.showPhaseColumn })),
   toggleMonthColors: () => set((s) => ({ showMonthColors: !s.showMonthColors })),
+
+  toggleDashboardPanel: () => set((s) => ({ dashboardPanelOpen: !s.dashboardPanelOpen })),
+  openDashboardPanel: () => set({ dashboardPanelOpen: true }),
+  closeDashboardPanel: () => set({ dashboardPanelOpen: false }),
 }));

@@ -10,7 +10,7 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
   background: #f8f9fa;
   color: #1a1a2e;
@@ -43,6 +43,7 @@ body {
 }
 
 @theme inline {
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -84,7 +85,11 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.25rem;
+  --accent-cyan: #06B6D4;
+  --accent-cyan-light: rgba(6, 182, 212, 0.08);
+  --accent-cyan-glow: 0 0 0 1px rgba(6, 182, 212, 0.15), 0 0 8px rgba(6, 182, 212, 0.08);
+  --accent-cyan-ring: 0 0 0 2px rgba(6, 182, 212, 0.25);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -102,7 +107,7 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.65 0.15 195);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -159,6 +164,18 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Tech aesthetic utilities ──────────────────────────────── */
+.tech-glow {
+  box-shadow: var(--accent-cyan-glow);
+}
+.tech-glow-active {
+  box-shadow: var(--accent-cyan-ring);
+}
+.font-tech {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum';
 }
 
 /* ── Rich text editor (TipTap) ─────────────────────────────── */

@@ -65,7 +65,7 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
           </g>
         )}
       </svg>
-      <span className={`text-xs tabular-nums ${isComplete ? 'text-emerald-500 font-medium' : 'text-gray-400'}`}>
+      <span className={`text-xs font-mono tabular-nums ${isComplete ? 'text-emerald-500 font-medium' : 'text-gray-400'}`}>
         {completed}/{total}
       </span>
     </div>

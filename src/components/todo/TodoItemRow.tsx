@@ -11,7 +11,8 @@ const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; n
   dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
   test:   { label: 'test',   className: 'bg-purple-100 text-purple-700 hover:bg-purple-200', next: 'pr' },
   pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-600 hover:bg-blue-200',       next: 'merged' },
-  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200',    next: undefined },
+  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200',    next: 'build' },
+  build:  { label: 'build',  className: 'bg-teal-100 text-teal-700 hover:bg-teal-200',       next: undefined },
 };
 
 interface Props {
@@ -247,7 +248,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           {item.devStatus && (
             <button
               onClick={cycleDevStatus}
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DEV_STATUS_CONFIG[item.devStatus].className}`}
+              className={`text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DEV_STATUS_CONFIG[item.devStatus].className}`}
               title={`Status: ${item.devStatus} — click to advance`}
             >
               {DEV_STATUS_CONFIG[item.devStatus].label}
@@ -258,7 +259,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           {dueInfo && !showDateInput && (
             <button
               onClick={openDateInput}
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DUE_BADGE[dueInfo.urgency]}`}
+              className={`text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DUE_BADGE[dueInfo.urgency]}`}
               title={`Due: ${item.dueDate} — click to edit`}
             >
               {dueInfo.label}
