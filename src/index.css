@@ -211,6 +211,16 @@ button {
   font-size: 10px !important;
 }
 
+/* Sidebar nav items — mono uppercase tracked so they match the HUD label aesthetic. */
+[data-sidebar="menu-button"],
+[data-sidebar="menu-sub-button"] {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px !important;
+  font-weight: 500;
+}
+
 /* ── Rich text editor (TipTap) ─────────────────────────────── */
 .rte-root .ProseMirror {
   min-height: 1.5em;
