@@ -130,7 +130,7 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
           {isEditingName ? (
             <input
               ref={nameRef}
-              className="text-xs font-medium text-gray-600 flex-1 border-none outline-none bg-transparent px-0"
+              className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-gray-600 flex-1 border-none outline-none bg-transparent px-0"
               placeholder="Name this group…"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
@@ -142,10 +142,10 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
             />
           ) : (
             <span
-              className="text-xs font-medium text-gray-500 flex-1 cursor-pointer truncate"
+              className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-gray-600 flex-1 cursor-pointer truncate"
               onClick={() => { setNameInput(subGroup.name); setIsEditingName(true); }}
             >
-              {subGroup.name || <span className="text-gray-300 italic font-normal">Name this group…</span>}
+              {subGroup.name || <span className="text-gray-300 italic font-normal normal-case">Name this group…</span>}
             </span>
           )}
 

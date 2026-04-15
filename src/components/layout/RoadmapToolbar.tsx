@@ -74,7 +74,7 @@ export function RoadmapToolbar() {
         <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-400 flex-shrink-0">Roadmap</span>
         {isEditing ? (
           <input
-            className="text-base font-semibold px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onBlur={handleNameBlur}
@@ -83,7 +83,7 @@ export function RoadmapToolbar() {
           />
         ) : (
           <h1
-            className="text-base font-semibold text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
             onClick={handleNameClick}
             title="Click to rename"
           >
