@@ -222,7 +222,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
                 {editText + '\u00a0'}
               </span>
               <input
-                className="col-start-1 row-start-1 text-sm border-none outline-none bg-transparent w-full"
+                className="col-start-1 row-start-1 text-sm font-sans border-none outline-none bg-transparent w-full"
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
                 onBlur={handleTextBlur}
@@ -235,7 +235,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
             </div>
           ) : (
             <span
-              className={`text-sm cursor-text whitespace-nowrap ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+              className={`text-sm font-sans cursor-text whitespace-nowrap ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
               onClick={() => { setEditText(item.text); setIsEditing(true); }}
             >
               {item.text || <span className="text-gray-300 italic">Untitled</span>}
