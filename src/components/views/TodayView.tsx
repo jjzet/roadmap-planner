@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useDashboardData, type BriefingTask, type TimeRange } from '../../hooks/useDashboardData';
+import { useDashboardDataContext } from '../../hooks/DashboardDataContext';
+import type { BriefingTask, TimeRange } from '../../hooks/useDashboardData';
 import { useTodoStore } from '../../store/todoStore';
 import { useUIStore } from '../../store/uiStore';
 import { ProgressRing } from '../todo/ProgressRing';
@@ -53,14 +54,14 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
     <div className="mb-5">
       <div className="flex items-center gap-2 mb-2">
         <span className={accentColor}>{icon}</span>
-        <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{title}</h3>
-        <span className="text-xs text-gray-400">({tasks.length})</span>
+        <h3 className="text-[11px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em]">{title}</h3>
+        <span className="text-[10px] font-mono tabular-nums text-gray-400">({tasks.length})</span>
       </div>
       <div className="space-y-0.5">
         {tasks.map((task) => (
           <div
             key={`${task.pageId}-${task.groupId}-${task.item.id}`}
-            className="flex items-center gap-3 py-1.5 px-3 rounded-lg hover:bg-white/80 transition-colors group/task"
+            className="flex items-center gap-3 py-1.5 px-3 rounded-sm hover:bg-cyan-50/40 transition-colors group/task"
           >
             {task.item.pinned && (
               <Pin className="w-3 h-3 text-amber-500 fill-amber-500 flex-shrink-0" />
@@ -75,18 +76,18 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
                   ? 'border-amber-400'
                   : accentColor.includes('emerald')
                   ? 'border-emerald-400'
-                  : 'border-blue-400'
+                  : 'border-cyan-500'
               }`}
             />
             <span className="flex-1 text-sm text-gray-700 min-w-0 truncate">
               {task.item.text || 'Untitled'}
             </span>
-            <span className="text-[10px] text-gray-400 flex-shrink-0">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 flex-shrink-0">
               {task.groupName}
             </span>
             {task.item.dueDate && (
               <span
-                className={`text-[10px] font-medium flex-shrink-0 ${
+                className={`text-[10px] font-mono font-medium tabular-nums flex-shrink-0 ${
                   accentColor.includes('red') ? 'text-red-500' : 'text-gray-400'
                 }`}
               >
@@ -95,7 +96,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
             )}
             {task.item.completedAt && (
               <span
-                className="text-[10px] text-gray-400 flex-shrink-0"
+                className="text-[10px] font-mono uppercase tracking-wider text-gray-400 flex-shrink-0"
                 title={new Date(task.item.completedAt).toLocaleString()}
               >
                 {formatRelativeTime(task.item.completedAt)}
@@ -103,7 +104,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
             )}
             <button
               onClick={() => onNavigate(task.pageId)}
-              className="opacity-0 group-hover/task:opacity-100 transition-opacity text-gray-400 hover:text-blue-500 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              className="opacity-0 group-hover/task:opacity-100 transition-opacity text-gray-400 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
               title="Go to page"
             >
               <ArrowRight className="w-3.5 h-3.5" />
@@ -118,7 +119,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
 // ── Main view ──────────────────────────────────────────────────────────────
 
 export function TodayView() {
-  const { data, isLoading, refresh } = useDashboardData();
+  const { data, isLoading, refresh } = useDashboardDataContext();
   const loadTodo = useTodoStore((s) => s.loadTodo);
   const setActiveView = useUIStore((s) => s.setActiveView);
   const [timeRange, setTimeRange] = useState<TimeRange>('daily');
@@ -143,10 +144,13 @@ export function TodayView() {
         className="flex items-center px-6 border-b border-gray-200 bg-white flex-shrink-0"
         style={{ height: TOOLBAR_HEIGHT, minHeight: TOOLBAR_HEIGHT }}
       >
-        <h1 className="text-lg font-semibold text-gray-800 flex-1">Today</h1>
+        <div className="flex items-center gap-2 flex-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+          <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Today</h1>
+        </div>
         <button
           onClick={refresh}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-500 border-none bg-transparent cursor-pointer"
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-600 border-none bg-transparent cursor-pointer"
           title="Refresh"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -164,17 +168,17 @@ export function TodayView() {
             <DailyInsightWidget />
 
             {/* ── Greeting + summary stats ── */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+            <div className="bg-white rounded-md border border-gray-200 p-5 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">{getGreeting()}</h2>
-                  <p className="text-sm text-gray-400 mt-0.5">{formatDate()}</p>
+                  <p className="text-[11px] font-mono uppercase tracking-wider text-gray-400 mt-1">{formatDate()}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <ProgressRing completed={data.completedTasks} total={data.totalTasks} size={36} />
                     <div>
-                      <p className="text-sm font-semibold text-gray-700">
+                      <p className="text-sm font-mono font-semibold tabular-nums text-gray-700">
                         {data.completedTasks}/{data.totalTasks}
                       </p>
                       <p className="text-xs text-gray-400">tasks done</p>
@@ -183,13 +187,13 @@ export function TodayView() {
                   {data.overdue.length > 0 && (
                     <div className="flex items-center gap-1.5 text-red-500 bg-red-50 px-3 py-1.5 rounded-full">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">{data.overdue.length} overdue</span>
+                      <span className="text-xs font-mono font-medium tabular-nums">{data.overdue.length} overdue</span>
                     </div>
                   )}
                   {data.dueToday.length > 0 && (
                     <div className="flex items-center gap-1.5 text-orange-500 bg-orange-50 px-3 py-1.5 rounded-full">
                       <Sun className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">{data.dueToday.length} due today</span>
+                      <span className="text-xs font-mono font-medium tabular-nums">{data.dueToday.length} due today</span>
                     </div>
                   )}
                 </div>
@@ -225,14 +229,14 @@ export function TodayView() {
             {hasTaskSections && (
               <div className="flex items-center gap-3">
                 <div className="flex-1 border-t border-gray-200" />
-                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Due dates</span>
+                <span className="text-[10px] font-mono text-gray-500 font-semibold uppercase tracking-[0.2em]">Due dates</span>
                 <div className="flex-1 border-t border-gray-200" />
               </div>
             )}
 
             {/* ── Task sections ── */}
             {hasTaskSections && (
-              <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+              <div className="bg-white rounded-md border border-gray-200 p-5 shadow-sm">
                 <TaskSection
                   title="Overdue"
                   icon={<AlertTriangle className="w-3.5 h-3.5" />}
@@ -258,7 +262,7 @@ export function TodayView() {
                   title="This Week"
                   icon={<CalendarDays className="w-3.5 h-3.5" />}
                   tasks={data.dueThisWeek}
-                  accentColor="text-blue-500"
+                  accentColor="text-cyan-600"
                   onNavigate={handleNavigate}
                 />
                 {data.recentlyCompleted.length > 0 && (

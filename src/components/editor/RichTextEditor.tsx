@@ -52,7 +52,7 @@ export function RichTextEditor({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: {
-          class: 'text-blue-500 underline underline-offset-2 hover:text-blue-600',
+          class: 'text-cyan-600 underline underline-offset-2 hover:text-cyan-700',
         },
       }),
     ],
@@ -82,7 +82,7 @@ export function RichTextEditor({
 
   const btn = (active: boolean) =>
     `p-1.5 rounded transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center ${
-      active ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+      active ? 'text-cyan-600 bg-cyan-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
     }`;
 
   const handleLink = () => {

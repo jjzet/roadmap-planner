@@ -78,7 +78,7 @@ export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals';
 
 // ── Todo Types ──
 
-export type DevStatus = 'dev' | 'test' | 'pr' | 'merged';
+export type DevStatus = 'dev' | 'test' | 'pr' | 'merged' | 'build';
 
 export interface TodoItem {
   id: string;
@@ -94,6 +94,14 @@ export interface TodoItem {
   expanded?: boolean;
   archived?: boolean;
   devStatus?: DevStatus;
+  subGroupId?: string; // if set, item belongs to this sub-group
+}
+
+export interface SubGroup {
+  id: string;
+  name: string;    // optional label
+  color: string;   // hex — drives left stripe + tinted bg
+  order: number;   // position among loose items + other sub-groups
 }
 
 export interface TodoGroup {
@@ -102,6 +110,7 @@ export interface TodoGroup {
   collapsed: boolean;
   order: number;
   items: TodoItem[];
+  subGroups?: SubGroup[];
 }
 
 export interface TextBlock {

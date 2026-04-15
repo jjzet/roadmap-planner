@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Self-hosted fonts — bundled locally so the app renders in Inter/JetBrains Mono
+   even when Google Fonts CDN is blocked or unreachable. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,10 +14,18 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
   background: #f8f9fa;
   color: #1a1a2e;
+}
+
+/* Form elements default to system fonts — force Inter inheritance. */
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
 }
 
 /* Custom scrollbar */
@@ -43,6 +55,8 @@ body {
 }
 
 @theme inline {
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -84,7 +98,11 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.25rem;
+  --accent-cyan: #06B6D4;
+  --accent-cyan-light: rgba(6, 182, 212, 0.08);
+  --accent-cyan-glow: 0 0 0 1px rgba(6, 182, 212, 0.15), 0 0 8px rgba(6, 182, 212, 0.08);
+  --accent-cyan-ring: 0 0 0 2px rgba(6, 182, 212, 0.25);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -102,7 +120,7 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: oklch(0.65 0.15 195);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -159,6 +177,52 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Tech aesthetic utilities ──────────────────────────────── */
+.tech-glow {
+  box-shadow: var(--accent-cyan-glow);
+}
+.tech-glow-active {
+  box-shadow: var(--accent-cyan-ring);
+}
+.font-tech {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum';
+}
+
+/* ── Sidebar active-item cyan accent ──────────────────────────
+   The shadcn sidebar applies bg-sidebar-accent on data-active=true;
+   we override active items here to get the WorldView-style cyan
+   highlight + left bar without touching every menu button. */
+[data-sidebar="menu-button"][data-active="true"],
+[data-sidebar="menu-sub-button"][data-active="true"] {
+  background: rgba(6, 182, 212, 0.08) !important;
+  color: #0e7490 !important;
+  box-shadow: inset 2px 0 0 0 #06B6D4;
+  border-radius: 0.25rem;
+}
+[data-sidebar="menu-button"][data-active="true"] svg,
+[data-sidebar="menu-sub-button"][data-active="true"] svg {
+  color: #06B6D4;
+}
+
+/* Sidebar group labels — mono uppercase tech style */
+[data-sidebar="group-label"] {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px !important;
+}
+
+/* Sidebar nav items — mono uppercase tracked so they match the HUD label aesthetic. */
+[data-sidebar="menu-button"],
+[data-sidebar="menu-sub-button"] {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px !important;
+  font-weight: 500;
 }
 
 /* ── Rich text editor (TipTap) ─────────────────────────────── */
@@ -234,7 +298,7 @@ body {
   font-size: inherit;
 }
 .rte-root .ProseMirror a {
-  color: #3b82f6;
+  color: #0891b2;
   text-decoration: underline;
   text-underline-offset: 2px;
 }

@@ -44,7 +44,7 @@ function GoalCard({ goal }: { goal: { id: string; title: string; body: string; u
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-200 group/goal overflow-hidden">
+    <div className="bg-white rounded-md border border-gray-200 hover:shadow-md transition-all duration-200 group/goal overflow-hidden">
       <div className="p-5">
         {/* Title */}
         <div className="flex items-start justify-between gap-2 mb-3">
@@ -86,7 +86,7 @@ function GoalCard({ goal }: { goal: { id: string; title: string; body: string; u
         </div>
 
         {/* Footer */}
-        <p className="text-[10px] text-gray-300 mt-3">
+        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-300 mt-3">
           Updated {formatRelativeTime(goal.updated_at)}
         </p>
       </div>
@@ -109,12 +109,16 @@ export function GoalsView() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Goals</h1>
-            <p className="text-sm text-gray-400 mt-1">Your goals and intentions. Pin them to any page to keep them front of mind.</p>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+              <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Goals</h1>
+            </div>
+            <p className="text-2xl font-bold text-gray-800 tracking-tight mt-2">Goals & intentions</p>
+            <p className="text-sm text-gray-400 mt-1">Pin them to any page to keep them front of mind.</p>
           </div>
           <button
             onClick={handleNewGoal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-mono font-medium uppercase tracking-wider text-gray-600 bg-white border border-gray-200 rounded-sm hover:bg-cyan-50/40 hover:text-cyan-700 hover:border-cyan-300 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             New Goal
@@ -125,7 +129,7 @@ export function GoalsView() {
         {isLoading ? (
           <div className="flex flex-col gap-3">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-100 p-5">
+              <div key={i} className="bg-white rounded-md border border-gray-200 p-5">
                 <div className="h-5 bg-gray-100 rounded-full animate-pulse w-32 mb-3" />
                 <div className="h-3 bg-gray-100 rounded-full animate-pulse w-3/4 mb-1.5" />
                 <div className="h-3 bg-gray-100 rounded-full animate-pulse w-1/2" />
@@ -139,7 +143,7 @@ export function GoalsView() {
             <p className="text-sm text-gray-300 mt-1 mb-6">Create your first goal to get started.</p>
             <button
               onClick={handleNewGoal}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors cursor-pointer border-none"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-white bg-cyan-600 rounded-sm hover:bg-cyan-700 transition-colors cursor-pointer border-none"
             >
               <Plus className="w-4 h-4" />
               New Goal

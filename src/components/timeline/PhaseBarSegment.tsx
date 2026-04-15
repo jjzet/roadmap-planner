@@ -212,7 +212,7 @@ export function PhaseBarSegment({ bar, allBars, subItemId, parentItemId, streamI
     <div
       className={`absolute rounded-sm cursor-pointer group select-none ${
         isDragging ? 'opacity-80 shadow-md' : ''
-      } ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}`}
+      } ${isSelected ? 'ring-2 ring-cyan-500 ring-offset-1' : ''}`}
       style={{
         left: displayX,
         width: Math.max(displayWidth, 12),

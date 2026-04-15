@@ -9,7 +9,7 @@ interface Props {
 }
 
 const chartConfig = {
-  count: { label: 'Tasks completed', color: 'hsl(221 83% 53%)' },
+  count: { label: 'Tasks completed', color: 'hsl(189 94% 43%)' },
 };
 
 const rangeLabels: Record<TimeRange, { title: string; subtitle: string }> = {
@@ -30,27 +30,27 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
   const tickInterval = timeRange === 'daily' ? 1 : 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+    <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="text-sm font-semibold text-gray-800">Completion Trend</h3>
-          <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700">Completion Trend</h3>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">{subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {hasAnyData && (
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono font-medium tabular-nums text-cyan-600 bg-cyan-50 border border-cyan-100 px-2 py-0.5 rounded-full">
               {total} total
             </span>
           )}
           {/* Time range toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <div className="flex bg-gray-100 rounded-sm p-0.5">
             {ranges.map((r) => (
               <button
                 key={r}
                 onClick={() => onTimeRangeChange(r)}
-                className={`text-[10px] font-medium px-2 py-1 rounded-md border-none cursor-pointer transition-colors ${
+                className={`text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-1 rounded-sm border-none cursor-pointer transition-colors ${
                   timeRange === r
-                    ? 'bg-white text-gray-800 shadow-sm'
+                    ? 'bg-white text-cyan-700 shadow-sm'
                     : 'bg-transparent text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -87,7 +87,7 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
               {data.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={entry.count > 0 ? 'hsl(221 83% 53%)' : '#e5e7eb'}
+                  fill={entry.count > 0 ? 'hsl(189 94% 43%)' : '#e5e7eb'}
                   fillOpacity={entry.count > 0 ? 0.85 + (entry.count / maxCount) * 0.15 : 1}
                 />
               ))}

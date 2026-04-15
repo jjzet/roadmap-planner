@@ -46,8 +46,8 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
             isComplete
               ? 'text-emerald-500'
               : percentage >= 0.5
-                ? 'text-blue-500'
-                : 'text-blue-400'
+                ? 'text-cyan-600'
+                : 'text-cyan-500'
           }`}
         />
         {/* Checkmark for 100% */}
@@ -65,7 +65,7 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
           </g>
         )}
       </svg>
-      <span className={`text-xs tabular-nums ${isComplete ? 'text-emerald-500 font-medium' : 'text-gray-400'}`}>
+      <span className={`text-xs font-mono tabular-nums ${isComplete ? 'text-emerald-500 font-medium' : 'text-gray-400'}`}>
         {completed}/{total}
       </span>
     </div>

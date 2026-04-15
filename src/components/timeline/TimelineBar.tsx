@@ -225,7 +225,7 @@ export function TimelineBar({ item, streamId, streamColor, streamItems, originDa
   return (
     <div
       className={`absolute rounded-md shadow-sm cursor-pointer group select-none ${
-        isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+        isSelected ? 'ring-2 ring-cyan-500 ring-offset-1' : ''
       } ${isDragging ? 'opacity-80 shadow-md' : ''} ${
         dependencyMode ? 'cursor-crosshair' : ''
       }`}
@@ -268,7 +268,7 @@ export function TimelineBar({ item, streamId, streamColor, streamItems, originDa
       {/* Dependency link dot */}
       {!dependencyMode && (
         <div
-          className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-gray-400 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer hover:border-blue-500 hover:bg-blue-100 z-20"
+          className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-gray-400 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer hover:border-cyan-500 hover:bg-cyan-100 z-20"
           onClick={handleLinkClick}
           title="Create dependency"
         />

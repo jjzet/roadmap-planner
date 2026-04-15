@@ -9,10 +9,12 @@ interface Props {
   block: HeadingBlock;
 }
 
+// HUD/tech aesthetic: mono uppercase tracked headings, sized down to feel like
+// instrument panel labels rather than chunky document titles.
 const HEADING_STYLES: Record<number, string> = {
-  1: 'text-2xl font-bold text-gray-900',
-  2: 'text-xl font-semibold text-gray-800',
-  3: 'text-lg font-medium text-gray-700',
+  1: 'text-[15px] font-mono font-semibold uppercase tracking-[0.18em] text-gray-800',
+  2: 'text-[12px] font-mono font-semibold uppercase tracking-[0.16em] text-gray-700',
+  3: 'text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-gray-600',
 };
 
 const PLACEHOLDER: Record<number, string> = {
@@ -56,7 +58,6 @@ export function HeadingBlockRow({ block }: Props) {
         <input
           ref={inputRef}
           className={`flex-1 bg-transparent border-none outline-none placeholder:text-gray-300 ${HEADING_STYLES[block.level] || HEADING_STYLES[2]}`}
-          style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
           placeholder={PLACEHOLDER[block.level] || 'Heading'}
           value={block.content}
           onChange={(e) => updateHeadingBlock(block.id, e.target.value)}

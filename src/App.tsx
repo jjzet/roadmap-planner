@@ -11,6 +11,9 @@ import { useTodoLoader } from './hooks/useTodoLoader';
 import { useInsightLoader } from './hooks/useInsightLoader';
 import { useGoalLoader } from './hooks/useGoalLoader';
 import { useUIStore } from './store/uiStore';
+import { DashboardDataProvider } from './hooks/DashboardDataContext';
+import { BottomStatsStrip } from './components/layout/BottomStatsStrip';
+import { SlideUpDashboard } from './components/layout/SlideUpDashboard';
 
 function App() {
   useRoadmapLoader();
@@ -22,16 +25,22 @@ function App() {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden h-screen bg-gray-50">
-          {activeView === 'roadmap' && <RoadmapView />}
-          {activeView === 'tasks' && <TasksView />}
-          {activeView === 'today' && <TodayView />}
-          {activeView === 'insights' && <InsightsView />}
-          {activeView === 'goals' && <GoalsView />}
-        </main>
-      </SidebarProvider>
+      <DashboardDataProvider>
+        <SidebarProvider>
+          <AppSidebar />
+          <main className="relative flex-1 flex flex-col overflow-hidden h-screen bg-gray-50">
+            <div className="flex-1 flex flex-col overflow-hidden pb-10">
+              {activeView === 'roadmap' && <RoadmapView />}
+              {activeView === 'tasks' && <TasksView />}
+              {activeView === 'today' && <TodayView />}
+              {activeView === 'insights' && <InsightsView />}
+              {activeView === 'goals' && <GoalsView />}
+            </div>
+            <SlideUpDashboard />
+            <BottomStatsStrip />
+          </main>
+        </SidebarProvider>
+      </DashboardDataProvider>
     </TooltipProvider>
   );
 }

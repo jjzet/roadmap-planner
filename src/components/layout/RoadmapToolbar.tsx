@@ -69,29 +69,33 @@ export function RoadmapToolbar() {
       <div className="h-6 w-px bg-gray-200" />
 
       {/* Roadmap name */}
-      {isEditing ? (
-        <input
-          className="text-lg font-semibold px-2 py-1 border border-blue-400 rounded outline-none"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          onBlur={handleNameBlur}
-          onKeyDown={handleNameKeyDown}
-          autoFocus
-        />
-      ) : (
-        <h1
-          className="text-lg font-semibold cursor-pointer hover:text-blue-600 truncate max-w-64"
-          onClick={handleNameClick}
-          title="Click to rename"
-        >
-          {roadmapName}
-        </h1>
-      )}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow flex-shrink-0" />
+        <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-400 flex-shrink-0">Roadmap</span>
+        {isEditing ? (
+          <input
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onBlur={handleNameBlur}
+            onKeyDown={handleNameKeyDown}
+            autoFocus
+          />
+        ) : (
+          <h1
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
+            onClick={handleNameClick}
+            title="Click to rename"
+          >
+            {roadmapName}
+          </h1>
+        )}
+      </div>
 
       {/* Milestone button */}
       <button
         onClick={handleOpenMilestoneForm}
-        className="text-sm px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 border border-gray-300"
+        className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-white text-gray-600 rounded-sm hover:bg-cyan-50/40 hover:text-cyan-700 border border-gray-200 hover:border-cyan-300 transition-colors"
         title="Add a milestone marker to a stream"
       >
         + Milestone
@@ -101,18 +105,18 @@ export function RoadmapToolbar() {
       <div className="flex-1" />
 
       {/* Save status */}
-      <div className="text-xs text-gray-400 w-16 text-right mr-2">
-        {saveStatus === 'saving' && 'Saving...'}
-        {saveStatus === 'saved' && '✓ Saved'}
-        {saveStatus === 'error' && '✗ Error'}
+      <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 w-20 text-right mr-2">
+        {saveStatus === 'saving' && 'saving…'}
+        {saveStatus === 'saved' && '✓ saved'}
+        {saveStatus === 'error' && '✗ error'}
       </div>
 
       {/* Month colors toggle */}
       <button
         onClick={toggleMonthColors}
-        className={`text-sm px-3 py-1 rounded-md border transition-colors ${
+        className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border transition-colors ${
           showMonthColors
-            ? 'bg-blue-50 text-blue-600 border-blue-200'
+            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
             : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-gray-700'
         }`}
         title={showMonthColors ? 'Hide month colors' : 'Show month colors'}
@@ -121,12 +125,12 @@ export function RoadmapToolbar() {
       </button>
 
       {/* Zoom toggle */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+      <div className="flex items-center gap-1 bg-gray-100 rounded-sm p-0.5">
         <button
           onClick={() => setZoom('week')}
-          className={`text-sm px-3 py-1 rounded-md border-none transition-colors ${
+          className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'week'
-              ? 'bg-white shadow-sm text-gray-900 font-medium'
+              ? 'bg-white shadow-sm text-cyan-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -134,9 +138,9 @@ export function RoadmapToolbar() {
         </button>
         <button
           onClick={() => setZoom('month')}
-          className={`text-sm px-3 py-1 rounded-md border-none transition-colors ${
+          className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'month'
-              ? 'bg-white shadow-sm text-gray-900 font-medium'
+              ? 'bg-white shadow-sm text-cyan-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -162,7 +166,7 @@ export function RoadmapToolbar() {
             <div className="text-sm font-medium text-gray-700 mb-3">Add Milestone</div>
             <label className="block text-xs text-gray-500 mb-1">Name</label>
             <input
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-blue-400"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-cyan-500"
               placeholder="Milestone name..."
               value={msName}
               onChange={(e) => setMsName(e.target.value)}
@@ -172,13 +176,13 @@ export function RoadmapToolbar() {
             <label className="block text-xs text-gray-500 mb-1">Date</label>
             <input
               type="date"
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-blue-400"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-cyan-500"
               value={msDate}
               onChange={(e) => setMsDate(e.target.value)}
             />
             <label className="block text-xs text-gray-500 mb-1">Stream</label>
             <select
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 bg-white outline-none focus:border-blue-400"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 bg-white outline-none focus:border-cyan-500"
               value={msStreamId}
               onChange={(e) => setMsStreamId(e.target.value)}
             >
@@ -187,7 +191,7 @@ export function RoadmapToolbar() {
               ))}
             </select>
             <div className="flex gap-2">
-              <button onClick={handleAddMilestone} className="text-sm px-3 py-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 border-none cursor-pointer">Add</button>
+              <button onClick={handleAddMilestone} className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-cyan-600 text-white rounded-sm hover:bg-cyan-700 border-none cursor-pointer">Add</button>
               <button onClick={() => setShowMilestoneForm(false)} className="text-sm px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 border-none cursor-pointer">Cancel</button>
             </div>
           </div>
