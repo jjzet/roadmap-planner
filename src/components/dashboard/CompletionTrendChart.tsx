@@ -99,8 +99,8 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
           <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
             <span className="text-lg">📈</span>
           </div>
-          <p className="text-sm text-gray-400">No completions recorded yet</p>
-          <p className="text-xs text-gray-300 mt-1">Complete tasks to start seeing your trend</p>
+          <p className="text-sm font-mono font-light text-gray-400">No completions recorded yet</p>
+          <p className="text-xs font-mono font-light text-gray-300 mt-1">Complete tasks to start seeing your trend</p>
         </div>
       )}
     </div>

@@ -28,7 +28,7 @@ export function UpcomingMilestonesWidget({ milestones }: Props) {
       </div>
 
       {milestones.length === 0 ? (
-        <p className="text-xs text-gray-400">No milestones in the next 30 days</p>
+        <p className="text-xs font-mono font-light text-gray-400">No milestones in the next 30 days</p>
       ) : (
         <div className="space-y-2">
           {milestones.map((m) => (
@@ -38,8 +38,8 @@ export function UpcomingMilestonesWidget({ milestones }: Props) {
               >
                 {daysLabel(m.daysUntil)}
               </span>
-              <span className="flex-1 text-sm text-gray-700 truncate">{m.name}</span>
-              <span className="text-[10px] text-gray-400 flex-shrink-0">{m.roadmapName}</span>
+              <span className="flex-1 text-sm font-mono font-light text-gray-700 truncate">{m.name}</span>
+              <span className="text-[10px] font-mono font-light text-gray-400 flex-shrink-0">{m.roadmapName}</span>
               <span className="text-[10px] font-mono text-gray-300 flex-shrink-0 tabular-nums">
                 {new Date(m.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>

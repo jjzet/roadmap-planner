@@ -10,7 +10,7 @@ export function GroupHealthWidget({ groups }: Props) {
     return (
       <div className="bg-white rounded-md border border-gray-200 p-4 shadow-sm">
         <h3 className="text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-700 mb-1">Group Health</h3>
-        <p className="text-xs text-gray-400">No groups found</p>
+        <p className="text-xs font-mono font-light text-gray-400">No groups found</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function GroupHealthWidget({ groups }: Props) {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-gray-700 truncate">{group.name}</span>
+                  <span className="text-sm font-mono font-light text-gray-700 truncate">{group.name}</span>
                   {group.overdue > 0 && (
                     <span className="text-[10px] font-mono font-medium tabular-nums text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
                       {group.overdue} overdue

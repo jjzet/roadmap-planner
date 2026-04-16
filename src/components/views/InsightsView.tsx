@@ -40,11 +40,11 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             {insight.category && (
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${catPill}`}>
+              <span className={`text-[10px] font-mono font-light px-2 py-0.5 rounded-full border capitalize ${catPill}`}>
                 {insight.category}
               </span>
             )}
-            <span className="text-[11px] text-gray-400">{formatDate(date)}</span>
+            <span className="text-[11px] font-mono font-light text-gray-400">{formatDate(date)}</span>
           </div>
           <button
             onClick={onToggleFav}
@@ -61,14 +61,14 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
 
         {/* Concept */}
         {insight.concept && (
-          <p className="text-[13.5px] font-semibold text-gray-800 leading-snug mb-1.5 tracking-tight">
+          <p className="text-[13.5px] font-mono font-light text-gray-800 leading-snug mb-1.5">
             {insight.concept}
           </p>
         )}
 
         {/* Lesson */}
         {insight.lesson && (
-          <p className="text-[12.5px] text-gray-500 leading-relaxed">
+          <p className="text-[12.5px] font-mono font-light text-gray-500 leading-relaxed">
             {insight.lesson}
           </p>
         )}
@@ -77,10 +77,10 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
         <div className="flex items-center gap-1.5 mt-2.5">
           <BookOpen className="w-3 h-3 text-gray-300 flex-shrink-0" />
           {insight.book && (
-            <span className="text-[11px] text-gray-400 font-medium truncate">{insight.book}</span>
+            <span className="text-[11px] font-mono font-light text-gray-400 truncate">{insight.book}</span>
           )}
           {insight.author && (
-            <span className="text-[11px] text-gray-300 italic truncate">{insight.author}</span>
+            <span className="text-[11px] font-mono font-light text-gray-300 italic truncate">{insight.author}</span>
           )}
         </div>
 
@@ -88,10 +88,10 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
         {expanded && (
           <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
             {insight.why_it_matters && (
-              <p className="text-[12.5px] text-gray-600 leading-relaxed">{insight.why_it_matters}</p>
+              <p className="text-[12.5px] font-mono font-light text-gray-600 leading-relaxed">{insight.why_it_matters}</p>
             )}
             {insight.long_summary && (
-              <p className="text-[12px] text-gray-400 leading-relaxed">{insight.long_summary}</p>
+              <p className="text-[12px] font-mono font-light text-gray-400 leading-relaxed">{insight.long_summary}</p>
             )}
           </div>
         )}
@@ -130,8 +130,8 @@ export function InsightsView() {
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
             <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Insights</h1>
           </div>
-          <p className="text-2xl font-bold text-gray-800 tracking-tight mt-2">Daily book insights</p>
-          <p className="text-sm text-gray-400 mt-1">Favourite the ones worth revisiting.</p>
+          <p className="text-2xl font-mono font-light text-gray-800 tracking-tight mt-2">Daily book insights</p>
+          <p className="text-sm font-mono font-light text-gray-400 mt-1">Favourite the ones worth revisiting.</p>
         </div>
 
         {/* Favourites section */}
@@ -172,8 +172,8 @@ export function InsightsView() {
           ) : validInsights.length === 0 ? (
             <div className="text-center py-16">
               <BookOpen className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-              <p className="text-sm text-gray-400">No insights generated yet.</p>
-              <p className="text-xs text-gray-300 mt-1">Insights appear here as they're generated each day.</p>
+              <p className="text-sm font-mono font-light text-gray-400">No insights generated yet.</p>
+              <p className="text-xs font-mono font-light text-gray-300 mt-1">Insights appear here as they're generated each day.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">

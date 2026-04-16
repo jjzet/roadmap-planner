@@ -63,7 +63,7 @@ export function SlideUpDashboard() {
         {/* Content */}
         <div className="overflow-y-auto px-5 py-4" style={{ height: 'calc(65vh - 2.5rem)' }}>
           {!data ? (
-            <div className="text-center text-sm text-gray-400 py-12">Loading dashboard…</div>
+            <div className="text-center text-sm font-mono font-light text-gray-400 py-12">Loading dashboard…</div>
           ) : (
             <div className="space-y-4 max-w-6xl mx-auto">
               {/* Row 1: Trend (2/3) + Velocity (1/3) */}

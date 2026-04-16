@@ -40,7 +40,7 @@ export function DailyInsightWidget() {
     return (
       <div className="flex items-center gap-2.5 px-1 py-3 mb-4">
         <BookOpen className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-        <p className="text-xs text-gray-400 flex-1">
+        <p className="text-xs font-mono font-light text-gray-400 flex-1">
           {`Could not load insight — ${error}`}
         </p>
         <button
@@ -73,18 +73,18 @@ export function DailyInsightWidget() {
           <div className="flex items-center gap-0 mb-2">
             <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
               {insight.category && (
-                <span className={`text-[11px] font-medium ${categoryColour} capitalize`}>
+                <span className={`text-[11px] font-mono font-light ${categoryColour} capitalize`}>
                   {insight.category}
                 </span>
               )}
               {insight.category && insight.book && (
-                <span className="text-gray-200 text-[11px]">·</span>
+                <span className="text-gray-200 text-[11px] font-mono">·</span>
               )}
               {insight.book && (
-                <span className="text-[11px] text-gray-500 font-medium truncate">{insight.book}</span>
+                <span className="text-[11px] font-mono font-light text-gray-500 truncate">{insight.book}</span>
               )}
               {insight.author && (
-                <span className="text-[11px] text-gray-400 italic truncate">{insight.author}</span>
+                <span className="text-[11px] font-mono font-light text-gray-400 italic truncate">{insight.author}</span>
               )}
             </div>
 
@@ -123,14 +123,14 @@ export function DailyInsightWidget() {
 
           {/* Concept headline */}
           {insight.concept && (
-            <p className="text-[13.5px] font-mono font-semibold text-gray-800 leading-snug mb-1.5">
+            <p className="text-[13.5px] font-mono font-light text-gray-800 leading-snug mb-1.5">
               {insight.concept}
             </p>
           )}
 
           {/* Lesson — the one-liner takeaway */}
           {insight.lesson && (
-            <p className="text-[12.5px] font-mono text-gray-500 leading-relaxed">
+            <p className="text-[12.5px] font-mono font-light text-gray-500 leading-relaxed">
               {insight.lesson}
             </p>
           )}
@@ -139,12 +139,12 @@ export function DailyInsightWidget() {
           {expanded && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
               {insight.why_it_matters && (
-                <p className="text-[12.5px] font-mono text-gray-600 leading-relaxed">
+                <p className="text-[12.5px] font-mono font-light text-gray-600 leading-relaxed">
                   {insight.why_it_matters}
                 </p>
               )}
               {insight.long_summary && (
-                <p className="text-[12px] font-mono text-gray-400 leading-relaxed">
+                <p className="text-[12px] font-mono font-light text-gray-400 leading-relaxed">
                   {insight.long_summary}
                 </p>
               )}

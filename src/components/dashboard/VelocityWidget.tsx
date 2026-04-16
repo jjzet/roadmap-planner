@@ -27,11 +27,11 @@ export function VelocityWidget({ velocity }: Props) {
       <div className="mt-4 flex items-end gap-6">
         <div>
           <p className="text-3xl font-bold text-gray-900 font-mono tabular-nums">{current}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{currentLabel}</p>
+          <p className="text-xs font-mono font-light text-gray-400 mt-0.5">{currentLabel}</p>
         </div>
         <div className="mb-1">
-          <p className="text-xl font-semibold text-gray-300 font-mono tabular-nums">{previous}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{previousLabel}</p>
+          <p className="text-xl font-light text-gray-300 font-mono tabular-nums">{previous}</p>
+          <p className="text-xs font-mono font-light text-gray-400 mt-0.5">{previousLabel}</p>
         </div>
       </div>
 

@@ -40,7 +40,7 @@ export function PinnedItemsWidget({ items }: Props) {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-xs text-gray-400">No pinned tasks — pin important items to surface them here</p>
+        <p className="text-xs font-mono font-light text-gray-400">No pinned tasks — pin important items to surface them here</p>
       ) : (
         <div className="space-y-1">
           {items.map(({ item, groupName, pageId }) => {
@@ -52,7 +52,7 @@ export function PinnedItemsWidget({ items }: Props) {
                 onClick={() => handleNavigate(pageId)}
               >
                 <Pin className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
-                <span className="flex-1 text-sm text-gray-700 truncate">{item.text || 'Untitled'}</span>
+                <span className="flex-1 text-sm font-mono font-light text-gray-700 truncate">{item.text || 'Untitled'}</span>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 flex-shrink-0">{groupName}</span>
                 {dueInfo && (
                   <span className={`text-[10px] font-mono font-medium tabular-nums flex-shrink-0 flex items-center gap-0.5 ${dueInfo.color}`}>
