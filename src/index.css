@@ -52,12 +52,15 @@ body {
   color: #1a1a2e;
 }
 
-/* Form elements default to system fonts — force Inter inheritance. */
-input,
-textarea,
-select,
-button {
-  font-family: inherit;
+/* Form elements default to system fonts — inherit from parent so Tailwind
+   utilities (font-mono, font-sans) can still override via @layer utilities. */
+@layer base {
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
 }
 
 /* Custom scrollbar */

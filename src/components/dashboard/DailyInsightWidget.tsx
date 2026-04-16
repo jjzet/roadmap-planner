@@ -123,14 +123,14 @@ export function DailyInsightWidget() {
 
           {/* Concept headline */}
           {insight.concept && (
-            <p className="text-[13.5px] font-semibold text-gray-800 leading-snug mb-1.5 tracking-tight">
+            <p className="text-[13.5px] font-mono font-semibold text-gray-800 leading-snug mb-1.5">
               {insight.concept}
             </p>
           )}
 
           {/* Lesson — the one-liner takeaway */}
           {insight.lesson && (
-            <p className="text-[12.5px] text-gray-500 leading-relaxed">
+            <p className="text-[12.5px] font-mono text-gray-500 leading-relaxed">
               {insight.lesson}
             </p>
           )}
@@ -139,12 +139,12 @@ export function DailyInsightWidget() {
           {expanded && (
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
               {insight.why_it_matters && (
-                <p className="text-[12.5px] text-gray-600 leading-relaxed">
+                <p className="text-[12.5px] font-mono text-gray-600 leading-relaxed">
                   {insight.why_it_matters}
                 </p>
               )}
               {insight.long_summary && (
-                <p className="text-[12px] text-gray-400 leading-relaxed">
+                <p className="text-[12px] font-mono text-gray-400 leading-relaxed">
                   {insight.long_summary}
                 </p>
               )}

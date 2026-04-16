@@ -152,8 +152,7 @@ export function TextBlockRow({ block }: Props) {
 
         <textarea
           ref={textareaRef}
-          className="flex-1 text-base leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 min-h-[1.75rem]"
-          style={{ fontFamily: "'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
+          className="flex-1 text-sm font-mono leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 min-h-[1.75rem]"
           placeholder="Type '/' for commands..."
           value={block.content}
           onChange={handleChange}
