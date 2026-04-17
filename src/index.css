@@ -338,6 +338,28 @@ body {
   text-underline-offset: 2px;
 }
 
+/* Bold: bump weight so JetBrains Mono bold reads clearly against font-light base */
+.rte-root .ProseMirror strong,
+.todo-text-inline strong {
+  font-weight: 800;
+}
+.rte-root .ProseMirror em,
+.todo-text-inline em {
+  font-style: italic;
+}
+
+/* Inline display for todo item text — strip <p> margins so rendered HTML sits on one line */
+.todo-text-inline p {
+  margin: 0;
+  display: inline;
+}
+.todo-text-inline .ProseMirror {
+  min-height: 0;
+}
+.todo-text-inline .ProseMirror > * + * {
+  margin-top: 0;
+}
+
 /* Placeholder: shown when editor is empty */
 .rte-root .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);

@@ -55,7 +55,6 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const unarchiveItem = useTodoStore((s) => s.unarchiveItem);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(item.text);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
   const [notesValue, setNotesValue] = useState(item.notes || '');
@@ -71,9 +70,9 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
 
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
-  const handleTextBlur = () => {
+  const handleRichTextSave = (html: string) => {
     setIsEditing(false);
-    if (editText.trim() !== item.text) updateItem(groupId, item.id, { text: editText.trim() });
+    if (html !== item.text) updateItem(groupId, item.id, { text: html });
   };
 
   const handleLinkSave = () => {
@@ -217,28 +216,24 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
 
           {/* Text / edit input */}
           {isEditing ? (
-            <div className="inline-grid text-[12px]">
-              <span aria-hidden className="invisible whitespace-pre col-start-1 row-start-1 text-[12px] font-mono font-light px-0 min-w-[4ch]">
-                {editText + '\u00a0'}
-              </span>
-              <input
-                className="col-start-1 row-start-1 text-[12px] font-mono font-light border-none outline-none bg-transparent w-full"
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                onBlur={handleTextBlur}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  if (e.key === 'Escape') { setEditText(item.text); setIsEditing(false); }
-                }}
+            <div className="flex-1 min-w-0 todo-text-inline">
+              <RichTextEditor
+                content={item.text}
+                onBlur={handleRichTextSave}
+                placeholder="Task…"
                 autoFocus
               />
             </div>
           ) : (
             <span
-              className={`text-[12px] font-mono font-light cursor-text whitespace-nowrap ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
-              onClick={() => { setEditText(item.text); setIsEditing(true); }}
+              className={`todo-text-inline text-[12px] font-mono font-light cursor-text whitespace-nowrap ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+              onClick={() => setIsEditing(true)}
             >
-              {item.text || <span className="text-gray-300 italic">Untitled</span>}
+              {item.text ? (
+                <span dangerouslySetInnerHTML={{ __html: item.text }} />
+              ) : (
+                <span className="text-gray-300 italic">Untitled</span>
+              )}
             </span>
           )}
 

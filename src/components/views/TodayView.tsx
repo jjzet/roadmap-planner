@@ -11,6 +11,7 @@ import { PinnedItemsWidget } from '../dashboard/PinnedItemsWidget';
 import { UpcomingMilestonesWidget } from '../dashboard/UpcomingMilestonesWidget';
 import { DailyInsightWidget } from '../dashboard/DailyInsightWidget';
 import { TOOLBAR_HEIGHT } from '@/lib/constants';
+import { stripHtml } from '@/lib/utils';
 import {
   AlertTriangle,
   Sun,
@@ -80,7 +81,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
               }`}
             />
             <span className="flex-1 text-sm text-gray-700 min-w-0 truncate">
-              {task.item.text || 'Untitled'}
+              {stripHtml(task.item.text) || 'Untitled'}
             </span>
             <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 flex-shrink-0">
               {task.groupName}

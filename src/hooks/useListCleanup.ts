@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem, TodoGroup } from '@/types';
+import { stripHtml } from '@/lib/utils';
 
 export type SuggestionType =
   | 'archive'
@@ -110,7 +111,7 @@ export function useListCleanup() {
             type: s.type,
             groupId: s.groupId,
             itemId: s.itemId,
-            itemText: item.text,
+            itemText: stripHtml(item.text),
             groupName: group.name,
             reason: s.reason,
             newText: s.newText,
