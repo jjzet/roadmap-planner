@@ -104,7 +104,10 @@ export function RichTextEditor({
         options={{ placement: 'bottom-start', offset: 8 }}
         style={{ zIndex: 50 }}
       >
-        <div className="flex items-center gap-0.5 rounded-lg bg-white border border-gray-200 shadow-lg px-1 py-1">
+        <div
+          className="flex items-center gap-0.5 rounded-lg bg-white border border-gray-200 shadow-lg px-1 py-1"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
