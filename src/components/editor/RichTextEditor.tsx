@@ -61,7 +61,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm max-w-none focus:outline-none text-[13.5px] leading-relaxed text-gray-700 rte-content',
+          'prose prose-sm max-w-none focus:outline-none text-[12px] font-mono font-light leading-relaxed text-gray-700 rte-content',
       },
     },
     onBlur: ({ editor }) => {

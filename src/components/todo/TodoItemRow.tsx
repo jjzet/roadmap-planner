@@ -167,7 +167,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
         />
       )}
       {/* Main row */}
-      <div className="flex items-center gap-1.5 py-1.5 px-1 hover:bg-gray-50/70 rounded-md">
+      <div className="flex items-center gap-1.5 py-0.5 px-1 hover:bg-gray-50/70 rounded-md">
 
         {/* Drag handle */}
         <span

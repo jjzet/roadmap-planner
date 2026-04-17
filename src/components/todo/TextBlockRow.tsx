@@ -140,7 +140,7 @@ export function TextBlockRow({ block }: Props) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="mb-4 group relative">
+    <div ref={setNodeRef} style={style} className="mb-1 group relative">
       <div className="flex items-start gap-2" ref={wrapperRef}>
         <span
           className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0"
@@ -152,7 +152,7 @@ export function TextBlockRow({ block }: Props) {
 
         <textarea
           ref={textareaRef}
-          className="flex-1 text-sm font-mono leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 min-h-[1.75rem]"
+          className="flex-1 text-[12px] font-mono font-light leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 min-h-[1.5rem]"
           placeholder="Type '/' for commands..."
           value={block.content}
           onChange={handleChange}
