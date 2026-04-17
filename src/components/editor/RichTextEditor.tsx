@@ -102,6 +102,7 @@ export function RichTextEditor({
         editor={editor}
         shouldShow={({ editor }) => editor.isEditable && editor.isFocused}
         options={{ placement: 'bottom-start', offset: 8 }}
+        style={{ zIndex: 50 }}
       >
         <div className="flex items-center gap-0.5 rounded-lg bg-white border border-gray-200 shadow-lg px-1 py-1">
           <button
