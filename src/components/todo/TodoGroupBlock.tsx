@@ -428,7 +428,7 @@ export function TodoGroupBlock({ group }: Props) {
                 <div className="flex items-center gap-2 py-1.5 pl-6">
                   <div className="w-4 h-4 rounded border border-gray-300 flex-shrink-0" />
                   <input
-                    className="flex-1 text-sm border-none outline-none bg-transparent placeholder:text-gray-400"
+                    className="flex-1 text-[12px] font-mono font-light border-none outline-none bg-transparent placeholder:text-gray-400"
                     placeholder="Type a task..."
                     value={newItemText}
                     onChange={(e) => setNewItemText(e.target.value)}

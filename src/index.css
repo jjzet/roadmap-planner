@@ -265,6 +265,13 @@ body {
   min-height: 1.5em;
   outline: none;
 }
+/* Force JetBrains Mono on all editor content — overrides prose plugin defaults */
+.rte-content,
+.rte-content *,
+.rte-root .ProseMirror,
+.rte-root .ProseMirror * {
+  font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
+}
 .rte-root .ProseMirror > * + * {
   margin-top: 0.5em;
 }

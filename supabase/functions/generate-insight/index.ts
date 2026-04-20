@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { date } = await req.json();
+    const { date, history } = await req.json();
     if (!date || typeof date !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'date' field" }),
@@ -74,6 +74,24 @@ Deno.serve(async (req) => {
     const category = categoryForDate(date);
     const client = new Anthropic({ apiKey });
 
+    // Build a deduplicated avoid-list from prior insights
+    const historyArr: Array<{ book?: string; author?: string; concept?: string }> =
+      Array.isArray(history) ? history : [];
+    const seen = new Set<string>();
+    const avoidLines: string[] = [];
+    for (const h of historyArr) {
+      const book = (h?.book ?? "").trim();
+      const author = (h?.author ?? "").trim();
+      if (!book) continue;
+      const key = `${book.toLowerCase()}|${author.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      avoidLines.push(author ? `- "${book}" by ${author}` : `- "${book}"`);
+    }
+    const avoidBlock = avoidLines.length
+      ? `\n\nALREADY COVERED — do NOT pick a book from this list, and do NOT repeat any of these concepts even from a different book. Pick a DIFFERENT book and a DIFFERENT angle:\n${avoidLines.join("\n")}\n`
+      : "";
+
     const response = await client.messages.create({
       model: "claude-opus-4-6",
       max_tokens: 2048,
@@ -83,7 +101,7 @@ Deno.serve(async (req) => {
           role: "user",
           content: `Today is ${date}. Generate a daily book insight in the category: ${category}.
 
-Pick a surprising, non-obvious finding from the book — something buried past the headline that most readers miss. Then explain it in plain, direct language.
+Pick a surprising, non-obvious finding from the book — something buried past the headline that most readers miss. Then explain it in plain, direct language.${avoidBlock}
 
 Good examples of the tone and depth I want:
 - "Kahneman found that experts who get fast, clear feedback (chess players, firefighters) build real intuition — but experts in slow-feedback fields (fund managers, therapists) build confidence without accuracy. The two feel identical from the inside, which means high confidence is not evidence of expertise."

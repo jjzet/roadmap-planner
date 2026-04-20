@@ -8,9 +8,25 @@ function todayKey(): string {
   return new Date().toISOString().split('T')[0];
 }
 
-async function generate(date: string): Promise<DailyInsight> {
+type InsightHistoryEntry = { book?: string; author?: string; concept?: string };
+
+async function loadHistory(excludeDate: string): Promise<InsightHistoryEntry[]> {
+  const { data, error } = await supabase
+    .from('daily_insights')
+    .select('insight_data, date')
+    .neq('date', excludeDate)
+    .order('date', { ascending: false })
+    .limit(120);
+  if (error || !data) return [];
+  return data
+    .map((row) => row.insight_data as DailyInsight | null)
+    .filter((d): d is DailyInsight => !!d)
+    .map((d) => ({ book: d.book, author: d.author, concept: d.concept }));
+}
+
+async function generate(date: string, history: InsightHistoryEntry[]): Promise<DailyInsight> {
   const { data, error } = await supabase.functions.invoke('generate-insight', {
-    body: { date },
+    body: { date, history },
   });
 
   if (error) throw new Error(error.message ?? 'Edge function call failed');
@@ -49,7 +65,8 @@ export function useDailyInsight() {
       }
 
       // Generate via edge function and cache
-      const insightData = await generate(date);
+      const history = await loadHistory(date);
+      const insightData = await generate(date, history);
       await supabase
         .from('daily_insights')
         .upsert({ date, insight_data: insightData }, { onConflict: 'date' });
@@ -69,7 +86,8 @@ export function useDailyInsight() {
     try {
       // Delete cached entry so a fresh one is generated
       await supabase.from('daily_insights').delete().eq('date', date);
-      const insightData = await generate(date);
+      const history = await loadHistory(date);
+      const insightData = await generate(date, history);
       await supabase
         .from('daily_insights')
         .upsert({ date, insight_data: insightData }, { onConflict: 'date' });
