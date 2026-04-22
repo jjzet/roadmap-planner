@@ -14,7 +14,7 @@ interface ChatState {
   error: string | null;
   historyLoaded: boolean;
 
-  setConversationId: (id: string) => void;
+  setConversationId: (id: string | null) => void;
   setMessages: (msgs: ChatMessage[]) => void;
   appendMessage: (msg: ChatMessage) => void;
   replaceMessage: (tempId: string, msg: ChatMessage) => void;
