@@ -37,8 +37,8 @@ export function SlideUpDashboard() {
 
       {/* Sliding panel — sits above both bottom bars (h-20 = 5rem) */}
       <div
-        className={`absolute left-0 right-0 bottom-20 z-40 bg-white border-t border-gray-200 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out ${
-          dashboardPanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%+5rem)]'
+        className={`absolute left-0 right-0 bottom-[5.5rem] z-40 bg-white border-t border-gray-200 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out ${
+          dashboardPanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%+6rem)]'
         }`}
         style={{ height: '65vh' }}
       >

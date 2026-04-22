@@ -31,7 +31,7 @@ function App() {
         <SidebarProvider>
           <AppSidebar />
           <main className="relative flex-1 flex flex-col overflow-clip h-screen bg-gray-50">
-            <div className="flex-1 flex flex-col overflow-hidden pb-20">
+            <div className="flex-1 flex flex-col overflow-hidden pb-24">
               {activeView === 'roadmap' && <RoadmapView />}
               {activeView === 'tasks' && <TasksView />}
               {activeView === 'today' && <TodayView />}
