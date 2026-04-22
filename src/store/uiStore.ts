@@ -25,6 +25,9 @@ interface UIState {
   // Slide-up dashboard panel (from BottomStatsStrip)
   dashboardPanelOpen: boolean;
 
+  // Chat panel (mutually exclusive with dashboard)
+  chatPanelOpen: boolean;
+
   setZoom: (z: ZoomLevel) => void;
   toggleZoom: () => void;
   selectItem: (itemId: string | null, streamId?: string | null) => void;
@@ -42,6 +45,10 @@ interface UIState {
   toggleDashboardPanel: () => void;
   openDashboardPanel: () => void;
   closeDashboardPanel: () => void;
+
+  toggleChatPanel: () => void;
+  openChatPanel: () => void;
+  closeChatPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -63,6 +70,7 @@ export const useUIStore = create<UIState>((set) => ({
   showMonthColors: true,
 
   dashboardPanelOpen: false,
+  chatPanelOpen: false,
 
   setZoom: (z) => set({ zoom: z }),
   toggleZoom: () =>
@@ -95,7 +103,11 @@ export const useUIStore = create<UIState>((set) => ({
   togglePhaseColumn: () => set((s) => ({ showPhaseColumn: !s.showPhaseColumn })),
   toggleMonthColors: () => set((s) => ({ showMonthColors: !s.showMonthColors })),
 
-  toggleDashboardPanel: () => set((s) => ({ dashboardPanelOpen: !s.dashboardPanelOpen })),
-  openDashboardPanel: () => set({ dashboardPanelOpen: true }),
+  toggleDashboardPanel: () => set((s) => ({ dashboardPanelOpen: !s.dashboardPanelOpen, chatPanelOpen: false })),
+  openDashboardPanel: () => set({ dashboardPanelOpen: true, chatPanelOpen: false }),
   closeDashboardPanel: () => set({ dashboardPanelOpen: false }),
+
+  toggleChatPanel: () => set((s) => ({ chatPanelOpen: !s.chatPanelOpen, dashboardPanelOpen: false })),
+  openChatPanel: () => set({ chatPanelOpen: true, dashboardPanelOpen: false }),
+  closeChatPanel: () => set({ chatPanelOpen: false }),
 }));

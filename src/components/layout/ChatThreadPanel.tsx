@@ -1,0 +1,185 @@
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, ArrowUp, RotateCcw } from 'lucide-react';
+import { useUIStore } from '@/store/uiStore';
+import { useTodoStore } from '@/store/todoStore';
+import { useChatStore } from '@/store/chatStore';
+import { useChat } from '@/hooks/useChat';
+
+export function ChatThreadPanel() {
+  const chatPanelOpen = useUIStore((s) => s.chatPanelOpen);
+  const closeChatPanel = useUIStore((s) => s.closeChatPanel);
+  const activeView = useUIStore((s) => s.activeView);
+  const currentTodoId = useTodoStore((s) => s.currentTodoId);
+
+  const activePageId = activeView === 'tasks' ? currentTodoId : null;
+
+  const { messages, isLoading, error, sendMessage } = useChat();
+  const { setMessages, setConversationId } = useChatStore();
+
+  const [draft, setDraft] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Escape closes panel
+  useEffect(() => {
+    if (!chatPanelOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeChatPanel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [chatPanelOpen, closeChatPanel]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Focus input when panel opens
+  useEffect(() => {
+    if (chatPanelOpen) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [chatPanelOpen]);
+
+  const handleSubmit = () => {
+    if (!draft.trim() || isLoading) return;
+    sendMessage(draft.trim(), activePageId);
+    setDraft('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const handleNewChat = async () => {
+    setMessages([]);
+    setConversationId(null);
+    // The next sendMessage call will create a fresh conversation via the edge function
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={closeChatPanel}
+        className={`absolute inset-0 bg-black/20 backdrop-blur-[1px] z-40 transition-opacity duration-200 ${
+          chatPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden
+      />
+
+      {/* Sliding panel — sits above both bottom bars (h-20 = 5rem) */}
+      <div
+        className={`absolute left-0 right-0 bottom-20 z-40 bg-white border-t border-gray-200 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out flex flex-col ${
+          chatPanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%+5rem)]'
+        }`}
+        style={{ height: '65vh' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 h-10 border-b border-gray-100 bg-gradient-to-r from-white to-cyan-50/30 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+            <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-700 font-semibold">
+              Assistant
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleNewChat}
+              className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer p-1 transition-colors"
+              title="Start new chat"
+            >
+              <RotateCcw className="w-3 h-3" />
+              new chat
+            </button>
+            <button
+              onClick={closeChatPanel}
+              className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer p-1 transition-colors"
+              title="Close (Esc)"
+            >
+              close
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Message thread */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
+          {messages.length === 0 && !isLoading && (
+            <p className="text-[11px] font-mono font-light text-gray-400 text-center pt-8">
+              No messages yet. Ask anything about the current page.
+            </p>
+          )}
+
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {msg.role === 'user' ? (
+                <div className="max-w-[75%] bg-cyan-50 border border-cyan-100 rounded-md px-3 py-2">
+                  <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap break-words">
+                    {msg.text}
+                  </p>
+                </div>
+              ) : (
+                <div className="max-w-[85%]">
+                  <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                    {msg.text}
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-1.5 py-1">
+                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex justify-start">
+              <p className="text-[11px] font-mono text-red-400 bg-red-50 border border-red-100 rounded-md px-3 py-2">
+                Error: {error}
+              </p>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input bar */}
+        <div className="flex-shrink-0 border-t border-gray-100 px-4 py-2 flex items-end gap-2">
+          <textarea
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask Claude… (Enter to send, Shift+Enter for new line)"
+            rows={1}
+            disabled={isLoading}
+            className="flex-1 bg-transparent border border-gray-200 rounded-md outline-none text-[12px] font-mono font-light text-gray-700 placeholder-gray-400 px-3 py-1.5 resize-none focus:border-cyan-300 focus:ring-1 focus:ring-cyan-200 transition-colors min-h-[2rem] max-h-24"
+            style={{ lineHeight: '1.5' }}
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!draft.trim() || isLoading}
+            className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-none cursor-pointer text-white mb-px"
+            title="Send (Enter)"
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}

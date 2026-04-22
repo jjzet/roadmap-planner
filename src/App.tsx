@@ -14,6 +14,8 @@ import { useUIStore } from './store/uiStore';
 import { DashboardDataProvider } from './hooks/DashboardDataContext';
 import { BottomStatsStrip } from './components/layout/BottomStatsStrip';
 import { SlideUpDashboard } from './components/layout/SlideUpDashboard';
+import { ChatDockBar } from './components/layout/ChatDockBar';
+import { ChatThreadPanel } from './components/layout/ChatThreadPanel';
 
 function App() {
   useRoadmapLoader();
@@ -28,15 +30,17 @@ function App() {
       <DashboardDataProvider>
         <SidebarProvider>
           <AppSidebar />
-          <main className="relative flex-1 flex flex-col overflow-hidden h-screen bg-gray-50">
-            <div className="flex-1 flex flex-col overflow-hidden pb-10">
+          <main className="relative flex-1 flex flex-col overflow-clip h-screen bg-gray-50">
+            <div className="flex-1 flex flex-col overflow-hidden pb-20">
               {activeView === 'roadmap' && <RoadmapView />}
               {activeView === 'tasks' && <TasksView />}
               {activeView === 'today' && <TodayView />}
               {activeView === 'insights' && <InsightsView />}
               {activeView === 'goals' && <GoalsView />}
             </div>
+            <ChatThreadPanel />
             <SlideUpDashboard />
+            <ChatDockBar />
             <BottomStatsStrip />
           </main>
         </SidebarProvider>
