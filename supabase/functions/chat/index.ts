@@ -65,6 +65,9 @@ type TodoItem = {
   devStatus?: string;
   order: number;
   subGroupId?: string;
+  tags?: string[];
+  link?: string;
+  expanded?: boolean;
 };
 
 type PageBlock =
@@ -364,7 +367,13 @@ async function runTool(
       id: genId("task"),
       text: text,
       completed: false,
+      pinned: false,
+      link: "",
+      tags: [],
       order: maxOrder + 1,
+      notes: "",
+      expanded: false,
+      archived: false,
     };
     if (input.due_date) newItem.dueDate = input.due_date as string;
     if (input.pinned) newItem.pinned = true;

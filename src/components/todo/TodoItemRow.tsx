@@ -371,7 +371,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           <div className="flex-1" />
 
           {/* Tags — right-aligned */}
-          {item.tags.length > 0 && (
+          {item.tags && item.tags.length > 0 && (
             <div className="flex items-center gap-1 flex-shrink-0">
               {item.tags.map((tag) => (
                 <span key={tag} className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-gray-100 text-gray-500">
