@@ -1,10 +1,18 @@
 import { create } from 'zustand';
 
+export interface ToolCallSummary {
+  name: string;
+  ok: boolean;
+  error?: string;
+  input?: Record<string, unknown>;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
   created_at: string;
+  toolCalls?: ToolCallSummary[];
 }
 
 interface ChatState {

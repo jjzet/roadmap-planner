@@ -1,9 +1,49 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ArrowUp, RotateCcw } from 'lucide-react';
+import { ChevronDown, ArrowUp, RotateCcw, Check, AlertCircle, Wrench } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useTodoStore } from '@/store/todoStore';
-import { useChatStore } from '@/store/chatStore';
+import { useChatStore, type ToolCallSummary } from '@/store/chatStore';
 import { useChat } from '@/hooks/useChat';
+
+const TOOL_LABELS: Record<string, string> = {
+  list_pages: 'Listed pages',
+  get_page: 'Read page',
+  create_task: 'Created task',
+  update_task: 'Updated task',
+  archive_task: 'Archived task',
+  delete_task: 'Deleted task',
+  reorder_tasks: 'Reordered tasks',
+};
+
+function toolDetail(tc: ToolCallSummary): string | null {
+  const input = tc.input ?? {};
+  if (tc.name === 'create_task' && typeof input.text === 'string') {
+    return input.text.length > 50 ? input.text.slice(0, 50) + '…' : input.text;
+  }
+  if (tc.name === 'update_task' && typeof input.completed === 'boolean') {
+    return input.completed ? 'marked complete' : 'marked incomplete';
+  }
+  if (tc.name === 'reorder_tasks' && Array.isArray(input.ordered_task_ids)) {
+    return `${input.ordered_task_ids.length} items`;
+  }
+  return null;
+}
+
+function ToolCallCard({ tc }: { tc: ToolCallSummary }) {
+  const label = TOOL_LABELS[tc.name] ?? tc.name;
+  const detail = toolDetail(tc);
+  const Icon = tc.ok ? Check : AlertCircle;
+  const color = tc.ok ? 'text-cyan-600 border-cyan-100 bg-cyan-50/60' : 'text-red-500 border-red-100 bg-red-50/60';
+  return (
+    <div className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider border rounded px-2 py-1 ${color}`}>
+      <Icon className="w-3 h-3" />
+      <Wrench className="w-3 h-3 opacity-60" />
+      <span>{label}</span>
+      {detail && <span className="normal-case tracking-normal text-gray-500 lowercase">· {detail}</span>}
+      {!tc.ok && tc.error && <span className="normal-case tracking-normal text-red-400">· {tc.error}</span>}
+    </div>
+  );
+}
 
 export function ChatThreadPanel() {
   const chatPanelOpen = useUIStore((s) => s.chatPanelOpen);
@@ -74,7 +114,7 @@ export function ChatThreadPanel() {
 
       {/* Sliding panel — sits above both bottom bars (h-20 = 5rem) */}
       <div
-        className={`absolute left-0 right-0 bottom-[5.5rem] z-40 bg-white border-t border-gray-200 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out flex flex-col ${
+        className={`absolute left-4 right-4 bottom-[5.5rem] z-40 bg-white border border-gray-200 rounded-lg shadow-[0_-8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out flex flex-col overflow-hidden ${
           chatPanelOpen ? 'translate-y-0' : 'translate-y-[calc(100%+6rem)]'
         }`}
         style={{ height: '65vh' }}
@@ -127,7 +167,14 @@ export function ChatThreadPanel() {
                   </p>
                 </div>
               ) : (
-                <div className="max-w-[85%]">
+                <div className="max-w-[85%] space-y-1.5">
+                  {msg.toolCalls && msg.toolCalls.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {msg.toolCalls.map((tc, i) => (
+                        <ToolCallCard key={i} tc={tc} />
+                      ))}
+                    </div>
+                  )}
                   <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
                     {msg.text}
                   </p>
