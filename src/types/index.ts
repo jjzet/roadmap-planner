@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals';
+export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal';
 
 // ── Todo Types ──
 
@@ -187,4 +187,16 @@ export interface GoalRecord {
   created_at: string;
   updated_at: string;
   archived: boolean;
+}
+
+// ── Journal Types ──
+
+export interface JournalEntry {
+  id: string;
+  date: string;       // YYYY-MM-DD
+  forward: string;
+  blockers: string;
+  tomorrow: string;
+  created_at: string;
+  updated_at: string;
 }

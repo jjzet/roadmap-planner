@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target } from 'lucide-react';
+import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target, NotebookPen } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -124,6 +124,16 @@ export function AppSidebar() {
                 >
                   <Target className="w-4 h-4" />
                   <span>Goals</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'journal'}
+                  onClick={() => setActiveView('journal')}
+                  tooltip="Journal"
+                >
+                  <NotebookPen className="w-4 h-4" />
+                  <span>Journal</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
