@@ -30,7 +30,7 @@ function App() {
       <DashboardDataProvider>
         <SidebarProvider>
           <AppSidebar />
-          <main className="relative flex-1 flex flex-col overflow-clip h-screen bg-gray-50">
+          <main className="relative flex-1 min-w-0 flex flex-col overflow-clip h-screen bg-gray-50">
             <div className="flex-1 flex flex-col overflow-hidden pb-24">
               {activeView === 'roadmap' && <RoadmapView />}
               {activeView === 'tasks' && <TasksView />}

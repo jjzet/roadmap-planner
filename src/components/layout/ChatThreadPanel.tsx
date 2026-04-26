@@ -1,9 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ArrowUp, RotateCcw, Check, AlertCircle, Wrench } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useUIStore } from '@/store/uiStore';
 import { useTodoStore } from '@/store/todoStore';
 import { useChatStore, type ToolCallSummary } from '@/store/chatStore';
 import { useChat } from '@/hooks/useChat';
+
+function AssistantMarkdown({ text }: { text: string }) {
+  return (
+    <div className="text-[12px] font-mono font-light text-gray-700 leading-relaxed break-words space-y-2 [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_em]:italic [&_h1]:text-[14px] [&_h1]:font-semibold [&_h1]:text-gray-900 [&_h1]:mt-2 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-2 [&_h3]:text-[12px] [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-gray-200 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[11px] [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded [&_pre]:p-2 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_a]:text-cyan-600 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_blockquote]:italic [&_table]:border-collapse [&_th]:border [&_th]:border-gray-200 [&_th]:px-2 [&_th]:py-1 [&_td]:border [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-1">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          a: ({ ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 const TOOL_LABELS: Record<string, string> = {
   list_pages: 'Listed pages',
@@ -175,9 +192,7 @@ export function ChatThreadPanel() {
                       ))}
                     </div>
                   )}
-                  <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
-                    {msg.text}
-                  </p>
+                  <AssistantMarkdown text={msg.text} />
                 </div>
               )}
             </div>
