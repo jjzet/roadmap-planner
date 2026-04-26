@@ -160,8 +160,10 @@ export interface TodoRecord {
 // ── Insight Types ──
 
 export interface DailyInsight {
-  book: string;
-  author: string;
+  book?: string;
+  author?: string;
+  source_type?: 'book' | 'research' | 'synthesis';
+  source?: string;
   category: string;
   concept: string;
   lesson: string;

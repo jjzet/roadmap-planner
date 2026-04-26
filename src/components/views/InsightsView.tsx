@@ -73,16 +73,22 @@ function InsightCard({ insight, date, isFav, onToggleFav }: {
           </p>
         )}
 
-        {/* Book / Author */}
-        <div className="flex items-center gap-1.5 mt-2.5">
-          <BookOpen className="w-3 h-3 text-gray-300 flex-shrink-0" />
-          {insight.book && (
-            <span className="text-[11px] font-mono font-light text-gray-400 truncate">{insight.book}</span>
-          )}
-          {insight.author && (
-            <span className="text-[11px] font-mono font-light text-gray-300 italic truncate">{insight.author}</span>
-          )}
-        </div>
+        {/* Source — book/author OR custom source for non-book insights */}
+        {(insight.book || insight.source) && (
+          <div className="flex items-center gap-1.5 mt-2.5">
+            <BookOpen className="w-3 h-3 text-gray-300 flex-shrink-0" />
+            {insight.book ? (
+              <>
+                <span className="text-[11px] font-mono font-light text-gray-400 truncate">{insight.book}</span>
+                {insight.author && (
+                  <span className="text-[11px] font-mono font-light text-gray-300 italic truncate">{insight.author}</span>
+                )}
+              </>
+            ) : (
+              <span className="text-[11px] font-mono font-light text-gray-400 italic truncate">{insight.source}</span>
+            )}
+          </div>
+        )}
 
         {/* Expanded */}
         {expanded && (

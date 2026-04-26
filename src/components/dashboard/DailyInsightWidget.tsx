@@ -77,15 +77,19 @@ export function DailyInsightWidget() {
                   {insight.category}
                 </span>
               )}
-              {insight.category && insight.book && (
+              {insight.category && (insight.book || insight.source) && (
                 <span className="text-gray-200 text-[11px] font-mono">·</span>
               )}
-              {insight.book && (
-                <span className="text-[11px] font-mono font-light text-gray-500 truncate">{insight.book}</span>
-              )}
-              {insight.author && (
-                <span className="text-[11px] font-mono font-light text-gray-400 italic truncate">{insight.author}</span>
-              )}
+              {insight.book ? (
+                <>
+                  <span className="text-[11px] font-mono font-light text-gray-500 truncate">{insight.book}</span>
+                  {insight.author && (
+                    <span className="text-[11px] font-mono font-light text-gray-400 italic truncate">{insight.author}</span>
+                  )}
+                </>
+              ) : insight.source ? (
+                <span className="text-[11px] font-mono font-light text-gray-500 italic truncate">{insight.source}</span>
+              ) : null}
             </div>
 
             {/* Controls — ghost, far right */}
