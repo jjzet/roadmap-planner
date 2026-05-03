@@ -116,20 +116,21 @@ function computeNewOrder(
   const insertAt = activeIdx < overIdx ? overIdx : overIdx;
   reordered.splice(insertAt, 0, { ...moved, parentId: projected.parentId, depth: projected.depth });
 
-  // Group by parentId and assign orderIndex
-  const groups = new Map<string | null, FlatPage[]>();
+  // Group by parentId and assign orderIndex (use __root__ sentinel for null keys)
+  const groups: Record<string, FlatPage[]> = {};
   for (const item of reordered) {
-    const key = item.parentId;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(item);
+    const key = item.parentId ?? '__root__';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
   }
 
   const updates: { id: string; parentId: string | null; orderIndex: number }[] = [];
-  groups.forEach((group, parentId) => {
-    group.forEach((item, i) => {
-      updates.push({ id: item.id, parentId, orderIndex: i });
-    });
-  });
+  for (const [key, group] of Object.entries(groups)) {
+    const parentId = key === '__root__' ? null : key;
+    for (let i = 0; i < group.length; i++) {
+      updates.push({ id: group[i].id, parentId, orderIndex: i });
+    }
+  }
   return updates;
 }
 
