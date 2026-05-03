@@ -20,6 +20,7 @@ import {
 interface Props {
   content: string;
   onBlur: (html: string) => void;
+  onChange?: (html: string, text: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   className?: string;
@@ -28,13 +29,16 @@ interface Props {
 export function RichTextEditor({
   content,
   onBlur,
+  onChange,
   placeholder = "Write something, or type '/' for commands…",
   autoFocus = false,
   className = '',
 }: Props) {
-  // Latest onBlur ref so the editor effect doesn't need to rebind.
+  // Latest callbacks in refs so editor effects don't need to rebind.
   const onBlurRef = useRef(onBlur);
   useEffect(() => { onBlurRef.current = onBlur; }, [onBlur]);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   const editor = useEditor({
     extensions: [
@@ -63,6 +67,9 @@ export function RichTextEditor({
         class:
           'prose prose-sm max-w-none focus:outline-none text-[12px] font-mono font-light leading-relaxed text-gray-700 rte-content',
       },
+    },
+    onUpdate: ({ editor }) => {
+      onChangeRef.current?.(editor.getHTML(), editor.getText());
     },
     onBlur: ({ editor }) => {
       onBlurRef.current(editor.getHTML());

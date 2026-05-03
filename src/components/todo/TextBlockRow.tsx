@@ -2,10 +2,11 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TextBlock, PageBlock } from '@/types';
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { GoalPickerModal } from './GoalPickerModal';
+import { RichTextEditor } from '@/components/editor/RichTextEditor';
 
 interface Props {
   block: TextBlock;
@@ -20,8 +21,6 @@ export function TextBlockRow({ block }: Props) {
   const removeBlock = useTodoStore((s) => s.removeBlock);
   const replaceBlock = useTodoStore((s) => s.replaceBlock);
   const insertBlockAfter = useTodoStore((s) => s.insertBlockAfter);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
@@ -36,33 +35,23 @@ export function TextBlockRow({ block }: Props) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const autoResize = useCallback(() => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = el.scrollHeight + 'px';
-    }
-  }, []);
-
-  useEffect(() => {
-    autoResize();
-  }, [block.content, autoResize]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    updateTextBlock(block.id, value);
-    autoResize();
-
-    // Check if content starts with "/"
-    if (value.startsWith('/')) {
-      const query = value.slice(1); // everything after the /
-      setSlashQuery(query);
+  const handleChange = useCallback((_html: string, text: string) => {
+    const trimmed = text.trim();
+    if (trimmed.startsWith('/')) {
+      setSlashQuery(trimmed.slice(1));
       setShowSlashMenu(true);
     } else {
       setShowSlashMenu(false);
       setSlashQuery('');
     }
-  };
+  }, []);
+
+  const handleBlur = useCallback((html: string) => {
+    // Don't save if content is a slash command stub — it'll be replaced
+    if (!showSlashMenu) {
+      updateTextBlock(block.id, html);
+    }
+  }, [block.id, showSlashMenu, updateTextBlock]);
 
   const handleSlashSelect = (commandId: string) => {
     setShowSlashMenu(false);
@@ -70,7 +59,6 @@ export function TextBlockRow({ block }: Props) {
 
     switch (commandId) {
       case 'text': {
-        // Clear current block content, insert a new text block after
         updateTextBlock(block.id, '');
         const newBlock: PageBlock = {
           type: 'text',
@@ -113,7 +101,6 @@ export function TextBlockRow({ block }: Props) {
         break;
       }
       case 'goal_card': {
-        // Show goal picker — block stays alive until a goal is selected
         setShowGoalPicker(true);
         updateTextBlock(block.id, '');
         break;
@@ -141,7 +128,7 @@ export function TextBlockRow({ block }: Props) {
 
   return (
     <div ref={setNodeRef} style={style} className="mb-1 group relative">
-      <div className="flex items-start gap-2" ref={wrapperRef}>
+      <div className="flex items-start gap-2">
         <span
           className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0"
           {...attributes}
@@ -150,14 +137,14 @@ export function TextBlockRow({ block }: Props) {
           <GripVertical className="w-4 h-4" />
         </span>
 
-        <textarea
-          ref={textareaRef}
-          className="flex-1 text-[12px] font-mono font-light leading-relaxed text-gray-700 bg-transparent border-none outline-none resize-none placeholder:text-gray-300 min-h-[1.5rem]"
-          placeholder="Type '/' for commands..."
-          value={block.content}
-          onChange={handleChange}
-          rows={1}
-        />
+        <div className="flex-1 min-w-0">
+          <RichTextEditor
+            content={block.content}
+            onBlur={handleBlur}
+            onChange={handleChange}
+            placeholder="Type '/' for commands…"
+          />
+        </div>
 
         <button
           onClick={() => removeBlock(block.id)}
@@ -168,7 +155,8 @@ export function TextBlockRow({ block }: Props) {
       </div>
 
       {showSlashMenu && (
-        <div className="ml-6">
+        // onMouseDown prevents editor blur when clicking menu items
+        <div className="ml-6" onMouseDown={(e) => e.preventDefault()}>
           <SlashCommandMenu
             query={slashQuery}
             onSelect={handleSlashSelect}
