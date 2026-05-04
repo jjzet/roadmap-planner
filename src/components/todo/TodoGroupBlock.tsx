@@ -363,7 +363,20 @@ export function TodoGroupBlock({ group }: Props) {
           </h3>
         )}
 
-        <ProgressRing completed={completedCount} total={totalCount} />
+        {/* Trash — next to title */}
+        <button
+          onClick={() => {
+            if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
+              removeGroup(group.id);
+            }
+          }}
+          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Spacer pushes ring to far right */}
+        <div className="flex-1" />
 
         {hasCompletedItems && (
           <button
@@ -375,16 +388,7 @@ export function TodoGroupBlock({ group }: Props) {
           </button>
         )}
 
-        <button
-          onClick={() => {
-            if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
-              removeGroup(group.id);
-            }
-          }}
-          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <ProgressRing completed={completedCount} total={totalCount} />
       </div>
 
       {/* Items — interleaved with sub-groups */}
@@ -426,6 +430,7 @@ export function TodoGroupBlock({ group }: Props) {
                     <TodoItemRow
                       item={slot.item}
                       groupId={group.id}
+                      subGroups={subGroups}
                     />
                   </div>
                 );

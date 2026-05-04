@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem, DevStatus } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X, Code2 } from 'lucide-react';
+import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X, Code2, Layers } from 'lucide-react';
 import { RichTextEditor } from '../editor/RichTextEditor';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
+import type { SubGroup } from '@/types';
 
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
   dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
@@ -19,6 +20,7 @@ interface Props {
   item: TodoItem;
   groupId: string;
   isArchived?: boolean;
+  subGroups?: SubGroup[];
 }
 
 type Urgency = 'overdue' | 'today' | 'soon' | 'future';
@@ -45,7 +47,7 @@ const DUE_BADGE: Record<Urgency, string> = {
   future:  'bg-gray-50 text-gray-500 border border-gray-200',
 };
 
-export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
+export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] }: Props) {
   const updateItem = useTodoStore((s) => s.updateItem);
   const removeItem = useTodoStore((s) => s.removeItem);
   const toggleItem = useTodoStore((s) => s.toggleItem);
@@ -53,8 +55,12 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const toggleItemExpand = useTodoStore((s) => s.toggleItemExpand);
   const archiveItem = useTodoStore((s) => s.archiveItem);
   const unarchiveItem = useTodoStore((s) => s.unarchiveItem);
+  const createSubGroup = useTodoStore((s) => s.createSubGroup);
+  const moveItemToSubGroup = useTodoStore((s) => s.moveItemToSubGroup);
+  const removeItemFromSubGroup = useTodoStore((s) => s.removeItemFromSubGroup);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showSubGroupPicker, setShowSubGroupPicker] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
   const [notesValue, setNotesValue] = useState(item.notes || '');
@@ -64,6 +70,18 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
   const [datePreview, setDatePreview] = useState('');
 
   const dateTextRef = useRef<HTMLInputElement>(null);
+  const subGroupPickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showSubGroupPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (subGroupPickerRef.current && !subGroupPickerRef.current.contains(e.target as Node)) {
+        setShowSubGroupPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showSubGroupPicker]);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -336,6 +354,62 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
               >
                 <Archive className="w-3.5 h-3.5" />
               </button>
+              <div className="relative" ref={subGroupPickerRef}>
+                <button
+                  onClick={() => setShowSubGroupPicker((v) => !v)}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-cyan-500' : 'text-gray-300 hover:text-cyan-600'}`}
+                  title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                </button>
+                {showSubGroupPicker && (
+                  <div
+                    className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[160px] py-1"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    {subGroups.length > 0 && (
+                      <>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 px-3 pt-1 pb-0.5">Sub-groups</p>
+                        {subGroups.map((sg) => (
+                          <button
+                            key={sg.id}
+                            onClick={() => {
+                              moveItemToSubGroup(groupId, item.id, sg.id);
+                              setShowSubGroupPicker(false);
+                            }}
+                            className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[12px] font-mono hover:bg-gray-50 border-none bg-transparent cursor-pointer ${item.subGroupId === sg.id ? 'text-cyan-600' : 'text-gray-700'}`}
+                          >
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sg.color }} />
+                            {sg.name || 'Unnamed'}
+                            {item.subGroupId === sg.id && <span className="ml-auto text-[10px] text-cyan-500">current</span>}
+                          </button>
+                        ))}
+                        <div className="border-t border-gray-100 my-1" />
+                      </>
+                    )}
+                    <button
+                      onClick={() => {
+                        createSubGroup(groupId, [item.id]);
+                        setShowSubGroupPicker(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-[12px] font-mono text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer"
+                    >
+                      + New sub-group
+                    </button>
+                    {item.subGroupId && (
+                      <button
+                        onClick={() => {
+                          removeItemFromSubGroup(groupId, item.id);
+                          setShowSubGroupPicker(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 text-[12px] font-mono text-red-500 hover:bg-red-50 border-none bg-transparent cursor-pointer"
+                      >
+                        Remove from sub-group
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => removeItem(groupId, item.id)}
                 className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
