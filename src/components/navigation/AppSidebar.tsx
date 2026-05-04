@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target, NotebookPen, ChevronRight, GripVertical } from 'lucide-react';
+import { Map, Plus, Trash2, Sun, BookOpen, Target, NotebookPen, ChevronRight, GripVertical } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -182,22 +182,23 @@ function PageItem({
         <div style={{ width: page.depth * INDENT_WIDTH }} className="flex-shrink-0" />
       )}
 
-      {/* Fixed-width slot shared by drag handle + chevron so all titles align.
-          On hover: drag handle appears; chevron fades out for parents. */}
-      <div className="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
-        {!isDragOverlay && (
-          <span
-            className="absolute inset-0 flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover/page:opacity-100 transition-opacity z-10"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="w-3.5 h-3.5" />
-          </span>
-        )}
+      {/* Drag handle — always reserves its width so chevron column stays fixed */}
+      {!isDragOverlay && (
+        <span
+          className="flex-shrink-0 flex items-center justify-center w-4 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover/page:opacity-100 transition-opacity"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </span>
+      )}
+
+      {/* Chevron slot — same width for all items; shows chevron for parents, blank for leaves */}
+      <div className="w-4 flex-shrink-0 flex items-center justify-center">
         {page.hasChildren && (
           <button
             onClick={() => onToggleExpand(page.id)}
-            className="absolute inset-0 flex items-center justify-center rounded border-none bg-transparent text-gray-400 hover:text-gray-700 cursor-pointer transition-opacity group-hover/page:opacity-0 group-hover/page:pointer-events-none"
+            className="flex items-center justify-center rounded border-none bg-transparent text-gray-400 hover:text-gray-700 cursor-pointer p-0"
             tabIndex={-1}
           >
             <ChevronRight
@@ -207,14 +208,13 @@ function PageItem({
         )}
       </div>
 
-      {/* Page button */}
+      {/* Page button — no icon, name only */}
       <SidebarMenuButton
         isActive={isActive}
         onClick={() => onClickPage(page.id)}
         tooltip={page.name}
         className="flex-1 min-w-0 h-7 text-xs"
       >
-        <FileText className="w-3.5 h-3.5 flex-shrink-0" />
         <span className="truncate">{page.name}</span>
       </SidebarMenuButton>
 
