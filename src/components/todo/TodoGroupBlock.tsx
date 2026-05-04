@@ -317,17 +317,21 @@ export function TodoGroupBlock({ group }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="mb-4 border border-gray-200 rounded-xl bg-white overflow-hidden"
+      className="mb-4 flex items-start gap-1 group"
     >
+      {/* Drag handle — outside the pill container */}
+      <span
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-2.5 flex-shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
+
+      {/* Pill container */}
+      <div className="flex-1 min-w-0 border border-gray-200 rounded-xl bg-white overflow-hidden">
       {/* Group Header */}
-      <div className="flex items-center gap-2 group px-4 py-2.5 border-b border-transparent">
-        <span
-          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-transparent">
         <button
           className="cursor-pointer text-gray-400 hover:text-gray-600 border-none bg-transparent p-0"
           onClick={() => toggleGroupCollapse(group.id)}
@@ -518,6 +522,7 @@ export function TodoGroupBlock({ group }: Props) {
           </DragOverlay>
         </DndContext>
       )}
+      </div>{/* end pill container */}
     </div>
   );
 }
