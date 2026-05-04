@@ -193,20 +193,18 @@ function PageItem({
         </span>
       )}
 
-      {/* Expand/collapse chevron for parents */}
-      <button
-        onClick={() => page.hasChildren && onToggleExpand(page.id)}
-        className={`flex-shrink-0 p-0.5 rounded transition-colors border-none bg-transparent ${
-          page.hasChildren
-            ? 'text-gray-400 hover:text-gray-700 cursor-pointer'
-            : 'text-transparent cursor-default pointer-events-none'
-        }`}
-        tabIndex={-1}
-      >
-        <ChevronRight
-          className={`w-3 h-3 transition-transform ${isExpanded && page.hasChildren ? 'rotate-90' : ''}`}
-        />
-      </button>
+      {/* Expand/collapse chevron — only rendered for parents so it doesn't push leaf titles right */}
+      {page.hasChildren ? (
+        <button
+          onClick={() => onToggleExpand(page.id)}
+          className="flex-shrink-0 p-0.5 rounded transition-colors border-none bg-transparent text-gray-400 hover:text-gray-700 cursor-pointer"
+          tabIndex={-1}
+        >
+          <ChevronRight
+            className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+          />
+        </button>
+      ) : null}
 
       {/* Page button */}
       <SidebarMenuButton
