@@ -314,9 +314,13 @@ export function TodoGroupBlock({ group }: Props) {
     : null;
 
   return (
-    <div ref={setNodeRef} style={style} className="mb-6">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="mb-4 border border-gray-200 rounded-xl bg-white overflow-hidden"
+    >
       {/* Group Header */}
-      <div className="flex items-center gap-2 group py-1.5">
+      <div className="flex items-center gap-2 group px-4 py-2.5 border-b border-transparent">
         <span
           className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
           {...attributes}
@@ -394,7 +398,7 @@ export function TodoGroupBlock({ group }: Props) {
             items={sortableIds}
             strategy={verticalListSortingStrategy}
           >
-            <div className="ml-6">
+            <div className="px-4 pb-3">
               {renderSlots.map((slot) => {
                 if (slot.type === 'subgroup') {
                   return (
@@ -474,33 +478,34 @@ export function TodoGroupBlock({ group }: Props) {
                 </div>
               )}
 
-              {/* Archived section */}
-              {archivedItems.length > 0 && (
-                <div className="mt-2 border-t border-gray-100 pt-2">
-                  <button
-                    onClick={() => setShowArchived(!showArchived)}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent py-1 pl-6"
-                  >
-                    <ChevronRight
-                      className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
-                    />
-                    Archived ({archivedItems.length})
-                  </button>
-                  {showArchived && (
-                    <div className="opacity-60">
-                      {archivedItems.map((item) => (
-                        <TodoItemRow
-                          key={item.id}
-                          item={item}
-                          groupId={group.id}
-                          isArchived
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Archived section — full-width footer with clear separator */}
+            {archivedItems.length > 0 && (
+              <div className="border-t border-gray-200 bg-gray-50/50">
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent w-full px-4 py-2 text-left"
+                >
+                  <ChevronRight
+                    className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
+                  />
+                  Archived ({archivedItems.length})
+                </button>
+                {showArchived && (
+                  <div className="px-4 pb-3 opacity-60">
+                    {archivedItems.map((item) => (
+                      <TodoItemRow
+                        key={item.id}
+                        item={item}
+                        groupId={group.id}
+                        isArchived
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </SortableContext>
 
           {/* Drag overlay */}
