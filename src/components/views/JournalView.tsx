@@ -89,6 +89,14 @@ export function JournalView() {
           </h1>
         </div>
 
+        {/* Heatmap */}
+        <div className="bg-white border border-gray-200 rounded-md px-4 py-4">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-3">
+            Habit
+          </p>
+          <JournalHeatmap entries={entries} selectedDate={selectedDate} onSelect={setSelectedDate} />
+        </div>
+
         {/* Active goals strip */}
         {goals.length > 0 && (
           <div>
@@ -182,13 +190,6 @@ export function JournalView() {
           </div>
         )}
 
-        {/* Heatmap */}
-        <div className="bg-white border border-gray-200 rounded-md px-4 py-4">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-3">
-            Habit
-          </p>
-          <JournalHeatmap entries={entries} selectedDate={selectedDate} onSelect={setSelectedDate} />
-        </div>
       </div>
     </div>
   );
