@@ -355,7 +355,7 @@ export function TodoGroupBlock({ group }: Props) {
           />
         ) : (
           <h3
-            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] flex-1 cursor-pointer"
+            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] cursor-pointer"
             onClick={() => toggleGroupCollapse(group.id)}
             onDoubleClick={() => { setNameInput(group.name); setIsEditingName(true); }}
           >

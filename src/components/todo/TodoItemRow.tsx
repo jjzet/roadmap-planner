@@ -325,7 +325,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               >
                 <Pin className={`w-3.5 h-3.5 ${item.pinned ? 'fill-amber-500' : ''}`} />
               </button>
-              <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+              <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
                 className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
