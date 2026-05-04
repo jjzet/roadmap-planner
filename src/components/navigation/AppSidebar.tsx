@@ -182,29 +182,30 @@ function PageItem({
         <div style={{ width: page.depth * INDENT_WIDTH }} className="flex-shrink-0" />
       )}
 
-      {/* Drag handle */}
-      {!isDragOverlay && (
-        <span
-          className="flex-shrink-0 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover/page:opacity-100 transition-opacity"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-3.5 h-3.5" />
-        </span>
-      )}
-
-      {/* Expand/collapse chevron — only rendered for parents so it doesn't push leaf titles right */}
-      {page.hasChildren ? (
-        <button
-          onClick={() => onToggleExpand(page.id)}
-          className="flex-shrink-0 p-0.5 rounded transition-colors border-none bg-transparent text-gray-400 hover:text-gray-700 cursor-pointer"
-          tabIndex={-1}
-        >
-          <ChevronRight
-            className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-          />
-        </button>
-      ) : null}
+      {/* Fixed-width slot shared by drag handle + chevron so all titles align.
+          On hover: drag handle appears; chevron fades out for parents. */}
+      <div className="relative w-5 h-5 flex-shrink-0 flex items-center justify-center">
+        {!isDragOverlay && (
+          <span
+            className="absolute inset-0 flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover/page:opacity-100 transition-opacity z-10"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </span>
+        )}
+        {page.hasChildren && (
+          <button
+            onClick={() => onToggleExpand(page.id)}
+            className="absolute inset-0 flex items-center justify-center rounded border-none bg-transparent text-gray-400 hover:text-gray-700 cursor-pointer transition-opacity group-hover/page:opacity-0 group-hover/page:pointer-events-none"
+            tabIndex={-1}
+          >
+            <ChevronRight
+              className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        )}
+      </div>
 
       {/* Page button */}
       <SidebarMenuButton
