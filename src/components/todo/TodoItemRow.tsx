@@ -190,19 +190,6 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
           <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
         </button>
 
-        {/* Pin indicator */}
-        <button
-          onClick={() => togglePinItem(groupId, item.id)}
-          className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-opacity ${
-            item.pinned
-              ? 'text-amber-500 opacity-100'
-              : 'text-gray-300 hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
-          }`}
-          title={item.pinned ? 'Unpin' : 'Pin to top'}
-        >
-          <Pin className={`w-3 h-3 ${item.pinned ? 'fill-amber-500' : ''}`} />
-        </button>
-
         {/* Checkbox */}
         <input
           type="checkbox"
@@ -308,7 +295,19 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
 
           {/* ── Hover-only action buttons (appear after active indicators) ── */}
           {!isArchived && !showDateInput && (
-            <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-0.5">
+            <div className="flex items-center gap-0.5 flex-shrink-0 ml-0.5">
+              <button
+                onClick={() => togglePinItem(groupId, item.id)}
+                className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
+                  item.pinned
+                    ? 'text-amber-500 opacity-100'
+                    : 'text-gray-300 hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
+                }`}
+                title={item.pinned ? 'Unpin' : 'Pin to top'}
+              >
+                <Pin className={`w-3.5 h-3.5 ${item.pinned ? 'fill-amber-500' : ''}`} />
+              </button>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
                 className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
@@ -344,6 +343,7 @@ export function TodoItemRow({ item, groupId, isArchived = false }: Props) {
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
+              </div>
             </div>
           )}
 
