@@ -9,7 +9,6 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarTrigger,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Plus, Trash2, ChevronRight, GripVertical } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
@@ -386,9 +385,8 @@ export function AppSidebar() {
         <img src="/icons/avocado_512.png" alt="Logo" className="w-14 h-14 shrink-0" />
       </SidebarHeader>
 
-      <SidebarSeparator className="mx-0" />
 
-      <SidebarContent>
+<SidebarContent>
         {/* Primary nav */}
         <SidebarGroup className="px-1 pt-2 pb-0">
           <SidebarGroupContent>
