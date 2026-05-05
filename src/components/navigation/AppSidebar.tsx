@@ -213,7 +213,7 @@ function PageItem({
         tooltip={page.name}
         className="flex-1 min-w-0 h-9 px-2 gap-1.5"
       >
-        <img src="/icons/checklist_512.png" alt="" className="w-7 h-7 shrink-0" />
+        <img src="/icons/checklist_512.png" alt="" className="w-9 h-9 shrink-0" />
         <span className="text-[11px] font-medium uppercase tracking-wider truncate">{page.name}</span>
       </SidebarMenuButton>
 
@@ -390,9 +390,9 @@ export function AppSidebar() {
 
       <SidebarContent>
         {/* Primary nav */}
-        <SidebarGroup className="px-1 pt-2">
+        <SidebarGroup className="px-1 pt-2 pb-0">
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-0.5">
               {[
                 { view: 'today',    icon: '/icons/calendar_512.png',  label: 'Today' },
                 { view: 'insights', icon: '/icons/idea_512.png',      label: 'Insights' },
@@ -406,7 +406,7 @@ export function AppSidebar() {
                     tooltip={label}
                     className="gap-2 h-9 px-2"
                   >
-                    <img src={icon} alt="" className="w-7 h-7 shrink-0" />
+                    <img src={icon} alt="" className="w-9 h-9 shrink-0" />
                     <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -416,7 +416,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Roadmaps Section */}
-        <SidebarGroup className="px-1 pt-3">
+        <SidebarGroup className="px-1 pt-3 pb-0">
           {/* Section header — label only */}
           <div className="flex items-center px-3 pb-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1 group-data-[collapsible=icon]:hidden">Roadmaps</span>
@@ -438,7 +438,7 @@ export function AppSidebar() {
                       tooltip={r.name}
                       className="flex-1 min-w-0 h-9 px-2 gap-1.5"
                     >
-                      <img src="/icons/folder_512.png" alt="" className="w-7 h-7 shrink-0" />
+                      <img src="/icons/folder_512.png" alt="" className="w-9 h-9 shrink-0" />
                       <span className="text-[11px] font-medium uppercase tracking-wider">{r.name}</span>
                     </SidebarMenuButton>
                     <button
@@ -455,7 +455,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Pages Section with DnD */}
-        <SidebarGroup className="px-1 pt-3">
+        <SidebarGroup className="px-1 pt-3 pb-0">
           {/* Section header — label only */}
           <div className="flex items-center px-3 pb-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1 group-data-[collapsible=icon]:hidden">Pages</span>
