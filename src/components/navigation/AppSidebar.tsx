@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, Plus, Trash2, Sun, BookOpen, Target, NotebookPen, ChevronRight, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, GripVertical } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -389,7 +389,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="cursor-default">
-              <img src="/logo.png" alt="Logo" className="w-10 h-10 shrink-0" />
+              <img src="/icons/avocado_256.png" alt="Logo" className="w-10 h-10 shrink-0" />
               <span className="font-semibold sr-only">Planner</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -409,7 +409,7 @@ export function AppSidebar() {
                   onClick={() => setActiveView('today')}
                   tooltip="Today"
                 >
-                  <Sun className="w-4 h-4" />
+                  <img src="/icons/calendar_64.png" alt="" className="w-5 h-5 shrink-0" />
                   <span>Today</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -419,7 +419,7 @@ export function AppSidebar() {
                   onClick={() => setActiveView('insights')}
                   tooltip="Insights"
                 >
-                  <BookOpen className="w-4 h-4" />
+                  <img src="/icons/idea_64.png" alt="" className="w-5 h-5 shrink-0" />
                   <span>Insights</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -429,7 +429,7 @@ export function AppSidebar() {
                   onClick={() => setActiveView('goals')}
                   tooltip="Goals"
                 >
-                  <Target className="w-4 h-4" />
+                  <img src="/icons/bookmark_64.png" alt="" className="w-5 h-5 shrink-0" />
                   <span>Goals</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -439,7 +439,7 @@ export function AppSidebar() {
                   onClick={() => setActiveView('journal')}
                   tooltip="Journal"
                 >
-                  <NotebookPen className="w-4 h-4" />
+                  <img src="/icons/pencil_64.png" alt="" className="w-5 h-5 shrink-0" />
                   <span>Journal</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -450,6 +450,7 @@ export function AppSidebar() {
         {/* Roadmaps Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center">
+            <img src="/icons/folder_64.png" alt="" className="w-4 h-4 shrink-0 mr-1.5" />
             <span className="flex-1">Roadmaps</span>
             <button
               onClick={handleNewRoadmap}
@@ -469,7 +470,7 @@ export function AppSidebar() {
                       tooltip={r.name}
                       className="flex-1 min-w-0"
                     >
-                      <Map className="w-4 h-4" />
+                      <img src="/icons/document_64.png" alt="" className="w-5 h-5 shrink-0" />
                       <span>{r.name}</span>
                     </SidebarMenuButton>
                     <button
@@ -488,6 +489,7 @@ export function AppSidebar() {
         {/* Pages Section with DnD */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center">
+            <img src="/icons/checklist_64.png" alt="" className="w-4 h-4 shrink-0 mr-1.5" />
             <span className="flex-1">Pages</span>
             <button
               onClick={handleNewPage}
