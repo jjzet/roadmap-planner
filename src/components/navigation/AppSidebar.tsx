@@ -382,96 +382,71 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+      {/* Logo */}
       <SidebarHeader
-        className="justify-center"
         style={{ height: TOOLBAR_HEIGHT, minHeight: TOOLBAR_HEIGHT }}
+        className="flex items-center px-3"
       >
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className="cursor-default">
-              <img src="/icons/avocado_512.png" alt="Logo" className="w-20 h-20 shrink-0" />
-              <span className="font-semibold sr-only">Planner</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center gap-2">
+          <img src="/icons/avocado_256.png" alt="Logo" className="w-9 h-9 shrink-0" />
+          <span className="text-[15px] font-bold text-gray-800 tracking-tight group-data-[collapsible=icon]:hidden">bench</span>
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator className="mx-0" />
 
       <SidebarContent>
-        {/* Today Briefing */}
-        <SidebarGroup>
+        {/* Primary nav */}
+        <SidebarGroup className="px-1 pt-2">
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={activeView === 'today'}
-                  onClick={() => setActiveView('today')}
-                  tooltip="Today"
-                >
-                  <img src="/icons/calendar_512.png" alt="" className="w-14 h-14 shrink-0" />
-                  <span>Today</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={activeView === 'insights'}
-                  onClick={() => setActiveView('insights')}
-                  tooltip="Insights"
-                >
-                  <img src="/icons/idea_512.png" alt="" className="w-14 h-14 shrink-0" />
-                  <span>Insights</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={activeView === 'goals'}
-                  onClick={() => setActiveView('goals')}
-                  tooltip="Goals"
-                >
-                  <img src="/icons/bookmark_512.png" alt="" className="w-14 h-14 shrink-0" />
-                  <span>Goals</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={activeView === 'journal'}
-                  onClick={() => setActiveView('journal')}
-                  tooltip="Journal"
-                >
-                  <img src="/icons/pencil_512.png" alt="" className="w-14 h-14 shrink-0" />
-                  <span>Journal</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {[
+                { view: 'today',    icon: '/icons/calendar_512.png',  label: 'Today' },
+                { view: 'insights', icon: '/icons/idea_512.png',      label: 'Insights' },
+                { view: 'goals',    icon: '/icons/bookmark_512.png',  label: 'Goals' },
+                { view: 'journal',  icon: '/icons/pencil_512.png',    label: 'Journal' },
+              ].map(({ view, icon, label }) => (
+                <SidebarMenuItem key={view}>
+                  <SidebarMenuButton
+                    isActive={activeView === view}
+                    onClick={() => setActiveView(view as typeof activeView)}
+                    tooltip={label}
+                    className="gap-2 h-10 px-2"
+                  >
+                    <img src={icon} alt="" className="w-8 h-8 shrink-0" />
+                    <span className="text-[13px] font-medium">{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Roadmaps Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center">
-            <img src="/icons/folder_512.png" alt="" className="w-16 h-16 shrink-0 mr-1.5" />
-            <span className="flex-1">Roadmaps</span>
+        <SidebarGroup className="px-1 pt-3">
+          {/* Section header */}
+          <div className="flex items-center gap-2 px-2 pb-1">
+            <img src="/icons/folder_512.png" alt="" className="w-10 h-10 shrink-0" />
+            <span className="text-[13px] font-bold uppercase tracking-widest text-gray-500 flex-1 group-data-[collapsible=icon]:hidden">Roadmaps</span>
             <button
               onClick={handleNewRoadmap}
-              className="ml-auto border-none bg-transparent cursor-pointer text-sidebar-foreground/50 hover:text-sidebar-foreground p-0 group-data-[collapsible=icon]:hidden"
+              className="border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 p-0 group-data-[collapsible=icon]:hidden"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
-          </SidebarGroupLabel>
+          </div>
           <SidebarGroupContent>
             <SidebarMenu>
               {roadmapList.map((r) => (
                 <SidebarMenuItem key={r.id}>
-                  <div className="group/rm relative flex items-center gap-0.5 pr-1">
+                  <div className="group/rm relative flex items-center gap-0.5 pr-1 pl-3">
                     <SidebarMenuButton
                       isActive={activeView === 'roadmap' && currentRoadmapId === r.id}
                       onClick={() => handleRoadmapClick(r.id)}
                       tooltip={r.name}
-                      className="flex-1 min-w-0"
+                      className="flex-1 min-w-0 h-8 px-2 gap-1.5"
                     >
-                      <img src="/icons/document_512.png" alt="" className="w-14 h-14 shrink-0" />
-                      <span>{r.name}</span>
+                      <span className="text-[12px] font-medium text-gray-600">{r.name}</span>
                     </SidebarMenuButton>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteRoadmap(r.id, r.name); }}
@@ -487,17 +462,18 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Pages Section with DnD */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center">
-            <img src="/icons/checklist_512.png" alt="" className="w-16 h-16 shrink-0 mr-1.5" />
-            <span className="flex-1">Pages</span>
+        <SidebarGroup className="px-1 pt-3">
+          {/* Section header */}
+          <div className="flex items-center gap-2 px-2 pb-1">
+            <img src="/icons/checklist_512.png" alt="" className="w-10 h-10 shrink-0" />
+            <span className="text-[13px] font-bold uppercase tracking-widest text-gray-500 flex-1 group-data-[collapsible=icon]:hidden">Pages</span>
             <button
               onClick={handleNewPage}
-              className="ml-auto border-none bg-transparent cursor-pointer text-sidebar-foreground/50 hover:text-sidebar-foreground p-0 group-data-[collapsible=icon]:hidden"
+              className="border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 p-0 group-data-[collapsible=icon]:hidden"
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
-          </SidebarGroupLabel>
+          </div>
           <SidebarGroupContent>
             <DndContext
               sensors={sensors}
