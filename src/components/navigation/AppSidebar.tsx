@@ -207,14 +207,15 @@ function PageItem({
         )}
       </div>
 
-      {/* Page button — no icon, name only */}
+      {/* Page button — checklist icon + name */}
       <SidebarMenuButton
         isActive={isActive}
         onClick={() => onClickPage(page.id)}
         tooltip={page.name}
-        className="flex-1 min-w-0 h-7 text-xs"
+        className="flex-1 min-w-0 h-8 px-2 gap-1.5"
       >
-        <span className="truncate">{page.name}</span>
+        <img src="/icons/checklist_512.png" alt="" className="w-6 h-6 shrink-0" />
+        <span className="text-[11px] font-medium uppercase tracking-wider truncate">{page.name}</span>
       </SidebarMenuButton>
 
       {/* Hover actions */}
@@ -384,12 +385,9 @@ export function AppSidebar() {
       {/* Logo */}
       <SidebarHeader
         style={{ height: TOOLBAR_HEIGHT, minHeight: TOOLBAR_HEIGHT }}
-        className="flex items-center px-3"
+        className="flex items-center justify-start px-2"
       >
-        <div className="flex items-center gap-2">
-          <img src="/icons/avocado_256.png" alt="Logo" className="w-9 h-9 shrink-0" />
-          <span className="text-[15px] font-bold text-gray-800 tracking-tight group-data-[collapsible=icon]:hidden">bench</span>
-        </div>
+        <img src="/icons/avocado_256.png" alt="Logo" className="w-12 h-12 shrink-0" />
       </SidebarHeader>
 
       <SidebarSeparator className="mx-0" />
@@ -410,10 +408,10 @@ export function AppSidebar() {
                     isActive={activeView === view}
                     onClick={() => setActiveView(view as typeof activeView)}
                     tooltip={label}
-                    className="gap-2 h-10 px-2"
+                    className="gap-2 h-9 px-2"
                   >
-                    <img src={icon} alt="" className="w-8 h-8 shrink-0" />
-                    <span className="text-[13px] font-medium">{label}</span>
+                    <img src={icon} alt="" className="w-9 h-9 shrink-0" />
+                    <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -423,29 +421,29 @@ export function AppSidebar() {
 
         {/* Roadmaps Section */}
         <SidebarGroup className="px-1 pt-3">
-          {/* Section header */}
-          <div className="flex items-center gap-2 px-2 pb-1">
-            <img src="/icons/folder_512.png" alt="" className="w-10 h-10 shrink-0" />
-            <span className="text-[13px] font-bold uppercase tracking-widest text-gray-500 flex-1 group-data-[collapsible=icon]:hidden">Roadmaps</span>
+          {/* Section header — label only */}
+          <div className="flex items-center px-3 pb-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1 group-data-[collapsible=icon]:hidden">Roadmaps</span>
             <button
               onClick={handleNewRoadmap}
               className="border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 p-0 group-data-[collapsible=icon]:hidden"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3" />
             </button>
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
               {roadmapList.map((r) => (
                 <SidebarMenuItem key={r.id}>
-                  <div className="group/rm relative flex items-center gap-0.5 pr-1 pl-3">
+                  <div className="group/rm relative flex items-center gap-0.5 pr-1">
                     <SidebarMenuButton
                       isActive={activeView === 'roadmap' && currentRoadmapId === r.id}
                       onClick={() => handleRoadmapClick(r.id)}
                       tooltip={r.name}
                       className="flex-1 min-w-0 h-8 px-2 gap-1.5"
                     >
-                      <span className="text-[12px] font-medium text-gray-600">{r.name}</span>
+                      <img src="/icons/folder_512.png" alt="" className="w-6 h-6 shrink-0" />
+                      <span className="text-[11px] font-medium uppercase tracking-wider">{r.name}</span>
                     </SidebarMenuButton>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteRoadmap(r.id, r.name); }}
@@ -462,15 +460,14 @@ export function AppSidebar() {
 
         {/* Pages Section with DnD */}
         <SidebarGroup className="px-1 pt-3">
-          {/* Section header */}
-          <div className="flex items-center gap-2 px-2 pb-1">
-            <img src="/icons/checklist_512.png" alt="" className="w-10 h-10 shrink-0" />
-            <span className="text-[13px] font-bold uppercase tracking-widest text-gray-500 flex-1 group-data-[collapsible=icon]:hidden">Pages</span>
+          {/* Section header — label only */}
+          <div className="flex items-center px-3 pb-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex-1 group-data-[collapsible=icon]:hidden">Pages</span>
             <button
               onClick={handleNewPage}
               className="border-none bg-transparent cursor-pointer text-gray-400 hover:text-gray-600 p-0 group-data-[collapsible=icon]:hidden"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3" />
             </button>
           </div>
           <SidebarGroupContent>
