@@ -212,7 +212,7 @@ function PageItem({
         tooltip={page.name}
         className="flex-1 min-w-0 h-8 px-2 gap-1.5"
       >
-        <img src="/icons/checklist_512.png" alt="" className="w-6 h-6 shrink-0" />
+        <img src="/icons/checklist_512.png" alt="" className="w-7 h-7 shrink-0" />
         <span className="text-[11px] font-medium uppercase tracking-wider truncate">{page.name}</span>
       </SidebarMenuButton>
 
@@ -404,7 +404,7 @@ export function AppSidebar() {
                     tooltip={label}
                     className="gap-2 h-8 px-2"
                   >
-                    <img src={icon} alt="" className="w-6 h-6 shrink-0" />
+                    <img src={icon} alt="" className="w-7 h-7 shrink-0" />
                     <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -436,7 +436,7 @@ export function AppSidebar() {
                       tooltip={r.name}
                       className="flex-1 min-w-0 h-8 px-2 gap-1.5"
                     >
-                      <img src="/icons/folder_512.png" alt="" className="w-6 h-6 shrink-0" />
+                      <img src="/icons/folder_512.png" alt="" className="w-7 h-7 shrink-0" />
                       <span className="text-[11px] font-medium uppercase tracking-wider">{r.name}</span>
                     </SidebarMenuButton>
                     <button
