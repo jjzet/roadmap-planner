@@ -212,9 +212,9 @@ function PageItem({
         isActive={isActive}
         onClick={() => onClickPage(page.id)}
         tooltip={page.name}
-        className="flex-1 min-w-0 h-8 px-2 gap-1.5"
+        className="flex-1 min-w-0 h-11 px-2 gap-1.5"
       >
-        <img src="/icons/checklist_512.png" alt="" className="w-6 h-6 shrink-0" />
+        <img src="/icons/checklist_512.png" alt="" className="w-11 h-11 shrink-0" />
         <span className="text-[11px] font-medium uppercase tracking-wider truncate">{page.name}</span>
       </SidebarMenuButton>
 
@@ -408,9 +408,9 @@ export function AppSidebar() {
                     isActive={activeView === view}
                     onClick={() => setActiveView(view as typeof activeView)}
                     tooltip={label}
-                    className="gap-2 h-9 px-2"
+                    className="gap-2 h-11 px-2"
                   >
-                    <img src={icon} alt="" className="w-9 h-9 shrink-0" />
+                    <img src={icon} alt="" className="w-11 h-11 shrink-0" />
                     <span className="text-[11px] font-medium uppercase tracking-wider">{label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -440,9 +440,9 @@ export function AppSidebar() {
                       isActive={activeView === 'roadmap' && currentRoadmapId === r.id}
                       onClick={() => handleRoadmapClick(r.id)}
                       tooltip={r.name}
-                      className="flex-1 min-w-0 h-8 px-2 gap-1.5"
+                      className="flex-1 min-w-0 h-11 px-2 gap-1.5"
                     >
-                      <img src="/icons/folder_512.png" alt="" className="w-6 h-6 shrink-0" />
+                      <img src="/icons/folder_512.png" alt="" className="w-11 h-11 shrink-0" />
                       <span className="text-[11px] font-medium uppercase tracking-wider">{r.name}</span>
                     </SidebarMenuButton>
                     <button
