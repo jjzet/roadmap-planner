@@ -15,7 +15,6 @@ import { Plus, Trash2, ChevronRight, GripVertical } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
-import { TOOLBAR_HEIGHT } from '@/lib/constants';
 import {
   DndContext,
   closestCenter,
@@ -383,11 +382,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       {/* Logo */}
-      <SidebarHeader
-        style={{ height: TOOLBAR_HEIGHT, minHeight: TOOLBAR_HEIGHT }}
-        className="flex items-center justify-start px-2"
-      >
-        <img src="/icons/avocado_256.png" alt="Logo" className="w-12 h-12 shrink-0" />
+      <SidebarHeader className="!flex-row !items-center !justify-start !p-2 !pl-3 h-[72px]">
+        <img src="/icons/avocado_512.png" alt="Logo" className="w-16 h-16 shrink-0" />
       </SidebarHeader>
 
       <SidebarSeparator className="mx-0" />
