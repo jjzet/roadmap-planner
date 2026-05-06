@@ -37,7 +37,7 @@ export function ChatDockBar() {
 
   return (
     <div
-      className="absolute bottom-12 left-4 right-4 h-10 bg-gray-50 border border-gray-200 rounded-lg shadow-md flex items-center px-4 gap-2 z-[35]"
+      className="absolute bottom-12 left-4 right-4 h-10 bg-white border border-gray-200 rounded-lg shadow-md flex items-center px-4 gap-2 z-[35]"
     >
       <img
         src="/icons/ai.png"
