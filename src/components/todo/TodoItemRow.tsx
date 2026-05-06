@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
@@ -72,6 +73,18 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
 
   const dateTextRef = useRef<HTMLInputElement>(null);
   const subGroupPickerRef = useRef<HTMLDivElement>(null);
+  const subGroupBtnRef = useRef<HTMLButtonElement>(null);
+  const [subGroupMenuPos, setSubGroupMenuPos] = useState<{ top: number; right: number } | null>(null);
+
+  useEffect(() => {
+    if (showSubGroupPicker && subGroupBtnRef.current) {
+      const rect = subGroupBtnRef.current.getBoundingClientRect();
+      setSubGroupMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [showSubGroupPicker]);
 
   useEffect(() => {
     if (!showSubGroupPicker) return;
@@ -360,6 +373,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </button>
               <div className="relative" ref={subGroupPickerRef}>
                 <button
+                  ref={subGroupBtnRef}
                   onClick={() => setShowSubGroupPicker((v) => !v)}
                   className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                   title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
@@ -367,9 +381,10 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                   <img src={item.subGroupId ? '/icons/toolbar/layers_blue.png' : '/icons/toolbar/layers.png'} className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
                   <img src="/icons/toolbar/layers_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
                 </button>
-                {showSubGroupPicker && (
+                {showSubGroupPicker && subGroupMenuPos && createPortal(
                   <div
-                    className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[160px] py-1"
+                    className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] py-1"
+                    style={{ top: subGroupMenuPos.top, right: subGroupMenuPos.right }}
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {subGroups.length > 0 && (
@@ -412,7 +427,8 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                         Remove from sub-group
                       </button>
                     )}
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
               <button
