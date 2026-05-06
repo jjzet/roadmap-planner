@@ -42,7 +42,7 @@ export function ChatDockBar() {
       <img
         src="/icons/ai.png"
         alt=""
-        className={`w-6 h-6 shrink-0 transition-opacity ${isLoading ? 'animate-pulse' : 'opacity-80'}`}
+        className={`w-6 h-6 shrink-0 transition-opacity mix-blend-multiply ${isLoading ? 'animate-pulse' : 'opacity-80'}`}
       />
       <input
         ref={inputRef}
