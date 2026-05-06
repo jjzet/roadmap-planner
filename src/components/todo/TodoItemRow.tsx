@@ -3,10 +3,28 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
 import type { TodoItem, DevStatus } from '@/types';
-import { GripVertical, Link, Trash2, ExternalLink, Pin, Calendar, ChevronRight, Archive, ArchiveRestore, X, Code2, Layers } from 'lucide-react';
+import { GripVertical, ExternalLink, ChevronRight, ArchiveRestore, X } from 'lucide-react';
 import { RichTextEditor } from '../editor/RichTextEditor';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 import type { SubGroup } from '@/types';
+
+function MaskIcon({ src, className = 'w-3.5 h-3.5' }: { src: string; className?: string }) {
+  return (
+    <span
+      className={`inline-block bg-current ${className}`}
+      style={{
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskSize: 'contain',
+        maskSize: 'contain',
+        WebkitMaskRepeat: 'no-repeat',
+        maskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        maskPosition: 'center',
+      }}
+    />
+  );
+}
 
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
   dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
@@ -319,48 +337,48 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                 className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
                   item.pinned
                     ? 'text-amber-500 opacity-100'
-                    : 'text-gray-300 hover:text-amber-500 opacity-0 group-hover/item:opacity-100'
+                    : 'text-gray-300 hover:text-blue-800 opacity-0 group-hover/item:opacity-100'
                 }`}
                 title={item.pinned ? 'Unpin' : 'Pin to top'}
               >
-                <Pin className={`w-3.5 h-3.5 ${item.pinned ? 'fill-amber-500' : ''}`} />
+                <MaskIcon src="/icons/toolbar/pin.png" />
               </button>
               <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.link ? 'Edit link' : 'Add link'}
               >
-                <Link className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/link.png" />
               </button>
               <button
                 onClick={cycleDevStatus}
-                className="text-gray-300 hover:text-amber-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Set dev status"
               >
-                <Code2 className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/code.png" />
               </button>
               <button
                 onClick={openDateInput}
-                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.dueDate ? 'Edit due date' : 'Set due date'}
               >
-                <Calendar className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/calendar.png" />
               </button>
               <button
                 onClick={() => archiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Archive item"
               >
-                <Archive className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/archive.png" />
               </button>
               <div className="relative" ref={subGroupPickerRef}>
                 <button
                   onClick={() => setShowSubGroupPicker((v) => !v)}
-                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-blue-500' : 'text-gray-300 hover:text-blue-600'}`}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-blue-800' : 'text-gray-300 hover:text-blue-800'}`}
                   title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
                 >
-                  <Layers className="w-3.5 h-3.5" />
+                  <MaskIcon src="/icons/toolbar/layers.png" />
                 </button>
                 {showSubGroupPicker && (
                   <div
@@ -415,7 +433,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                 className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/trash.png" />
               </button>
               </div>
             </div>
@@ -426,7 +444,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-0.5">
               <button
                 onClick={() => unarchiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Restore item"
               >
                 <ArchiveRestore className="w-3.5 h-3.5" />
@@ -436,7 +454,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                 className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <MaskIcon src="/icons/toolbar/trash.png" />
               </button>
             </div>
           )}
