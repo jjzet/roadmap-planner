@@ -37,12 +37,12 @@ export function ChatDockBar() {
 
   return (
     <div
-      className="absolute bottom-12 left-4 right-4 h-10 bg-white border border-gray-200 rounded-lg shadow-md flex items-center px-4 gap-2 z-[35]"
+      className="absolute bottom-12 left-4 right-4 h-10 bg-white border border-gray-200 rounded-lg shadow-md flex items-center pl-2 pr-4 gap-2 z-[35]"
     >
       <img
         src="/icons/ai.png"
         alt=""
-        className={`w-6 h-6 shrink-0 transition-opacity mix-blend-multiply ${isLoading ? 'animate-pulse' : 'opacity-80'}`}
+        className={`w-5 h-5 shrink-0 transition-opacity mix-blend-multiply ${isLoading ? 'animate-pulse' : 'opacity-80'}`}
       />
       <input
         ref={inputRef}
