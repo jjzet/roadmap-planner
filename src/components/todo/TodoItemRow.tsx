@@ -317,51 +317,55 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-0.5 flex-shrink-0 ml-0.5">
               <button
                 onClick={() => togglePinItem(groupId, item.id)}
-                className={`tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
-                  item.pinned
-                    ? 'opacity-100'
-                    : 'opacity-0 group-hover/item:opacity-100'
+                className={`group border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
+                  item.pinned ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'
                 }`}
                 title={item.pinned ? 'Unpin' : 'Pin to top'}
               >
-                <img src="/icons/toolbar/pin.png" className={`tb-icon w-3.5 h-3.5 ${item.pinned ? 'tb-amber' : ''}`} alt="" />
+                <img src={item.pinned ? '/icons/toolbar/pin_blue.png' : '/icons/toolbar/pin.png'} className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/pin_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.link ? 'Edit link' : 'Add link'}
               >
-                <img src="/icons/toolbar/link.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/link.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/link_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               <button
                 onClick={cycleDevStatus}
-                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Set dev status"
               >
-                <img src="/icons/toolbar/code.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/code.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/code_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               <button
                 onClick={openDateInput}
-                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.dueDate ? 'Edit due date' : 'Set due date'}
               >
-                <img src="/icons/toolbar/calendar.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/calendar.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/calendar_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               <button
                 onClick={() => archiveItem(groupId, item.id)}
-                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Archive item"
               >
-                <img src="/icons/toolbar/archive.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/archive.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/archive_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               <div className="relative" ref={subGroupPickerRef}>
                 <button
                   onClick={() => setShowSubGroupPicker((v) => !v)}
-                  className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
+                  className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                   title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
                 >
-                  <img src="/icons/toolbar/layers.png" className={`tb-icon w-3.5 h-3.5 ${item.subGroupId ? 'tb-blue' : ''}`} alt="" />
+                  <img src={item.subGroupId ? '/icons/toolbar/layers_blue.png' : '/icons/toolbar/layers.png'} className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                  <img src="/icons/toolbar/layers_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
                 </button>
                 {showSubGroupPicker && (
                   <div
@@ -413,10 +417,11 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </div>
               <button
                 onClick={() => removeItem(groupId, item.id)}
-                className="tb-btn-red border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <img src="/icons/toolbar/trash.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/trash.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/trash_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
               </div>
             </div>
@@ -434,10 +439,11 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </button>
               <button
                 onClick={() => removeItem(groupId, item.id)}
-                className="tb-btn-red border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="group border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <img src="/icons/toolbar/trash.png" className="tb-icon w-3.5 h-3.5" alt="" />
+                <img src="/icons/toolbar/trash.png" className="w-3.5 h-3.5 group-hover:hidden" alt="" />
+                <img src="/icons/toolbar/trash_blue.png" className="w-3.5 h-3.5 hidden group-hover:block" alt="" />
               </button>
             </div>
           )}
