@@ -8,23 +8,6 @@ import { RichTextEditor } from '../editor/RichTextEditor';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 import type { SubGroup } from '@/types';
 
-function MaskIcon({ src, className = 'w-3.5 h-3.5' }: { src: string; className?: string }) {
-  return (
-    <span
-      className={`inline-block bg-current ${className}`}
-      style={{
-        WebkitMaskImage: `url(${src})`,
-        maskImage: `url(${src})`,
-        WebkitMaskSize: 'contain',
-        maskSize: 'contain',
-        WebkitMaskRepeat: 'no-repeat',
-        maskRepeat: 'no-repeat',
-        WebkitMaskPosition: 'center',
-        maskPosition: 'center',
-      }}
-    />
-  );
-}
 
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
   dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
@@ -334,51 +317,51 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-0.5 flex-shrink-0 ml-0.5">
               <button
                 onClick={() => togglePinItem(groupId, item.id)}
-                className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
+                className={`tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
                   item.pinned
-                    ? 'text-amber-500 opacity-100'
-                    : 'text-gray-300 hover:text-blue-800 opacity-0 group-hover/item:opacity-100'
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover/item:opacity-100'
                 }`}
                 title={item.pinned ? 'Unpin' : 'Pin to top'}
               >
-                <MaskIcon src="/icons/toolbar/pin.png" />
+                <img src="/icons/toolbar/pin.png" className={`tb-icon w-3.5 h-3.5 ${item.pinned ? 'tb-amber' : ''}`} alt="" />
               </button>
               <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.link ? 'Edit link' : 'Add link'}
               >
-                <MaskIcon src="/icons/toolbar/link.png" />
+                <img src="/icons/toolbar/link.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
               <button
                 onClick={cycleDevStatus}
-                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Set dev status"
               >
-                <MaskIcon src="/icons/toolbar/code.png" />
+                <img src="/icons/toolbar/code.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
               <button
                 onClick={openDateInput}
-                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.dueDate ? 'Edit due date' : 'Set due date'}
               >
-                <MaskIcon src="/icons/toolbar/calendar.png" />
+                <img src="/icons/toolbar/calendar.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
               <button
                 onClick={() => archiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Archive item"
               >
-                <MaskIcon src="/icons/toolbar/archive.png" />
+                <img src="/icons/toolbar/archive.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
               <div className="relative" ref={subGroupPickerRef}>
                 <button
                   onClick={() => setShowSubGroupPicker((v) => !v)}
-                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-blue-800' : 'text-gray-300 hover:text-blue-800'}`}
+                  className="tb-btn border-none bg-transparent cursor-pointer p-0.5 rounded"
                   title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
                 >
-                  <MaskIcon src="/icons/toolbar/layers.png" />
+                  <img src="/icons/toolbar/layers.png" className={`tb-icon w-3.5 h-3.5 ${item.subGroupId ? 'tb-blue' : ''}`} alt="" />
                 </button>
                 {showSubGroupPicker && (
                   <div
@@ -430,10 +413,10 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </div>
               <button
                 onClick={() => removeItem(groupId, item.id)}
-                className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn-red border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <MaskIcon src="/icons/toolbar/trash.png" />
+                <img src="/icons/toolbar/trash.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
               </div>
             </div>
@@ -451,10 +434,10 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </button>
               <button
                 onClick={() => removeItem(groupId, item.id)}
-                className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="tb-btn-red border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Delete item"
               >
-                <MaskIcon src="/icons/toolbar/trash.png" />
+                <img src="/icons/toolbar/trash.png" className="tb-icon w-3.5 h-3.5" alt="" />
               </button>
             </div>
           )}

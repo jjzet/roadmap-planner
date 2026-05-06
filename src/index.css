@@ -242,6 +242,34 @@ body {
   color: #1e3a8a;
 }
 
+/* ── Task toolbar icons ──────────────────────────────────────
+   Hand-drawn PNGs are grey by default (the source art is grey).
+   On parent button hover we recolor with a CSS filter: navy by
+   default (.tb-btn) or red for the trash button (.tb-btn-red).
+   .tb-amber and .tb-blue let us colour-lock the icon for
+   stateful buttons (e.g. pinned, current sub-group). */
+.tb-icon { transition: filter 150ms ease; }
+
+.tb-btn:hover .tb-icon:not(.tb-amber):not(.tb-blue) {
+  filter: brightness(0) saturate(100%) invert(15%) sepia(80%)
+          saturate(3500%) hue-rotate(220deg) brightness(0.85);
+}
+
+.tb-btn-red:hover .tb-icon {
+  filter: brightness(0) saturate(100%) invert(38%) sepia(85%)
+          saturate(2800%) hue-rotate(340deg) brightness(0.95);
+}
+
+.tb-amber {
+  filter: brightness(0) saturate(100%) invert(67%) sepia(80%)
+          saturate(900%) hue-rotate(0deg);
+}
+
+.tb-blue {
+  filter: brightness(0) saturate(100%) invert(15%) sepia(80%)
+          saturate(3500%) hue-rotate(220deg) brightness(0.85);
+}
+
 /* Sidebar group labels — mono uppercase tech style */
 [data-sidebar="group-label"] {
   font-family: var(--font-mono) !important;
