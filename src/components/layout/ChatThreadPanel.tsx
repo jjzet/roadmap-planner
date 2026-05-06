@@ -9,7 +9,7 @@ import { useChat } from '@/hooks/useChat';
 
 function AssistantMarkdown({ text }: { text: string }) {
   return (
-    <div className="text-[12px] font-mono font-light text-gray-700 leading-relaxed break-words space-y-2 [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_em]:italic [&_h1]:text-[14px] [&_h1]:font-semibold [&_h1]:text-gray-900 [&_h1]:mt-2 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-2 [&_h3]:text-[12px] [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-gray-200 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[11px] [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded [&_pre]:p-2 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_a]:text-cyan-600 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_blockquote]:italic [&_table]:border-collapse [&_th]:border [&_th]:border-gray-200 [&_th]:px-2 [&_th]:py-1 [&_td]:border [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-1">
+    <div className="text-[12px] font-mono font-light text-gray-700 leading-relaxed break-words space-y-2 [&_p]:m-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_em]:italic [&_h1]:text-[14px] [&_h1]:font-semibold [&_h1]:text-gray-900 [&_h1]:mt-2 [&_h2]:text-[13px] [&_h2]:font-semibold [&_h2]:text-gray-900 [&_h2]:mt-2 [&_h3]:text-[12px] [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-2 [&_hr]:my-3 [&_hr]:border-gray-200 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[11px] [&_pre]:bg-gray-50 [&_pre]:border [&_pre]:border-gray-200 [&_pre]:rounded [&_pre]:p-2 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_a]:text-blue-600 [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_blockquote]:italic [&_table]:border-collapse [&_th]:border [&_th]:border-gray-200 [&_th]:px-2 [&_th]:py-1 [&_td]:border [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-1">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -50,7 +50,7 @@ function ToolCallCard({ tc }: { tc: ToolCallSummary }) {
   const label = TOOL_LABELS[tc.name] ?? tc.name;
   const detail = toolDetail(tc);
   const Icon = tc.ok ? Check : AlertCircle;
-  const color = tc.ok ? 'text-cyan-600 border-cyan-100 bg-cyan-50/60' : 'text-red-500 border-red-100 bg-red-50/60';
+  const color = tc.ok ? 'text-blue-600 border-blue-100 bg-blue-50/60' : 'text-red-500 border-red-100 bg-red-50/60';
   return (
     <div className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider border rounded px-2 py-1 ${color}`}>
       <Icon className="w-3 h-3" />
@@ -137,9 +137,9 @@ export function ChatThreadPanel() {
         style={{ height: '65vh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 h-10 border-b border-gray-100 bg-gradient-to-r from-white to-cyan-50/30 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 h-10 border-b border-gray-100 bg-gradient-to-r from-white to-blue-50/30 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
             <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-700 font-semibold">
               Assistant
             </h2>
@@ -178,7 +178,7 @@ export function ChatThreadPanel() {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'user' ? (
-                <div className="max-w-[75%] bg-cyan-50 border border-cyan-100 rounded-md px-3 py-2">
+                <div className="max-w-[75%] bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
                   <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap break-words">
                     {msg.text}
                   </p>
@@ -201,9 +201,9 @@ export function ChatThreadPanel() {
           {isLoading && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 py-1">
-                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1 h-1 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
@@ -229,13 +229,13 @@ export function ChatThreadPanel() {
             placeholder="Ask Claude… (Enter to send, Shift+Enter for new line)"
             rows={1}
             disabled={isLoading}
-            className="flex-1 bg-transparent border border-gray-200 rounded-md outline-none text-[12px] font-mono font-light text-gray-700 placeholder-gray-400 px-3 py-1.5 resize-none focus:border-cyan-300 focus:ring-1 focus:ring-cyan-200 transition-colors min-h-[2rem] max-h-24"
+            className="flex-1 bg-transparent border border-gray-200 rounded-md outline-none text-[12px] font-mono font-light text-gray-700 placeholder-gray-400 px-3 py-1.5 resize-none focus:border-blue-300 focus:ring-1 focus:ring-blue-200 transition-colors min-h-[2rem] max-h-24"
             style={{ lineHeight: '1.5' }}
           />
           <button
             onClick={handleSubmit}
             disabled={!draft.trim() || isLoading}
-            className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-none cursor-pointer text-white mb-px"
+            className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-blue-500 hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-none cursor-pointer text-white mb-px"
             title="Send (Enter)"
           >
             <ArrowUp className="w-3.5 h-3.5" />

@@ -110,7 +110,7 @@ export function GoalsView() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
               <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Goals</h1>
             </div>
             <p className="text-2xl font-bold text-gray-800 tracking-tight mt-2">Goals & intentions</p>
@@ -118,7 +118,7 @@ export function GoalsView() {
           </div>
           <button
             onClick={handleNewGoal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-mono font-medium uppercase tracking-wider text-gray-600 bg-white border border-gray-200 rounded-sm hover:bg-cyan-50/40 hover:text-cyan-700 hover:border-cyan-300 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-mono font-medium uppercase tracking-wider text-gray-600 bg-white border border-gray-200 rounded-sm hover:bg-blue-50/40 hover:text-blue-700 hover:border-blue-300 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             New Goal
@@ -143,7 +143,7 @@ export function GoalsView() {
             <p className="text-sm text-gray-300 mt-1 mb-6">Create your first goal to get started.</p>
             <button
               onClick={handleNewGoal}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-white bg-cyan-600 rounded-sm hover:bg-cyan-700 transition-colors cursor-pointer border-none"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-white bg-blue-600 rounded-sm hover:bg-blue-700 transition-colors cursor-pointer border-none"
             >
               <Plus className="w-4 h-4" />
               New Goal

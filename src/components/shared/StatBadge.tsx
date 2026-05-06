@@ -6,7 +6,7 @@ const VARIANT_STYLES: Record<Variant, string> = {
   danger:  'bg-red-50 border-red-200 text-red-600',
   warning: 'bg-orange-50 border-orange-200 text-orange-600',
   success: 'bg-emerald-50 border-emerald-200 text-emerald-600',
-  info:    'bg-cyan-50 border-cyan-200 text-cyan-600',
+  info:    'bg-blue-50 border-blue-200 text-blue-600',
   neutral: 'bg-gray-50 border-gray-200 text-gray-500',
 };
 

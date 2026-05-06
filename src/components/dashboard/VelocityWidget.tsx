@@ -59,7 +59,7 @@ export function VelocityWidget({ velocity }: Props) {
       </div>
       <div className="flex gap-1 mt-1">
         <p className="flex-1 text-center text-[10px] font-mono uppercase tracking-wider text-gray-300">{previousLabel}</p>
-        <p className="flex-1 text-center text-[10px] font-mono uppercase tracking-wider text-cyan-600">{currentLabel}</p>
+        <p className="flex-1 text-center text-[10px] font-mono uppercase tracking-wider text-blue-600">{currentLabel}</p>
       </div>
     </div>
   );

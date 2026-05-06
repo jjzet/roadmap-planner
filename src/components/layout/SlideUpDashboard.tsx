@@ -43,9 +43,9 @@ export function SlideUpDashboard() {
         style={{ height: '65vh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 h-10 border-b border-gray-100 bg-gradient-to-r from-white to-cyan-50/30">
+        <div className="flex items-center justify-between px-5 h-10 border-b border-gray-100 bg-gradient-to-r from-white to-blue-50/30">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
             <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-700 font-semibold">
               Dashboard
             </h2>

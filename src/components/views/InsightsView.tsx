@@ -4,7 +4,7 @@ import { useInsightStore } from '@/store/insightStore';
 import type { DailyInsight } from '@/types';
 
 const CATEGORY_BG: Record<string, string> = {
-  'leadership': 'bg-cyan-50 text-cyan-700 border-cyan-100',
+  'leadership': 'bg-blue-50 text-blue-700 border-blue-100',
   'communication': 'bg-violet-50 text-violet-600 border-violet-100',
   'design thinking': 'bg-teal-50 text-teal-600 border-teal-100',
   'performance': 'bg-green-50 text-green-600 border-green-100',
@@ -14,7 +14,7 @@ const CATEGORY_BG: Record<string, string> = {
   'systems thinking': 'bg-indigo-50 text-indigo-600 border-indigo-100',
   'habits': 'bg-emerald-50 text-emerald-600 border-emerald-100',
   'creativity': 'bg-pink-50 text-pink-600 border-pink-100',
-  'organisational culture': 'bg-cyan-50 text-cyan-600 border-cyan-100',
+  'organisational culture': 'bg-blue-50 text-blue-600 border-blue-100',
 };
 
 function formatDate(dateStr: string): string {
@@ -133,7 +133,7 @@ export function InsightsView() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
             <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Insights</h1>
           </div>
           <p className="text-2xl font-mono font-light text-gray-800 tracking-tight mt-2">Daily book insights</p>

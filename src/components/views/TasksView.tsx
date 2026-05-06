@@ -84,7 +84,7 @@ export function TasksView() {
                     setActiveView('tasks');
                   }
                 }}
-                className="ml-1 flex items-center gap-1 text-[10px] text-gray-400 hover:text-cyan-600 border-none bg-transparent cursor-pointer px-0"
+                className="ml-1 flex items-center gap-1 text-[10px] text-gray-400 hover:text-blue-600 border-none bg-transparent cursor-pointer px-0"
               >
                 <Plus className="w-3 h-3" />
                 Add
@@ -98,10 +98,10 @@ export function TasksView() {
                   <button
                     key={page.id}
                     onClick={() => { loadTodo(page.id); setActiveView('tasks'); }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-cyan-50 hover:border-cyan-200 text-left transition-colors cursor-pointer group"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 text-left transition-colors cursor-pointer group"
                   >
-                    <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-cyan-500 flex-shrink-0" />
-                    <span className="text-xs font-mono text-gray-700 group-hover:text-cyan-700 truncate">{page.name}</span>
+                    <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 flex-shrink-0" />
+                    <span className="text-xs font-mono text-gray-700 group-hover:text-blue-700 truncate">{page.name}</span>
                   </button>
                 ))}
               </div>

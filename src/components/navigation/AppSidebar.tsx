@@ -222,7 +222,7 @@ function PageItem({
           {page.depth === 0 && (
             <button
               onClick={(e) => { e.stopPropagation(); onAddSubPage(page.id); }}
-              className="p-1 rounded text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 border-none bg-transparent cursor-pointer transition-colors"
+              className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 border-none bg-transparent cursor-pointer transition-colors"
               title="Add sub-page"
             >
               <Plus className="w-3 h-3" />

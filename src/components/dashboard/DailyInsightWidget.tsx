@@ -15,7 +15,7 @@ const CATEGORY_COLOURS: Record<string, string> = {
   'systems thinking':       'text-indigo-500',
   'habits':                 'text-emerald-500',
   'creativity':             'text-pink-500',
-  'organisational culture': 'text-cyan-500',
+  'organisational culture': 'text-blue-500',
 };
 
 const DEFAULT_COLOUR = 'text-gray-400';

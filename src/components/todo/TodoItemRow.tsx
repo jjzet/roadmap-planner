@@ -11,7 +11,7 @@ import type { SubGroup } from '@/types';
 const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
   dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
   test:   { label: 'test',   className: 'bg-purple-100 text-purple-700 hover:bg-purple-200', next: 'pr' },
-  pr:     { label: 'PR',     className: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200',       next: 'merged' },
+  pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-700 hover:bg-blue-200',       next: 'merged' },
   merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200',    next: 'build' },
   build:  { label: 'build',  className: 'bg-teal-100 text-teal-700 hover:bg-teal-200',       next: undefined },
 };
@@ -174,7 +174,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''} ${isSelected ? 'ring-1 ring-cyan-300 bg-cyan-50/30 rounded-md' : ''}`}
+      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''} ${isSelected ? 'ring-1 ring-blue-300 bg-blue-50/30 rounded-md' : ''}`}
       onClick={handleRowClick}
     >
       {urgencyAccent && (
@@ -272,7 +272,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-cyan-500 hover:text-cyan-700 flex-shrink-0"
+              className="text-blue-500 hover:text-blue-700 flex-shrink-0"
               title={item.link}
               onClick={(e) => e.stopPropagation()}
             >
@@ -285,7 +285,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-1 flex-shrink-0">
               <input
                 ref={dateTextRef}
-                className="text-xs border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-cyan-500 w-28 bg-white"
+                className="text-xs border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-500 w-28 bg-white"
                 placeholder="tomorrow, +3d, fri…"
                 value={dateInputValue}
                 onChange={handleDateInputChange}
@@ -294,7 +294,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                 autoFocus
               />
               {datePreview && (
-                <span className="text-[10px] text-cyan-600 whitespace-nowrap">{datePreview}</span>
+                <span className="text-[10px] text-blue-600 whitespace-nowrap">{datePreview}</span>
               )}
               <button
                 onMouseDown={(e) => {
@@ -328,7 +328,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
               <button
                 onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-                className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.link ? 'Edit link' : 'Add link'}
               >
                 <Link className="w-3.5 h-3.5" />
@@ -342,14 +342,14 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               </button>
               <button
                 onClick={openDateInput}
-                className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title={item.dueDate ? 'Edit due date' : 'Set due date'}
               >
                 <Calendar className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => archiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Archive item"
               >
                 <Archive className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               <div className="relative" ref={subGroupPickerRef}>
                 <button
                   onClick={() => setShowSubGroupPicker((v) => !v)}
-                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-cyan-500' : 'text-gray-300 hover:text-cyan-600'}`}
+                  className={`border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors ${item.subGroupId ? 'text-blue-500' : 'text-gray-300 hover:text-blue-600'}`}
                   title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -377,11 +377,11 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                               moveItemToSubGroup(groupId, item.id, sg.id);
                               setShowSubGroupPicker(false);
                             }}
-                            className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[12px] font-mono hover:bg-gray-50 border-none bg-transparent cursor-pointer ${item.subGroupId === sg.id ? 'text-cyan-600' : 'text-gray-700'}`}
+                            className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[12px] font-mono hover:bg-gray-50 border-none bg-transparent cursor-pointer ${item.subGroupId === sg.id ? 'text-blue-600' : 'text-gray-700'}`}
                           >
                             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sg.color }} />
                             {sg.name || 'Unnamed'}
-                            {item.subGroupId === sg.id && <span className="ml-auto text-[10px] text-cyan-500">current</span>}
+                            {item.subGroupId === sg.id && <span className="ml-auto text-[10px] text-blue-500">current</span>}
                           </button>
                         ))}
                         <div className="border-t border-gray-100 my-1" />
@@ -426,7 +426,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-0.5">
               <button
                 onClick={() => unarchiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className="text-gray-300 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0.5 rounded"
                 title="Restore item"
               >
                 <ArchiveRestore className="w-3.5 h-3.5" />
@@ -470,7 +470,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
         {showLinkInput && (
           <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
             <input
-              className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-cyan-500"
+              className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-500"
               placeholder="Paste JIRA link or URL..."
               value={linkValue}
               onChange={(e) => setLinkValue(e.target.value)}

@@ -40,7 +40,7 @@ export function ChatDockBar() {
       className="absolute bottom-12 left-4 right-4 h-10 bg-white border border-gray-200 rounded-lg shadow-md flex items-center px-4 gap-2 z-[35]"
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0 transition-opacity ${
+        className={`w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 transition-opacity ${
           isLoading ? 'animate-pulse' : 'opacity-70'
         }`}
       />
@@ -57,7 +57,7 @@ export function ChatDockBar() {
       <button
         onClick={handleSubmit}
         disabled={!draft.trim() || isLoading}
-        className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-cyan-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-transparent border-none cursor-pointer p-0"
+        className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-transparent border-none cursor-pointer p-0"
         title="Send (Enter)"
       >
         <ArrowUp className="w-3.5 h-3.5" />

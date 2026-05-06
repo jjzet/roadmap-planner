@@ -46,8 +46,8 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
             isComplete
               ? 'text-emerald-500'
               : percentage >= 0.5
-                ? 'text-cyan-600'
-                : 'text-cyan-500'
+                ? 'text-blue-600'
+                : 'text-blue-500'
           }`}
         />
         {/* Checkmark for 100% */}

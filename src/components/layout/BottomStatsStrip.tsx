@@ -21,7 +21,7 @@ const DOT_COLORS: Record<DotKind, string> = {
   completed: 'bg-emerald-500',
   overdue:   'bg-red-500',
   today:     'bg-orange-500',
-  upcoming:  'bg-cyan-500',
+  upcoming:  'bg-blue-500',
   empty:     'bg-gray-200',
 };
 
@@ -162,7 +162,7 @@ export function BottomStatsStrip() {
                       <span
                         className={`block rounded-full ${DOT_COLORS[dot.kind]} ${
                           dot.kind === 'empty' ? 'opacity-50' : ''
-                        } ${i === 7 ? 'ring-2 ring-cyan-300/40' : ''}`}
+                        } ${i === 7 ? 'ring-2 ring-blue-300/40' : ''}`}
                         style={{
                           width: size,
                           height: size,
@@ -184,14 +184,14 @@ export function BottomStatsStrip() {
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={refresh}
-          className="text-gray-300 hover:text-cyan-500 border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
+          className="text-gray-300 hover:text-blue-500 border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
           title="Refresh stats"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
         <button
           onClick={toggleDashboardPanel}
-          className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-500 hover:text-cyan-600 border border-gray-200 hover:border-cyan-300 bg-white hover:bg-cyan-50/50 cursor-pointer px-2 py-1 rounded transition-colors"
+          className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 bg-white hover:bg-blue-50/50 cursor-pointer px-2 py-1 rounded transition-colors"
           title={dashboardPanelOpen ? 'Hide dashboard' : 'Show dashboard'}
         >
           dashboard

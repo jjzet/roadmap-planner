@@ -24,7 +24,7 @@ interface Props {
 
 const TYPE_META: Record<SuggestionType, { label: string; Icon: React.ElementType; colour: string }> = {
   archive:        { label: 'Archive',    Icon: Archive,   colour: 'text-gray-400' },
-  set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-cyan-500' },
+  set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-blue-500' },
   set_due_date:   { label: 'Due dates',  Icon: Calendar,  colour: 'text-amber-400' },
   add_tags:       { label: 'Tags',       Icon: Tag,       colour: 'text-violet-400' },
   rename:         { label: 'Rename',     Icon: Pencil,    colour: 'text-teal-400' },
@@ -68,7 +68,7 @@ function SuggestionRow({
               <ArrowRight className="w-3 h-3 text-gray-300 flex-shrink-0" />
             </>
           )}
-          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-sm bg-cyan-50 text-cyan-600">
+          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-sm bg-blue-50 text-blue-600">
             {DEV_STATUS_LABELS[suggestion.newDevStatus] ?? suggestion.newDevStatus}
           </span>
         </div>

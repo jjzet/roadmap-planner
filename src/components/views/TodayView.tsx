@@ -62,7 +62,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
         {tasks.map((task) => (
           <div
             key={`${task.pageId}-${task.groupId}-${task.item.id}`}
-            className="flex items-center gap-3 py-1.5 px-3 rounded-sm hover:bg-cyan-50/40 transition-colors group/task"
+            className="flex items-center gap-3 py-1.5 px-3 rounded-sm hover:bg-blue-50/40 transition-colors group/task"
           >
             {task.item.pinned && (
               <Pin className="w-3 h-3 text-amber-500 fill-amber-500 flex-shrink-0" />
@@ -77,7 +77,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
                   ? 'border-amber-400'
                   : accentColor.includes('emerald')
                   ? 'border-emerald-400'
-                  : 'border-cyan-500'
+                  : 'border-blue-500'
               }`}
             />
             <span className="flex-1 text-sm text-gray-700 min-w-0 truncate">
@@ -105,7 +105,7 @@ function TaskSection({ title, icon, tasks, accentColor, onNavigate }: TaskSectio
             )}
             <button
               onClick={() => onNavigate(task.pageId)}
-              className="opacity-0 group-hover/task:opacity-100 transition-opacity text-gray-400 hover:text-cyan-600 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+              className="opacity-0 group-hover/task:opacity-100 transition-opacity text-gray-400 hover:text-blue-600 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
               title="Go to page"
             >
               <ArrowRight className="w-3.5 h-3.5" />
@@ -146,12 +146,12 @@ export function TodayView() {
         style={{ height: TOOLBAR_HEIGHT, minHeight: TOOLBAR_HEIGHT }}
       >
         <div className="flex items-center gap-2 flex-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
           <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Today</h1>
         </div>
         <button
           onClick={refresh}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-600 border-none bg-transparent cursor-pointer"
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-600 border-none bg-transparent cursor-pointer"
           title="Refresh"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -263,7 +263,7 @@ export function TodayView() {
                   title="This Week"
                   icon={<CalendarDays className="w-3.5 h-3.5" />}
                   tasks={data.dueThisWeek}
-                  accentColor="text-cyan-600"
+                  accentColor="text-blue-600"
                   onNavigate={handleNavigate}
                 />
                 {data.recentlyCompleted.length > 0 && (

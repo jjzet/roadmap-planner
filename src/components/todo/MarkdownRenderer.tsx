@@ -22,7 +22,7 @@ const components: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-cyan-600 hover:underline cursor-pointer"
+      className="text-blue-600 hover:underline cursor-pointer"
     >
       {children}
     </a>

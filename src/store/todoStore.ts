@@ -26,7 +26,7 @@ export const SUBGROUP_COLORS = [
   '#EF4444', // red
   '#8B5CF6', // violet
   '#EC4899', // pink
-  '#06B6D4', // cyan
+  '#1e3a8a', // cyan
   '#F97316', // orange
 ];
 
