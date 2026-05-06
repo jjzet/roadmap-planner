@@ -39,10 +39,10 @@ export function ChatDockBar() {
     <div
       className="absolute bottom-12 left-4 right-4 h-10 bg-white border border-gray-200 rounded-lg shadow-md flex items-center px-4 gap-2 z-[35]"
     >
-      <span
-        className={`w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 transition-opacity ${
-          isLoading ? 'animate-pulse' : 'opacity-70'
-        }`}
+      <img
+        src="/icons/ai.png"
+        alt=""
+        className={`w-4 h-4 shrink-0 transition-opacity ${isLoading ? 'animate-pulse' : 'opacity-80'}`}
       />
       <input
         ref={inputRef}
