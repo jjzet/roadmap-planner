@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 type Variant = 'danger' | 'warning' | 'success' | 'info' | 'neutral';
 
 const VARIANT_STYLES: Record<Variant, string> = {
-  danger:  'bg-red-50 border-red-200 text-red-600',
-  warning: 'bg-orange-50 border-orange-200 text-orange-600',
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-600',
+  danger:  'bg-blue-100 border-blue-300 text-blue-800',
+  warning: 'bg-blue-50 border-blue-200 text-blue-700',
+  success: 'bg-blue-50 border-blue-200 text-blue-700',
   info:    'bg-blue-50 border-blue-200 text-blue-600',
-  neutral: 'bg-gray-50 border-gray-200 text-gray-500',
+  neutral: 'bg-blue-50/60 border-blue-100 text-blue-600',
 };
 
 interface StatBadgeProps {
@@ -20,7 +20,7 @@ interface StatBadgeProps {
 export function StatBadge({ label, value, variant = 'neutral', icon }: StatBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-mono tabular-nums leading-none ${VARIANT_STYLES[variant]}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[11px] font-mono tabular-nums leading-none ${VARIANT_STYLES[variant]}`}
     >
       {icon}
       <span className="font-semibold">{value}</span>
