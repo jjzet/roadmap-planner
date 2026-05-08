@@ -2,6 +2,9 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useChatStore, type ChatMessage, type ToolCallSummary } from '@/store/chatStore';
 import { useTodoStore } from '@/store/todoStore';
+import { useGoalStore } from '@/store/goalStore';
+import { useJournalStore } from '@/store/journalStore';
+import { useMemoryPalaceStore } from '@/store/memoryPalaceStore';
 
 const CHAT_URL = 'https://nebfkwfgjtqinrfiglva.supabase.co/functions/v1/chat';
 const ANON_KEY =
@@ -98,9 +101,6 @@ export function useChat() {
         .eq('conversation_id', conv.id)
         .order('sequence', { ascending: true });
 
-      // Walk messages in order. Tool-use blocks from assistant turns accumulate in
-      // a buffer; tool_result blocks from subsequent user turns annotate those
-      // entries with ok/error; the buffer attaches to the next assistant TEXT turn.
       const displayable: ChatMessage[] = [];
       const pending: ToolCallSummary[] = [];
       const pendingIds: string[] = [];
@@ -150,7 +150,7 @@ export function useChat() {
   }
 
   const sendMessage = useCallback(
-    async (userText: string, activePageId: string | null) => {
+    async (userText: string, activePageId: string | null, activeView: string | null) => {
       if (!userText.trim() || isLoading) return;
 
       setLoading(true);
@@ -166,7 +166,11 @@ export function useChat() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${ANON_KEY}`,
           },
-          body: JSON.stringify({ user_message: userText.trim(), active_page_id: activePageId }),
+          body: JSON.stringify({
+            user_message: userText.trim(),
+            active_page_id: activePageId,
+            active_view: activeView,
+          }),
         });
 
         if (!res.ok) {
@@ -174,10 +178,9 @@ export function useChat() {
           throw new Error(`HTTP ${res.status}: ${body}`);
         }
 
-        const { text, conversation_id, tool_calls, mutated } = await res.json();
+        const { text, conversation_id, tool_calls, mutated, mutated_surfaces } = await res.json();
         if (conversation_id) setConversationId(conversation_id);
 
-        // Replace the temp user message with a stable one (no real ID from server for user turn)
         replaceMessage(tempId, {
           id: `user-${Date.now()}`,
           role: 'user',
@@ -194,9 +197,24 @@ export function useChat() {
         });
 
         if (mutated) {
-          const { fetchTodoList, loadTodo, currentTodoId } = useTodoStore.getState();
-          await fetchTodoList();
-          if (currentTodoId) await loadTodo(currentTodoId);
+          const surfaces: string[] = Array.isArray(mutated_surfaces) ? mutated_surfaces : ['page'];
+
+          if (surfaces.includes('page')) {
+            const { fetchTodoList, loadTodo, currentTodoId } = useTodoStore.getState();
+            await fetchTodoList();
+            if (currentTodoId) await loadTodo(currentTodoId);
+          }
+          if (surfaces.includes('goals')) {
+            await useGoalStore.getState().fetchGoals();
+          }
+          if (surfaces.includes('journal')) {
+            await useJournalStore.getState().fetchAll();
+          }
+          if (surfaces.includes('palace')) {
+            // Force re-fetch by clearing loaded flag.
+            useMemoryPalaceStore.setState({ loaded: false });
+            await useMemoryPalaceStore.getState().fetchPalaces();
+          }
         }
       } catch (err) {
         removeMessage(tempId);

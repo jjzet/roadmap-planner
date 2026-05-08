@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal';
+export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal' | 'memory';
 
 // ── Todo Types ──
 
@@ -199,4 +199,43 @@ export interface JournalEntry {
   tomorrow: string;
   created_at: string;
   updated_at: string;
+}
+
+// ── Memory Palace Types ──
+
+export type PalaceTheme = 'forest' | 'dungeon' | 'castle' | 'beach' | 'space';
+
+export interface PalaceRoom {
+  id: string;
+  name: string;
+  x: number;       // top-left tile x
+  y: number;       // top-left tile y
+  w: number;       // width in tiles
+  h: number;       // height in tiles
+  color: string;   // hex floor tint
+  note?: string;
+}
+
+export interface PalaceObject {
+  id: string;
+  x: number;       // tile x
+  y: number;       // tile y
+  sprite: string;  // emoji used as the sprite
+  label: string;
+  note: string;
+  roomId?: string;
+}
+
+export interface MemoryPalace {
+  id: string;
+  name: string;
+  description: string;
+  theme: PalaceTheme;
+  grid_width: number;
+  grid_height: number;
+  rooms: PalaceRoom[];
+  objects: PalaceObject[];
+  created_at: string;
+  updated_at: string;
+  archived: boolean;
 }

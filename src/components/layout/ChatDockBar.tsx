@@ -23,7 +23,7 @@ export function ChatDockBar() {
 
   const handleSubmit = () => {
     if (!draft.trim() || isLoading) return;
-    sendMessage(draft.trim(), activePageId);
+    sendMessage(draft.trim(), activePageId, activeView);
     setDraft('');
     if (!chatPanelOpen) openChatPanel();
   };

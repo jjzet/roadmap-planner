@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target, NotebookPen } from 'lucide-react';
+import { Map, FileText, Plus, Trash2, Sun, BookOpen, Target, NotebookPen, Brain } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -134,6 +134,16 @@ export function AppSidebar() {
                 >
                   <NotebookPen className="w-4 h-4" />
                   <span>Journal</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'memory'}
+                  onClick={() => setActiveView('memory')}
+                  tooltip="Memory Palace"
+                >
+                  <Brain className="w-4 h-4" />
+                  <span>Memory</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

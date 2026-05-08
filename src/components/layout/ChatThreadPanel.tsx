@@ -25,11 +25,56 @@ function AssistantMarkdown({ text }: { text: string }) {
 const TOOL_LABELS: Record<string, string> = {
   list_pages: 'Listed pages',
   get_page: 'Read page',
+  create_page: 'Created page',
   create_task: 'Created task',
   update_task: 'Updated task',
   archive_task: 'Archived task',
   delete_task: 'Deleted task',
   reorder_tasks: 'Reordered tasks',
+  list_goals: 'Listed goals',
+  create_goal: 'Created goal',
+  update_goal: 'Updated goal',
+  archive_goal: 'Archived goal',
+  get_journal_entry: 'Read journal',
+  list_recent_journal: 'Read journal',
+  upsert_journal_entry: 'Saved journal',
+  list_palaces: 'Listed palaces',
+  get_palace: 'Read palace',
+  create_palace: 'Created palace',
+  add_palace_room: 'Added room',
+  add_palace_object: 'Placed object',
+  update_palace_object: 'Updated object',
+};
+
+const VIEW_SUGGESTIONS: Record<string, { label: string; prompt: string }[]> = {
+  tasks: [
+    { label: 'Tidy up this page', prompt: 'Look at the current page and suggest tasks to archive, group, or rephrase.' },
+    { label: 'What should I focus on?', prompt: 'Given the open tasks on this page and my goals, what are the 3 things I should focus on next?' },
+    { label: 'Add a quick task', prompt: 'Add a task to this page: ' },
+  ],
+  today: [
+    { label: 'Plan my day', prompt: "Look at my open tasks across pages and today's journal. Suggest a 3-bullet plan for today." },
+    { label: 'What needs follow-up?', prompt: 'Which of my recent tasks look stale or need a status update from me?' },
+  ],
+  goals: [
+    { label: 'Review goals', prompt: 'Read my goals and tell me how they relate to what I\'ve been working on this week.' },
+    { label: 'Add a goal', prompt: 'Help me draft a new goal — I want to ' },
+  ],
+  journal: [
+    { label: 'Summarise this week', prompt: 'Read my recent journal entries and give me a 3-bullet summary of patterns I should notice.' },
+    { label: 'Reflect on today', prompt: "I want to think out loud about today before journaling. Ask me a few prompting questions." },
+    { label: 'Save this as my entry', prompt: 'Take what we just talked through and save it as my journal entry for today.' },
+  ],
+  memory: [
+    { label: 'Plan a palace', prompt: 'Help me design a memory palace for ' },
+    { label: 'Add to active palace', prompt: 'Add a few memory objects to my current palace for these concepts: ' },
+  ],
+  insights: [
+    { label: 'Tie insight to my work', prompt: "How could today's daily insight apply to what I'm currently working on?" },
+  ],
+  roadmap: [
+    { label: 'Help with roadmap', prompt: 'I want to think about my roadmap. ' },
+  ],
 };
 
 function toolDetail(tc: ToolCallSummary): string | null {
@@ -99,11 +144,24 @@ export function ChatThreadPanel() {
     }
   }, [chatPanelOpen]);
 
-  const handleSubmit = () => {
-    if (!draft.trim() || isLoading) return;
-    sendMessage(draft.trim(), activePageId);
+  const handleSubmit = (override?: string) => {
+    const text = (override ?? draft).trim();
+    if (!text || isLoading) return;
+    sendMessage(text, activePageId, activeView);
     setDraft('');
   };
+
+  const handleSuggestionClick = (prompt: string) => {
+    if (prompt.endsWith(' ') || prompt.endsWith(': ')) {
+      // Half-finished prompt — pre-fill so user can complete.
+      setDraft(prompt);
+      inputRef.current?.focus();
+    } else {
+      handleSubmit(prompt);
+    }
+  };
+
+  const suggestions = VIEW_SUGGESTIONS[activeView] ?? VIEW_SUGGESTIONS.today;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -111,6 +169,8 @@ export function ChatThreadPanel() {
       handleSubmit();
     }
   };
+
+  const handleSendClick = () => handleSubmit();
 
   const handleNewChat = async () => {
     setMessages([]);
@@ -167,9 +227,24 @@ export function ChatThreadPanel() {
         {/* Message thread */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
           {messages.length === 0 && !isLoading && (
-            <p className="text-[11px] font-mono font-light text-gray-400 text-center pt-8">
-              No messages yet. Ask anything about the current page.
-            </p>
+            <div className="pt-6 space-y-4">
+              <div className="text-center">
+                <p className="text-[11px] font-mono font-light text-gray-400">
+                  Ready when you are. Try one of these, or just ask.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5 px-4">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.label}
+                    onClick={() => handleSuggestionClick(s.prompt)}
+                    className="text-[10px] font-mono uppercase tracking-wider text-cyan-700 bg-cyan-50/60 border border-cyan-100 rounded-sm px-2.5 py-1.5 hover:bg-cyan-100 hover:border-cyan-300 transition-all cursor-pointer"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
           {messages.map((msg) => (
@@ -233,7 +308,7 @@ export function ChatThreadPanel() {
             style={{ lineHeight: '1.5' }}
           />
           <button
-            onClick={handleSubmit}
+            onClick={handleSendClick}
             disabled={!draft.trim() || isLoading}
             className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-cyan-500 hover:bg-cyan-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-none cursor-pointer text-white mb-px"
             title="Send (Enter)"

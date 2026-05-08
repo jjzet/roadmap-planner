@@ -1,9 +1,10 @@
 // AI chat edge function.
-// Phase 1: read-only tool use. Tools: list_pages, get_page.
-// Active page is pre-serialized into the system prompt.
+// Tools span the user's productivity surface: pages/tasks, goals, journal,
+// and memory palaces. Active view context is folded into the system prompt so
+// the model can answer most questions without a tool call.
 //
-// Request:  { user_message: string, active_page_id?: string | null }
-// Response: { text: string, conversation_id: string }
+// Request:  { user_message: string, active_page_id?: string | null, active_view?: string | null }
+// Response: { text, conversation_id, tool_calls, mutated }
 //
 // Deploy: supabase functions deploy chat
 
@@ -12,20 +13,26 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const USER_ID = "default";
 const MODEL = "claude-opus-4-6";
-const MAX_TOOL_ITERATIONS = 8;
+const MAX_TOOL_ITERATIONS = 10;
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `You are an assistant embedded in a personal task/notes app for a senior technical leader.
+const SYSTEM_PROMPT = `You are an action-oriented assistant embedded in a personal productivity app for a senior technical leader.
 
-Your scope is the user's PAGES only — task lists and free-form text/heading blocks on those pages. You do NOT have access to roadmap data, goals, or daily insights.
+Your job is to help the user move work forward — not just describe it. When the user asks for something that maps to a tool, do it. When they ask a question, answer it from context first; only reach for tools when context is insufficient.
 
-You can READ pages (list_pages, get_page) and WRITE to them (create_task, update_task, archive_task, delete_task, reorder_tasks). When a task write tool succeeds, confirm the change briefly and cite task text — don't dump IDs back at the user.
+Surfaces you can act on:
+- PAGES: task lists and free-form blocks (text/heading/divider). Tools: list_pages, get_page, create_page, create_task, update_task, archive_task, delete_task, reorder_tasks.
+- GOALS: short-form goal cards. Tools: list_goals, create_goal, update_goal, archive_goal.
+- JOURNAL: one entry per date with three prompts (forward, blockers, tomorrow). Tools: get_journal_entry, list_recent_journal, upsert_journal_entry.
+- MEMORY PALACES: 2D mnemonic maps with rooms and objects (each object carries a memory note). Tools: list_palaces, get_palace, create_palace, add_palace_room, add_palace_object, update_palace_object.
 
-The user's currently active page (if any) is provided in full below. Prefer answering from that context before calling tools. Use list_pages only when the user references a different page, or asks something that spans pages.
-
-When writing, favour archive_task over delete_task unless the user is explicit about deletion. Always confirm destructive actions (delete_task, archive of many items) before executing them.
-
-Be concise and conversational. Plain English, no jargon. If you don't know, say so.`;
+Operating principles:
+- Prefer one decisive action over five clarifying questions. If a request is ambiguous, make a reasonable choice and explain it briefly afterwards.
+- Favour archive over delete for tasks and goals. Confirm before deleting many items at once.
+- For journal work: when the user asks to summarise their day or week, READ first (list_recent_journal or get_journal_entry), draft the summary inline, and offer to save the result back into the relevant date's entry — don't write without explicit consent.
+- For memory palace work: when the user wants to memorise a concept, propose a sensible spatial layout (a room per theme, an object per item) before placing anything, and use evocative emoji sprites.
+- For text-style requests like "add a note about X", append a text block to the active page rather than creating a task.
+- Keep replies concise and conversational. Cite item text when you act, not raw IDs.`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,6 +84,47 @@ type PageBlock =
   | { type: "divider"; data: { id: string; order: number } }
   | { type: "goal_card"; data: { id: string; goalId: string; order: number } };
 
+type JournalRow = {
+  id: string;
+  date: string;
+  forward: string;
+  blockers: string;
+  tomorrow: string;
+};
+
+type PalaceRoom = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  note?: string;
+};
+
+type PalaceObject = {
+  id: string;
+  x: number;
+  y: number;
+  sprite: string;
+  label: string;
+  note: string;
+  roomId?: string;
+};
+
+type PalaceRow = {
+  id: string;
+  name: string;
+  description: string;
+  theme: string;
+  grid_width: number;
+  grid_height: number;
+  rooms: PalaceRoom[];
+  objects: PalaceObject[];
+  updated_at: string;
+};
+
 // ─── Page serialization ────────────────────────────────────────────────
 function stripHtml(html: string | undefined | null): string {
   if (!html) return "";
@@ -89,7 +137,6 @@ function serializePage(page: PageRow): string {
   lines.push("");
 
   const blocks = page.data?.blocks ?? [];
-  // Fallback: if no blocks but groups exist, synthesize group blocks.
   const effectiveBlocks: PageBlock[] = blocks.length
     ? blocks
     : (page.data?.groups ?? []).map((g, i) => ({
@@ -156,42 +203,49 @@ function serializePage(page: PageRow): string {
 
 // ─── Tools ─────────────────────────────────────────────────────────────
 const TOOLS = [
+  // Pages
   {
     name: "list_pages",
     description:
       "List all non-archived pages (task lists / text pages). Returns id, name, and last-updated timestamp.",
-    input_schema: {
-      type: "object" as const,
-      properties: {},
-      required: [],
-    },
+    input_schema: { type: "object" as const, properties: {}, required: [] },
   },
   {
     name: "get_page",
     description:
-      "Fetch the full content of a page by id, serialized as readable text with task IDs preserved. Use this when the user references a page other than the currently active one.",
+      "Fetch the full content of a page by id, serialized as readable text with task IDs preserved.",
     input_schema: {
       type: "object" as const,
-      properties: {
-        page_id: { type: "string", description: "The page id" },
-      },
+      properties: { page_id: { type: "string" } },
       required: ["page_id"],
     },
   },
   {
-    name: "create_task",
+    name: "create_page",
     description:
-      "Add a new task to a task-list group on a page. Returns the created task's id.",
+      "Create a new page (task list / notes). Returns the new page id. The page starts with one empty task group so create_task is immediately usable.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string", description: "Display name of the page" },
+        first_group_name: { type: "string", description: "Name of the initial task group (default: 'Tasks')" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "create_task",
+    description: "Add a new task to a task-list group on a page. Returns the new task id.",
     input_schema: {
       type: "object" as const,
       properties: {
         page_id: { type: "string" },
         group_id: { type: "string", description: "The task list (group) id" },
-        text: { type: "string", description: "Task text (plain text — HTML not needed)" },
+        text: { type: "string", description: "Plain text" },
         due_date: { type: "string", description: "YYYY-MM-DD (optional)" },
         pinned: { type: "boolean" },
         notes: { type: "string" },
-        sub_group_id: { type: "string", description: "Optional sub-group id within the group" },
+        sub_group_id: { type: "string" },
       },
       required: ["page_id", "group_id", "text"],
     },
@@ -199,7 +253,7 @@ const TOOLS = [
   {
     name: "update_task",
     description:
-      "Update fields on an existing task. Only provided fields change; omitted fields are left alone. Use to toggle completion, edit text, change due date, pin/unpin, etc.",
+      "Update fields on an existing task. Only provided fields change; omitted fields are left alone.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -216,46 +270,191 @@ const TOOLS = [
   },
   {
     name: "archive_task",
-    description:
-      "Archive a task (soft-hide it without deleting). Preferred over delete_task unless the user explicitly asks to delete.",
+    description: "Archive a task (soft-hide). Preferred over delete_task.",
     input_schema: {
       type: "object" as const,
-      properties: {
-        page_id: { type: "string" },
-        task_id: { type: "string" },
-      },
+      properties: { page_id: { type: "string" }, task_id: { type: "string" } },
       required: ["page_id", "task_id"],
     },
   },
   {
     name: "delete_task",
-    description:
-      "Permanently delete a task. Destructive — confirm with the user before calling unless they've been explicit.",
+    description: "Permanently delete a task. Confirm first unless user is explicit.",
     input_schema: {
       type: "object" as const,
-      properties: {
-        page_id: { type: "string" },
-        task_id: { type: "string" },
-      },
+      properties: { page_id: { type: "string" }, task_id: { type: "string" } },
       required: ["page_id", "task_id"],
     },
   },
   {
     name: "reorder_tasks",
     description:
-      "Reorder tasks within a group. Provide the full ordered list of task ids for the group; order fields will be reassigned 0..N.",
+      "Reorder tasks within a group. Provide the full ordered list of task ids; orders are reassigned 0..N.",
     input_schema: {
       type: "object" as const,
       properties: {
         page_id: { type: "string" },
         group_id: { type: "string" },
-        ordered_task_ids: {
-          type: "array",
-          items: { type: "string" },
-          description: "Task ids in desired order (must be the complete set for that group)",
-        },
+        ordered_task_ids: { type: "array", items: { type: "string" } },
       },
       required: ["page_id", "group_id", "ordered_task_ids"],
+    },
+  },
+  // Goals
+  {
+    name: "list_goals",
+    description: "List all non-archived goals with title and body excerpt.",
+    input_schema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "create_goal",
+    description: "Create a new goal with a title and optional body.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string" },
+        body: { type: "string", description: "Optional HTML or plain text body" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_goal",
+    description: "Update a goal's title and/or body.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  {
+    name: "archive_goal",
+    description: "Archive a goal (soft-hide).",
+    input_schema: {
+      type: "object" as const,
+      properties: { goal_id: { type: "string" } },
+      required: ["goal_id"],
+    },
+  },
+  // Journal
+  {
+    name: "get_journal_entry",
+    description: "Fetch the journal entry for a specific date (YYYY-MM-DD).",
+    input_schema: {
+      type: "object" as const,
+      properties: { date: { type: "string" } },
+      required: ["date"],
+    },
+  },
+  {
+    name: "list_recent_journal",
+    description: "List recent journal entries (newest first). Default limit 7.",
+    input_schema: {
+      type: "object" as const,
+      properties: { limit: { type: "number" } },
+      required: [],
+    },
+  },
+  {
+    name: "upsert_journal_entry",
+    description:
+      "Create or replace a journal entry for a date. Use to save a summary the user has approved. Empty strings clear that prompt.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        date: { type: "string", description: "YYYY-MM-DD" },
+        forward: { type: "string", description: "How did I move forward?" },
+        blockers: { type: "string", description: "What got in the way?" },
+        tomorrow: { type: "string", description: "Tomorrow's one thing" },
+      },
+      required: ["date"],
+    },
+  },
+  // Memory palaces
+  {
+    name: "list_palaces",
+    description: "List the user's memory palaces with id, name, theme, and dimensions.",
+    input_schema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "get_palace",
+    description: "Fetch the full content of a palace including rooms and objects.",
+    input_schema: {
+      type: "object" as const,
+      properties: { palace_id: { type: "string" } },
+      required: ["palace_id"],
+    },
+  },
+  {
+    name: "create_palace",
+    description:
+      "Create a new memory palace. Themes: forest, dungeon, castle, beach, space. Default grid is 16×12.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string" },
+        theme: { type: "string", description: "forest | dungeon | castle | beach | space" },
+        description: { type: "string" },
+        grid_width: { type: "number" },
+        grid_height: { type: "number" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "add_palace_room",
+    description:
+      "Add a room to a palace. (x, y) is the top-left tile; w/h are tile dimensions. Rooms group related memories — name them after themes.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        name: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        w: { type: "number" },
+        h: { type: "number" },
+        color: { type: "string", description: "Hex like #7c5e3c" },
+        note: { type: "string" },
+      },
+      required: ["palace_id", "name", "x", "y", "w", "h"],
+    },
+  },
+  {
+    name: "add_palace_object",
+    description:
+      "Place a memory object on a tile. The sprite should be a single emoji that evokes the concept. The note explains what it stands for.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        sprite: { type: "string" },
+        label: { type: "string" },
+        note: { type: "string" },
+        room_id: { type: "string" },
+      },
+      required: ["palace_id", "x", "y", "sprite", "label"],
+    },
+  },
+  {
+    name: "update_palace_object",
+    description: "Update the label, sprite or note on an existing palace object.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        object_id: { type: "string" },
+        sprite: { type: "string" },
+        label: { type: "string" },
+        note: { type: "string" },
+      },
+      required: ["palace_id", "object_id"],
     },
   },
 ];
@@ -287,7 +486,6 @@ async function savePageData(
   return error?.message ?? null;
 }
 
-// Return [group, blockIndex] for a given group id, searching both `blocks` and legacy `groups`.
 function findGroup(data: TodoData, groupId: string): TodoGroup | null {
   for (const b of data.blocks ?? []) {
     if (b.type === "group" && b.data.id === groupId) return b.data;
@@ -321,11 +519,38 @@ function genId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+async function persistPalace(
+  supabase: ReturnType<typeof createClient>,
+  palaceId: string,
+  patch: Record<string, unknown>
+): Promise<string | null> {
+  const { error } = await supabase
+    .from("memory_palaces")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", palaceId);
+  return error?.message ?? null;
+}
+
+async function loadPalace(
+  supabase: ReturnType<typeof createClient>,
+  palaceId: string
+): Promise<{ palace: PalaceRow | null; error?: string }> {
+  const { data, error } = await supabase
+    .from("memory_palaces")
+    .select("*")
+    .eq("id", palaceId)
+    .maybeSingle();
+  if (error) return { palace: null, error: error.message };
+  if (!data) return { palace: null, error: "palace not found" };
+  return { palace: data as PalaceRow };
+}
+
 async function runTool(
   supabase: ReturnType<typeof createClient>,
   name: string,
   input: Record<string, unknown>
 ): Promise<string> {
+  // ── Pages ────────────────────────────────────────────────────────────
   if (name === "list_pages") {
     const { data, error } = await supabase
       .from("todo_lists")
@@ -348,6 +573,29 @@ async function runTool(
     return serializePage(data as PageRow);
   }
 
+  if (name === "create_page") {
+    const pageName = (input.name as string) ?? "";
+    if (!pageName.trim()) return JSON.stringify({ error: "name required" });
+    const groupName = (input.first_group_name as string) || "Tasks";
+    const groupId = genId("group");
+    const data: TodoData = {
+      blocks: [
+        {
+          type: "group",
+          data: { id: groupId, name: groupName, items: [], subGroups: [], order: 0 } as TodoGroup & { order: number },
+        },
+      ],
+      groups: [],
+    };
+    const { data: row, error } = await supabase
+      .from("todo_lists")
+      .insert({ name: pageName.trim(), data })
+      .select("id, name")
+      .single();
+    if (error || !row) return JSON.stringify({ error: error?.message ?? "create failed" });
+    return JSON.stringify({ ok: true, page_id: row.id, name: row.name, group_id: groupId });
+  }
+
   if (name === "create_task") {
     const pageId = input.page_id as string;
     const groupId = input.group_id as string;
@@ -365,7 +613,7 @@ async function runTool(
     const maxOrder = group.items.reduce((m, it) => Math.max(m, it.order ?? 0), -1);
     const newItem: TodoItem = {
       id: genId("task"),
-      text: text,
+      text,
       completed: false,
       pinned: false,
       link: "",
@@ -455,13 +703,251 @@ async function runTool(
       const it = byId.get(id)!;
       it.order = idx;
     });
-    // Preserve items not in ordered list at the end (shouldn't happen if caller sends full list).
     const extras = items.filter((it) => !ordered.includes(it.id));
     extras.forEach((it, idx) => (it.order = ordered.length + idx));
 
     const saveErr = await savePageData(supabase, pageId, page.data);
     if (saveErr) return JSON.stringify({ error: saveErr });
     return JSON.stringify({ ok: true, count: ordered.length });
+  }
+
+  // ── Goals ────────────────────────────────────────────────────────────
+  if (name === "list_goals") {
+    const { data, error } = await supabase
+      .from("goals")
+      .select("id, title, body, updated_at")
+      .eq("archived", false)
+      .order("updated_at", { ascending: false });
+    if (error) return JSON.stringify({ error: error.message });
+    const goals = (data ?? []).map((g) => ({
+      id: g.id,
+      title: g.title,
+      body_excerpt: stripHtml(g.body as string).slice(0, 240),
+      updated_at: g.updated_at,
+    }));
+    return JSON.stringify({ goals });
+  }
+
+  if (name === "create_goal") {
+    const title = (input.title as string) ?? "";
+    const body = (input.body as string) ?? "";
+    if (!title.trim()) return JSON.stringify({ error: "title required" });
+    const { data, error } = await supabase
+      .from("goals")
+      .insert({ title: title.trim(), body })
+      .select("id, title")
+      .single();
+    if (error || !data) return JSON.stringify({ error: error?.message ?? "create failed" });
+    return JSON.stringify({ ok: true, goal_id: data.id });
+  }
+
+  if (name === "update_goal") {
+    const goalId = input.goal_id as string;
+    if (!goalId) return JSON.stringify({ error: "goal_id required" });
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (typeof input.title === "string") patch.title = input.title;
+    if (typeof input.body === "string") patch.body = input.body;
+    const { error } = await supabase.from("goals").update(patch).eq("id", goalId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: goalId });
+  }
+
+  if (name === "archive_goal") {
+    const goalId = input.goal_id as string;
+    if (!goalId) return JSON.stringify({ error: "goal_id required" });
+    const { error } = await supabase
+      .from("goals")
+      .update({ archived: true, updated_at: new Date().toISOString() })
+      .eq("id", goalId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: goalId });
+  }
+
+  // ── Journal ──────────────────────────────────────────────────────────
+  if (name === "get_journal_entry") {
+    const date = input.date as string;
+    if (!date) return JSON.stringify({ error: "date required" });
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow")
+      .eq("date", date)
+      .maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ entry: null, message: "no entry for date" });
+    return JSON.stringify({ entry: data });
+  }
+
+  if (name === "list_recent_journal") {
+    const limit = typeof input.limit === "number" ? input.limit : 7;
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow")
+      .order("date", { ascending: false })
+      .limit(limit);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ entries: data ?? [] });
+  }
+
+  if (name === "upsert_journal_entry") {
+    const date = input.date as string;
+    if (!date) return JSON.stringify({ error: "date required" });
+    const payload = {
+      date,
+      forward: typeof input.forward === "string" ? input.forward : "",
+      blockers: typeof input.blockers === "string" ? input.blockers : "",
+      tomorrow: typeof input.tomorrow === "string" ? input.tomorrow : "",
+      updated_at: new Date().toISOString(),
+    };
+    // If user provided no fields at all, refuse — too easy to wipe an entry.
+    if (
+      typeof input.forward !== "string" &&
+      typeof input.blockers !== "string" &&
+      typeof input.tomorrow !== "string"
+    ) {
+      return JSON.stringify({ error: "provide at least one of forward/blockers/tomorrow" });
+    }
+    // Preserve any field the caller didn't supply.
+    const { data: existing } = await supabase
+      .from("journal_entries")
+      .select("forward, blockers, tomorrow")
+      .eq("date", date)
+      .maybeSingle();
+    if (existing) {
+      if (typeof input.forward !== "string") payload.forward = (existing as JournalRow).forward;
+      if (typeof input.blockers !== "string") payload.blockers = (existing as JournalRow).blockers;
+      if (typeof input.tomorrow !== "string") payload.tomorrow = (existing as JournalRow).tomorrow;
+    }
+    const { error } = await supabase.from("journal_entries").upsert(payload, { onConflict: "date" });
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, date });
+  }
+
+  // ── Memory palaces ───────────────────────────────────────────────────
+  if (name === "list_palaces") {
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .select("id, name, theme, grid_width, grid_height, updated_at, rooms, objects")
+      .eq("archived", false)
+      .order("updated_at", { ascending: false });
+    if (error) return JSON.stringify({ error: error.message });
+    const palaces = (data ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      theme: p.theme,
+      grid: `${p.grid_width}×${p.grid_height}`,
+      rooms: (p.rooms as PalaceRoom[] | null)?.length ?? 0,
+      objects: (p.objects as PalaceObject[] | null)?.length ?? 0,
+      updated_at: p.updated_at,
+    }));
+    return JSON.stringify({ palaces });
+  }
+
+  if (name === "get_palace") {
+    const palaceId = input.palace_id as string;
+    if (!palaceId) return JSON.stringify({ error: "palace_id required" });
+    const { palace, error } = await loadPalace(supabase, palaceId);
+    if (error || !palace) return JSON.stringify({ error: error ?? "palace not found" });
+    const lines: string[] = [];
+    lines.push(`# Palace: ${palace.name} (id: ${palace.id})`);
+    lines.push(`Theme: ${palace.theme} · Grid: ${palace.grid_width}×${palace.grid_height}`);
+    if (palace.description) lines.push(`Description: ${palace.description}`);
+    lines.push("");
+    lines.push("## Rooms");
+    for (const r of palace.rooms ?? []) {
+      lines.push(`- ${r.name} (id: ${r.id}) — at (${r.x},${r.y}), ${r.w}×${r.h}${r.note ? ` · ${r.note}` : ""}`);
+    }
+    lines.push("");
+    lines.push("## Objects");
+    for (const o of palace.objects ?? []) {
+      lines.push(
+        `- ${o.sprite} ${o.label} (id: ${o.id}) at (${o.x},${o.y})${o.roomId ? ` in room ${o.roomId}` : ""}${o.note ? ` — ${o.note}` : ""}`
+      );
+    }
+    return lines.join("\n");
+  }
+
+  if (name === "create_palace") {
+    const palaceName = (input.name as string) ?? "";
+    if (!palaceName.trim()) return JSON.stringify({ error: "name required" });
+    const themeRaw = (input.theme as string) ?? "forest";
+    const theme = ["forest", "dungeon", "castle", "beach", "space"].includes(themeRaw) ? themeRaw : "forest";
+    const payload = {
+      name: palaceName.trim(),
+      description: (input.description as string) ?? "",
+      theme,
+      grid_width: typeof input.grid_width === "number" ? input.grid_width : 16,
+      grid_height: typeof input.grid_height === "number" ? input.grid_height : 12,
+      rooms: [],
+      objects: [],
+    };
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .insert(payload)
+      .select("id, name")
+      .single();
+    if (error || !data) return JSON.stringify({ error: error?.message ?? "create failed" });
+    return JSON.stringify({ ok: true, palace_id: data.id });
+  }
+
+  if (name === "add_palace_room") {
+    const palaceId = input.palace_id as string;
+    if (!palaceId) return JSON.stringify({ error: "palace_id required" });
+    const { palace, error } = await loadPalace(supabase, palaceId);
+    if (error || !palace) return JSON.stringify({ error: error ?? "palace not found" });
+    const room: PalaceRoom = {
+      id: genId("room"),
+      name: (input.name as string) ?? "Room",
+      x: Math.max(0, Math.min(palace.grid_width - 1, input.x as number)),
+      y: Math.max(0, Math.min(palace.grid_height - 1, input.y as number)),
+      w: Math.max(1, input.w as number),
+      h: Math.max(1, input.h as number),
+      color: (input.color as string) ?? "#7c5e3c",
+      note: (input.note as string) ?? "",
+    };
+    const rooms = [...(palace.rooms ?? []), room];
+    const err = await persistPalace(supabase, palaceId, { rooms });
+    if (err) return JSON.stringify({ error: err });
+    return JSON.stringify({ ok: true, room_id: room.id });
+  }
+
+  if (name === "add_palace_object") {
+    const palaceId = input.palace_id as string;
+    if (!palaceId) return JSON.stringify({ error: "palace_id required" });
+    const { palace, error } = await loadPalace(supabase, palaceId);
+    if (error || !palace) return JSON.stringify({ error: error ?? "palace not found" });
+    const obj: PalaceObject = {
+      id: genId("obj"),
+      x: Math.max(0, Math.min(palace.grid_width - 1, input.x as number)),
+      y: Math.max(0, Math.min(palace.grid_height - 1, input.y as number)),
+      sprite: (input.sprite as string) ?? "✨",
+      label: (input.label as string) ?? "",
+      note: (input.note as string) ?? "",
+      roomId: (input.room_id as string) || undefined,
+    };
+    const objects = [...(palace.objects ?? []), obj];
+    const err = await persistPalace(supabase, palaceId, { objects });
+    if (err) return JSON.stringify({ error: err });
+    return JSON.stringify({ ok: true, object_id: obj.id });
+  }
+
+  if (name === "update_palace_object") {
+    const palaceId = input.palace_id as string;
+    const objectId = input.object_id as string;
+    if (!palaceId || !objectId) return JSON.stringify({ error: "palace_id and object_id required" });
+    const { palace, error } = await loadPalace(supabase, palaceId);
+    if (error || !palace) return JSON.stringify({ error: error ?? "palace not found" });
+    const objects = (palace.objects ?? []).map((o) => {
+      if (o.id !== objectId) return o;
+      return {
+        ...o,
+        ...(typeof input.sprite === "string" ? { sprite: input.sprite } : {}),
+        ...(typeof input.label === "string" ? { label: input.label } : {}),
+        ...(typeof input.note === "string" ? { note: input.note } : {}),
+      };
+    });
+    const err = await persistPalace(supabase, palaceId, { objects });
+    if (err) return JSON.stringify({ error: err });
+    return JSON.stringify({ ok: true, object_id: objectId });
   }
 
   return JSON.stringify({ error: `unknown tool: ${name}` });
@@ -527,6 +1013,67 @@ async function appendMessages(
     .eq("id", conversationId);
 }
 
+// ─── Context building ──────────────────────────────────────────────────
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+async function buildContextBlock(
+  supabase: ReturnType<typeof createClient>,
+  activePageId: string | null,
+  activeView: string | null
+): Promise<string> {
+  const parts: string[] = [];
+
+  // Active goals — small, almost always relevant.
+  const { data: goalRows } = await supabase
+    .from("goals")
+    .select("id, title")
+    .eq("archived", false)
+    .order("updated_at", { ascending: false })
+    .limit(5);
+  if (goalRows && goalRows.length > 0) {
+    parts.push("─── ACTIVE GOALS ───");
+    for (const g of goalRows) {
+      parts.push(`- ${g.title} (id: ${g.id})`);
+    }
+  }
+
+  // Today's journal — surface so AI can summarise / reflect.
+  const today = todayISO();
+  const { data: todayEntry } = await supabase
+    .from("journal_entries")
+    .select("date, forward, blockers, tomorrow")
+    .eq("date", today)
+    .maybeSingle();
+  if (todayEntry) {
+    parts.push(`\n─── TODAY'S JOURNAL (${today}) ───`);
+    if (todayEntry.forward) parts.push(`Forward: ${todayEntry.forward}`);
+    if (todayEntry.blockers) parts.push(`Blockers: ${todayEntry.blockers}`);
+    if (todayEntry.tomorrow) parts.push(`Tomorrow: ${todayEntry.tomorrow}`);
+  } else {
+    parts.push(`\n(No journal entry yet for ${today}.)`);
+  }
+
+  // View context.
+  parts.push(`\n─── VIEW ───`);
+  parts.push(`Current view: ${activeView ?? "unknown"}`);
+  if (activePageId) {
+    const { data: pageRow } = await supabase
+      .from("todo_lists")
+      .select("id, name, data, updated_at")
+      .eq("id", activePageId)
+      .maybeSingle();
+    if (pageRow) {
+      parts.push(`\n─── ACTIVE PAGE ───`);
+      parts.push(serializePage(pageRow as PageRow));
+      parts.push(`─── END ACTIVE PAGE ───`);
+    }
+  }
+
+  return parts.length === 0 ? "" : "\n\n" + parts.join("\n");
+}
+
 // ─── Handler ───────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -544,7 +1091,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { user_message, active_page_id } = await req.json();
+    const { user_message, active_page_id, active_view } = await req.json();
     if (!user_message || typeof user_message !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'user_message'" }),
@@ -555,28 +1102,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const anthropic = new Anthropic({ apiKey });
 
-    // Load / create conversation and prior messages.
     const conversationId = await getOrCreateConversation(supabase);
     const prior = await loadMessages(supabase, conversationId);
-    let nextSeq = prior.length > 0 ? prior[prior.length - 1].sequence + 1 : 0;
+    const nextSeq = prior.length > 0 ? prior[prior.length - 1].sequence + 1 : 0;
 
-    // Build active-page context for system prompt.
-    let activePageBlock = "";
-    if (active_page_id) {
-      const { data: pageRow } = await supabase
-        .from("todo_lists")
-        .select("id, name, data, updated_at")
-        .eq("id", active_page_id)
-        .maybeSingle();
-      if (pageRow) {
-        activePageBlock = `\n\n─── ACTIVE PAGE ───\n${serializePage(pageRow as PageRow)}\n─── END ACTIVE PAGE ───`;
-      }
-    } else {
-      activePageBlock = "\n\n(No active page — user is on a non-page view.)";
-    }
-    const system = SYSTEM_PROMPT + activePageBlock;
+    const contextBlock = await buildContextBlock(supabase, active_page_id ?? null, active_view ?? null);
+    const system = SYSTEM_PROMPT + contextBlock;
 
-    // Build message array: prior history + new user turn.
     const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
       ...prior.map((m) => ({ role: m.role, content: m.content })),
       { role: "user", content: user_message },
@@ -589,7 +1121,6 @@ Deno.serve(async (req) => {
     let finalText = "";
     const toolCallsUsed: Array<{ name: string; input: Record<string, unknown>; ok: boolean; error?: string }> = [];
 
-    // Tool-use loop.
     for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
       const response = await anthropic.messages.create({
         model: MODEL,
@@ -600,7 +1131,6 @@ Deno.serve(async (req) => {
         messages: messages as any,
       });
 
-      // Persist the assistant turn (raw content blocks).
       messages.push({ role: "assistant", content: response.content });
       toPersist.push({ role: "assistant", content: response.content });
 
@@ -610,7 +1140,6 @@ Deno.serve(async (req) => {
         break;
       }
 
-      // Execute each tool_use block and build a single tool_result user turn.
       const toolUses = response.content.filter((b) => b.type === "tool_use");
       const toolResults = [];
       for (const tu of toolUses) {
@@ -626,7 +1155,7 @@ Deno.serve(async (req) => {
             errMsg = String(parsed.error);
           }
         } catch {
-          // result wasn't JSON (e.g. serializePage markdown) — treat as success.
+          // result wasn't JSON — treat as success.
         }
         toolCallsUsed.push({ name: tu.name, input: toolInput, ok, error: errMsg });
         toolResults.push({
@@ -646,9 +1175,32 @@ Deno.serve(async (req) => {
 
     await appendMessages(supabase, conversationId, nextSeq, toPersist);
 
-    const mutated = toolCallsUsed.some((t) =>
-      ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"].includes(t.name)
-    );
+    const MUTATING_TOOLS = new Set([
+      "create_task",
+      "update_task",
+      "archive_task",
+      "delete_task",
+      "reorder_tasks",
+      "create_page",
+      "create_goal",
+      "update_goal",
+      "archive_goal",
+      "upsert_journal_entry",
+      "create_palace",
+      "add_palace_room",
+      "add_palace_object",
+      "update_palace_object",
+    ]);
+    const mutated = toolCallsUsed.some((t) => MUTATING_TOOLS.has(t.name));
+    const mutatedSurfaces = new Set<string>();
+    for (const t of toolCallsUsed) {
+      if (!MUTATING_TOOLS.has(t.name)) continue;
+      if (t.name.startsWith("create_palace") || t.name.startsWith("add_palace") || t.name.startsWith("update_palace"))
+        mutatedSurfaces.add("palace");
+      else if (t.name.endsWith("_goal") || t.name === "list_goals") mutatedSurfaces.add("goals");
+      else if (t.name.includes("journal")) mutatedSurfaces.add("journal");
+      else mutatedSurfaces.add("page");
+    }
 
     return new Response(
       JSON.stringify({
@@ -656,6 +1208,7 @@ Deno.serve(async (req) => {
         conversation_id: conversationId,
         tool_calls: toolCallsUsed,
         mutated,
+        mutated_surfaces: Array.from(mutatedSurfaces),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
