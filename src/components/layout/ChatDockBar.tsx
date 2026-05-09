@@ -17,13 +17,24 @@ export function ChatDockBar() {
 
   const { sendMessage, isLoading } = useChat();
 
+  const placeholder = (() => {
+    switch (activeView) {
+      case 'today': return "Ask about today's focus, due tasks, or pinned items…";
+      case 'tasks': return "Ask Claude to add, update, or summarise this page…";
+      case 'goals': return "Ask Claude about your goals, log progress, or draft an update…";
+      case 'journal': return "Reflect with Claude — say 'log today: …' to save it…";
+      case 'insights': return 'Ask Claude…';
+      default: return 'Ask Claude…';
+    }
+  })();
+
   const handleFocus = () => {
     if (!chatPanelOpen) openChatPanel();
   };
 
   const handleSubmit = () => {
     if (!draft.trim() || isLoading) return;
-    sendMessage(draft.trim(), activePageId);
+    sendMessage(draft.trim(), activePageId, activeView);
     setDraft('');
     if (!chatPanelOpen) openChatPanel();
   };
@@ -50,7 +61,7 @@ export function ChatDockBar() {
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
-        placeholder="Ask Claude…"
+        placeholder={placeholder}
         className="flex-1 bg-transparent border-none outline-none text-[12px] font-mono font-light text-gray-700 placeholder-gray-400 min-w-0"
         disabled={isLoading}
       />
