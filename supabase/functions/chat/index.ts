@@ -15,17 +15,31 @@ const MODEL = "claude-opus-4-6";
 const MAX_TOOL_ITERATIONS = 8;
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `You are an assistant embedded in a personal task/notes app for a senior technical leader.
+const SYSTEM_PROMPT = `You are an embedded productivity assistant for a senior technical leader. You take action inside the app on the user's behalf.
 
-Your scope is the user's PAGES only — task lists and free-form text/heading blocks on those pages. You do NOT have access to roadmap data, goals, or daily insights.
+Your domains:
+- PAGES — task lists (with groups + sub-groups) and free-form text / heading / divider / goal-card blocks. Day-to-day todos and notes live here.
+- GOALS — rich-text intentions the user is working toward.
+- JOURNAL — one daily reflective entry per date, with three prompts: forward (how I moved forward), blockers (what got in the way), tomorrow (one focused thing).
+- TODAY — an aggregated briefing of overdue / due-today / due-tomorrow tasks across all pages.
 
-You can READ pages (list_pages, get_page) and WRITE to them (create_task, update_task, archive_task, delete_task, reorder_tasks). When a task write tool succeeds, confirm the change briefly and cite task text — don't dump IDs back at the user.
+Tools you can call:
+- Pages (read): list_pages, get_page
+- Tasks (write): create_task, update_task, archive_task, delete_task, reorder_tasks
+- Goals: list_goals, get_goal, create_goal, update_goal, archive_goal
+- Journal: get_journal_entry, upsert_journal_entry, list_recent_journal_entries
+- Briefing: get_today_briefing
 
-The user's currently active page (if any) is provided in full below. Prefer answering from that context before calling tools. Use list_pages only when the user references a different page, or asks something that spans pages.
-
-When writing, favour archive_task over delete_task unless the user is explicit about deletion. Always confirm destructive actions (delete_task, archive of many items) before executing them.
-
-Be concise and conversational. Plain English, no jargon. If you don't know, say so.`;
+How to behave:
+- The user's active context (page or view) is provided below. Prefer answering from that context before calling tools.
+- Be action-oriented: when the user asks for something tractable (capture a task, update a goal, summarise a page, draft a journal entry), do it via tools rather than only describing what they could do.
+- After a successful write, confirm briefly and cite the affected text — never dump raw IDs at the user.
+- Drafting work (handover summaries, status updates, journal reflections, page summaries) should be done in plain prose first; only persist via tools when the user signals "save it" / "add it" / "log it".
+- For journal: when the user reflects on their day, offer to log it. Map their words sensibly to forward / blockers / tomorrow; ask before guessing if it's ambiguous.
+- For goals: keep updates incremental. Use update_goal to append progress notes rather than rewriting unless asked.
+- Prefer archive_task / archive_goal over delete_*. Confirm destructive actions before executing them.
+- Markdown is supported in your replies. Use it sparingly — short paragraphs, lists when listing.
+- Keep responses tight, plain English, no jargon. If you don't know, say so.`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,6 +95,25 @@ type PageBlock =
 function stripHtml(html: string | undefined | null): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function shiftIsoDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
 function serializePage(page: PageRow): string {
@@ -256,6 +289,119 @@ const TOOLS = [
         },
       },
       required: ["page_id", "group_id", "ordered_task_ids"],
+    },
+  },
+  // ─── Goals ────────────────────────────────────────────────────────────
+  {
+    name: "list_goals",
+    description:
+      "List the user's active (non-archived) goals. Returns id, title, a short snippet of body text, and updated_at.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        include_archived: { type: "boolean", description: "Default false" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_goal",
+    description: "Fetch the full body of a goal as plain text (HTML stripped).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  {
+    name: "create_goal",
+    description: "Create a new goal. Body is optional plain text — will be stored as a paragraph.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string" },
+        body: { type: "string", description: "Optional initial body (plain text)" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_goal",
+    description:
+      "Update a goal's title and/or body. By default `body` REPLACES the existing body; pass `mode: \"append\"` to instead add a new paragraph at the end (preferred for incremental progress notes).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string", description: "Plain text. Will be wrapped in <p>…</p>." },
+        mode: { type: "string", description: "'replace' (default) or 'append'" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  {
+    name: "archive_goal",
+    description: "Archive a goal (preferred over delete).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  // ─── Journal ──────────────────────────────────────────────────────────
+  {
+    name: "get_journal_entry",
+    description:
+      "Fetch a single journal entry by date (YYYY-MM-DD). If no date is provided, today is used. Returns the three fields (forward / blockers / tomorrow) or null if no entry exists.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        date: { type: "string", description: "YYYY-MM-DD; defaults to today" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "list_recent_journal_entries",
+    description:
+      "List recent journal entries (most recent first). Useful for spotting trends in what blocks the user week-on-week.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Default 7, max 30" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "upsert_journal_entry",
+    description:
+      "Create or update a journal entry for a date (defaults to today). All three fields are optional; omitted fields are LEFT ALONE on existing entries (or empty on new ones). Pass an empty string to explicitly clear a field.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        date: { type: "string", description: "YYYY-MM-DD; defaults to today" },
+        forward: { type: "string", description: "How I moved forward today" },
+        blockers: { type: "string", description: "What got in the way" },
+        tomorrow: { type: "string", description: "Tomorrow's one focused thing" },
+      },
+      required: [],
+    },
+  },
+  // ─── Today briefing ───────────────────────────────────────────────────
+  {
+    name: "get_today_briefing",
+    description:
+      "Return an aggregated briefing of tasks across all pages: overdue, due today, due tomorrow, and pinned items. Useful when the user asks 'what should I focus on?' or 'what's due today?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
     },
   },
 ];
@@ -464,6 +610,183 @@ async function runTool(
     return JSON.stringify({ ok: true, count: ordered.length });
   }
 
+  // ─── Goals ──────────────────────────────────────────────────────────
+  if (name === "list_goals") {
+    const includeArchived = input.include_archived === true;
+    let q = supabase.from("goals").select("id, title, body, updated_at, archived").order("updated_at", { ascending: false });
+    if (!includeArchived) q = q.eq("archived", false);
+    const { data, error } = await q;
+    if (error) return JSON.stringify({ error: error.message });
+    const rows = (data ?? []) as Array<{ id: string; title: string; body: string; updated_at: string; archived: boolean }>;
+    return JSON.stringify({
+      goals: rows.map((g) => {
+        const text = stripHtml(g.body ?? "");
+        const snippet = text.length > 140 ? text.slice(0, 140) + "…" : text;
+        return { id: g.id, title: g.title, snippet, updated_at: g.updated_at, archived: g.archived };
+      }),
+    });
+  }
+
+  if (name === "get_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const { data, error } = await supabase.from("goals").select("id, title, body, updated_at, archived").eq("id", id).maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ error: "goal not found" });
+    const g = data as { id: string; title: string; body: string; updated_at: string; archived: boolean };
+    return JSON.stringify({
+      id: g.id,
+      title: g.title,
+      body: stripHtml(g.body ?? ""),
+      updated_at: g.updated_at,
+      archived: g.archived,
+    });
+  }
+
+  if (name === "create_goal") {
+    const title = (input.title as string) ?? "";
+    const bodyText = (input.body as string) ?? "";
+    if (!title.trim()) return JSON.stringify({ error: "title is required" });
+    const body = bodyText.trim() ? `<p>${escapeHtml(bodyText)}</p>` : "";
+    const { data, error } = await supabase.from("goals").insert({ title, body }).select("id").single();
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: (data as { id: string }).id });
+  }
+
+  if (name === "update_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const mode = (input.mode as string) === "append" ? "append" : "replace";
+    const patch: { title?: string; body?: string; updated_at?: string } = {};
+    if (typeof input.title === "string") patch.title = input.title;
+    if (typeof input.body === "string") {
+      const newPara = `<p>${escapeHtml(input.body as string)}</p>`;
+      if (mode === "append") {
+        const { data: cur, error: gErr } = await supabase.from("goals").select("body").eq("id", id).maybeSingle();
+        if (gErr) return JSON.stringify({ error: gErr.message });
+        if (!cur) return JSON.stringify({ error: "goal not found" });
+        const existing = (cur as { body: string }).body ?? "";
+        patch.body = existing ? `${existing}\n${newPara}` : newPara;
+      } else {
+        patch.body = newPara;
+      }
+    }
+    if (Object.keys(patch).length === 0) return JSON.stringify({ error: "nothing to update" });
+    patch.updated_at = new Date().toISOString();
+    const { error } = await supabase.from("goals").update(patch).eq("id", id);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: id, mode });
+  }
+
+  if (name === "archive_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const { error } = await supabase
+      .from("goals")
+      .update({ archived: true, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: id });
+  }
+
+  // ─── Journal ────────────────────────────────────────────────────────
+  if (name === "get_journal_entry") {
+    const date = (input.date as string) || todayISO();
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow, updated_at")
+      .eq("date", date)
+      .maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ date, entry: null });
+    return JSON.stringify({ date, entry: data });
+  }
+
+  if (name === "list_recent_journal_entries") {
+    const raw = Number(input.limit ?? 7);
+    const limit = Math.min(Math.max(Number.isFinite(raw) ? raw : 7, 1), 30);
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow, updated_at")
+      .order("date", { ascending: false })
+      .limit(limit);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ entries: data ?? [] });
+  }
+
+  if (name === "upsert_journal_entry") {
+    const date = (input.date as string) || todayISO();
+    const incoming: Partial<{ forward: string; blockers: string; tomorrow: string }> = {};
+    if (typeof input.forward === "string") incoming.forward = input.forward;
+    if (typeof input.blockers === "string") incoming.blockers = input.blockers;
+    if (typeof input.tomorrow === "string") incoming.tomorrow = input.tomorrow;
+    if (Object.keys(incoming).length === 0) {
+      return JSON.stringify({ error: "Provide at least one of forward / blockers / tomorrow" });
+    }
+    // Read existing so omitted fields are preserved.
+    const { data: existing, error: rErr } = await supabase
+      .from("journal_entries")
+      .select("forward, blockers, tomorrow")
+      .eq("date", date)
+      .maybeSingle();
+    if (rErr) return JSON.stringify({ error: rErr.message });
+    const cur = (existing ?? { forward: "", blockers: "", tomorrow: "" }) as {
+      forward: string; blockers: string; tomorrow: string;
+    };
+    const payload = {
+      date,
+      forward: incoming.forward ?? cur.forward ?? "",
+      blockers: incoming.blockers ?? cur.blockers ?? "",
+      tomorrow: incoming.tomorrow ?? cur.tomorrow ?? "",
+      updated_at: new Date().toISOString(),
+    };
+    const isEmpty = !payload.forward.trim() && !payload.blockers.trim() && !payload.tomorrow.trim();
+    if (isEmpty) {
+      const { error } = await supabase.from("journal_entries").delete().eq("date", date);
+      if (error) return JSON.stringify({ error: error.message });
+      return JSON.stringify({ ok: true, date, deleted: true });
+    }
+    const { error } = await supabase.from("journal_entries").upsert(payload, { onConflict: "date" });
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, date, entry: payload });
+  }
+
+  // ─── Today briefing ─────────────────────────────────────────────────
+  if (name === "get_today_briefing") {
+    const { data, error } = await supabase
+      .from("todo_lists")
+      .select("id, name, data");
+    if (error) return JSON.stringify({ error: error.message });
+    const today = todayISO();
+    const tomorrow = shiftIsoDate(today, 1);
+    const overdue: Array<{ page: string; group: string; text: string; due: string }> = [];
+    const dueToday: Array<{ page: string; group: string; text: string }> = [];
+    const dueTomorrow: Array<{ page: string; group: string; text: string }> = [];
+    const pinned: Array<{ page: string; group: string; text: string }> = [];
+    for (const row of (data ?? []) as PageRow[]) {
+      for (const g of allGroups(row.data ?? { groups: [], blocks: [] })) {
+        for (const it of g.items ?? []) {
+          if (it.archived || it.completed) continue;
+          const text = stripHtml(it.text);
+          if (it.pinned) pinned.push({ page: row.name, group: g.name, text });
+          if (it.dueDate) {
+            if (it.dueDate < today) overdue.push({ page: row.name, group: g.name, text, due: it.dueDate });
+            else if (it.dueDate === today) dueToday.push({ page: row.name, group: g.name, text });
+            else if (it.dueDate === tomorrow) dueTomorrow.push({ page: row.name, group: g.name, text });
+          }
+        }
+      }
+    }
+    return JSON.stringify({
+      date: today,
+      counts: { overdue: overdue.length, due_today: dueToday.length, due_tomorrow: dueTomorrow.length, pinned: pinned.length },
+      overdue,
+      due_today: dueToday,
+      due_tomorrow: dueTomorrow,
+      pinned,
+    });
+  }
+
   return JSON.stringify({ error: `unknown tool: ${name}` });
 }
 
@@ -544,7 +867,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { user_message, active_page_id } = await req.json();
+    const { user_message, active_page_id, active_view } = await req.json();
     if (!user_message || typeof user_message !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'user_message'" }),
@@ -560,8 +883,12 @@ Deno.serve(async (req) => {
     const prior = await loadMessages(supabase, conversationId);
     let nextSeq = prior.length > 0 ? prior[prior.length - 1].sequence + 1 : 0;
 
-    // Build active-page context for system prompt.
-    let activePageBlock = "";
+    // Build active-context for the system prompt.
+    let activeBlock = "";
+    const today = todayISO();
+    const viewLabel = typeof active_view === "string" && active_view ? active_view : "unknown";
+    activeBlock += `\n\n─── ACTIVE CONTEXT ───\nDate: ${today}\nCurrent view: ${viewLabel}`;
+
     if (active_page_id) {
       const { data: pageRow } = await supabase
         .from("todo_lists")
@@ -569,12 +896,39 @@ Deno.serve(async (req) => {
         .eq("id", active_page_id)
         .maybeSingle();
       if (pageRow) {
-        activePageBlock = `\n\n─── ACTIVE PAGE ───\n${serializePage(pageRow as PageRow)}\n─── END ACTIVE PAGE ───`;
+        activeBlock += `\n\n${serializePage(pageRow as PageRow)}`;
       }
+    } else if (viewLabel === "journal") {
+      const { data: je } = await supabase
+        .from("journal_entries")
+        .select("date, forward, blockers, tomorrow")
+        .eq("date", today)
+        .maybeSingle();
+      activeBlock += je
+        ? `\n\nToday's journal entry:\n- forward: ${je.forward}\n- blockers: ${je.blockers}\n- tomorrow: ${je.tomorrow}`
+        : "\n\nToday's journal entry: (empty)";
+    } else if (viewLabel === "goals") {
+      const { data: gs } = await supabase
+        .from("goals")
+        .select("id, title, body")
+        .eq("archived", false)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (gs && gs.length) {
+        const lines = (gs as Array<{ id: string; title: string; body: string }>).map(
+          (g) => `- ${g.title} (id: ${g.id})${g.body ? ` — ${stripHtml(g.body).slice(0, 120)}` : ""}`
+        );
+        activeBlock += `\n\nActive goals:\n${lines.join("\n")}`;
+      } else {
+        activeBlock += "\n\nActive goals: (none)";
+      }
+    } else if (viewLabel === "today") {
+      activeBlock += "\n\n(User is viewing the Today briefing — feel free to call get_today_briefing to ground answers.)";
     } else {
-      activePageBlock = "\n\n(No active page — user is on a non-page view.)";
+      activeBlock += "\n\n(No active page — call list_pages / list_goals / etc. as needed.)";
     }
-    const system = SYSTEM_PROMPT + activePageBlock;
+    activeBlock += "\n─── END ACTIVE CONTEXT ───";
+    const system = SYSTEM_PROMPT + activeBlock;
 
     // Build message array: prior history + new user turn.
     const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
@@ -646,9 +1000,15 @@ Deno.serve(async (req) => {
 
     await appendMessages(supabase, conversationId, nextSeq, toPersist);
 
-    const mutated = toolCallsUsed.some((t) =>
-      ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"].includes(t.name)
-    );
+    const TASK_MUTATIONS = ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"];
+    const GOAL_MUTATIONS = ["create_goal", "update_goal", "archive_goal"];
+    const JOURNAL_MUTATIONS = ["upsert_journal_entry"];
+    const mutatedDomains = {
+      tasks: toolCallsUsed.some((t) => t.ok && TASK_MUTATIONS.includes(t.name)),
+      goals: toolCallsUsed.some((t) => t.ok && GOAL_MUTATIONS.includes(t.name)),
+      journal: toolCallsUsed.some((t) => t.ok && JOURNAL_MUTATIONS.includes(t.name)),
+    };
+    const mutated = mutatedDomains.tasks || mutatedDomains.goals || mutatedDomains.journal;
 
     return new Response(
       JSON.stringify({
@@ -656,6 +1016,7 @@ Deno.serve(async (req) => {
         conversation_id: conversationId,
         tool_calls: toolCallsUsed,
         mutated,
+        mutated_domains: mutatedDomains,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
