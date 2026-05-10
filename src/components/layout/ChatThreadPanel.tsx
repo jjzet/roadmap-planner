@@ -39,6 +39,14 @@ const TOOL_LABELS: Record<string, string> = {
   list_recent_journal_entries: 'Reviewed journal',
   upsert_journal_entry: 'Saved journal',
   get_today_briefing: 'Today briefing',
+  list_palaces: 'Listed palaces',
+  get_palace: 'Read palace',
+  create_palace: 'Created palace',
+  add_palace_room: 'Added room',
+  add_palace_memory: 'Added memory',
+  update_palace_memory: 'Updated memory',
+  delete_palace_memory: 'Removed memory',
+  search_palace_memories: 'Searched memories',
 };
 
 function clip(text: string, n = 50): string {
@@ -74,6 +82,18 @@ function toolDetail(tc: ToolCallSummary): string | null {
   if (tc.name === 'get_journal_entry' && typeof input.date === 'string') {
     return input.date;
   }
+  if (tc.name === 'create_palace' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'add_palace_memory' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'add_palace_room' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'search_palace_memories' && typeof input.query === 'string') {
+    return `“${clip(input.query, 30)}”`;
+  }
   return null;
 }
 
@@ -104,6 +124,12 @@ const VIEW_SUGGESTIONS: Record<string, string[]> = {
   roadmap: [
     "What's most urgent right now?",
     'Summarise tasks I should focus on',
+  ],
+  palaces: [
+    'Remember this for me: ',
+    'What was that thing about: ',
+    'Add a memory to this palace: ',
+    'Suggest rooms for this palace',
   ],
 };
 

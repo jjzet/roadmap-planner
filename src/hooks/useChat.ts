@@ -4,6 +4,7 @@ import { useChatStore, type ChatMessage, type ToolCallSummary } from '@/store/ch
 import { useTodoStore } from '@/store/todoStore';
 import { useGoalStore } from '@/store/goalStore';
 import { useJournalStore } from '@/store/journalStore';
+import { usePalaceStore } from '@/store/palaceStore';
 
 const CHAT_URL = 'https://nebfkwfgjtqinrfiglva.supabase.co/functions/v1/chat';
 const ANON_KEY =
@@ -202,7 +203,7 @@ export function useChat() {
         // Refresh just the stores whose data the agent mutated. Falls back to refreshing
         // tasks for legacy `mutated:true` payloads that pre-date `mutated_domains`.
         const domains = (mutated_domains ?? (mutated ? { tasks: true } : {})) as {
-          tasks?: boolean; goals?: boolean; journal?: boolean;
+          tasks?: boolean; goals?: boolean; journal?: boolean; palaces?: boolean;
         };
         if (domains.tasks) {
           const { fetchTodoList, loadTodo, currentTodoId } = useTodoStore.getState();
@@ -214,6 +215,9 @@ export function useChat() {
         }
         if (domains.journal) {
           await useJournalStore.getState().fetchAll();
+        }
+        if (domains.palaces) {
+          await usePalaceStore.getState().fetchPalaces();
         }
       } catch (err) {
         removeMessage(tempId);

@@ -23,6 +23,7 @@ export function ChatDockBar() {
       case 'tasks': return "Ask Claude to add, update, or summarise this page…";
       case 'goals': return "Ask Claude about your goals, log progress, or draft an update…";
       case 'journal': return "Reflect with Claude — say 'log today: …' to save it…";
+      case 'palaces': return "Tell Claude what to remember — 'put X in the Y room'…";
       case 'insights': return 'Ask Claude…';
       default: return 'Ask Claude…';
     }
