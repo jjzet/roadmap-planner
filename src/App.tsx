@@ -7,11 +7,13 @@ import { TodayView } from '@/components/views/TodayView';
 import { InsightsView } from '@/components/views/InsightsView';
 import { GoalsView } from '@/components/views/GoalsView';
 import { JournalView } from '@/components/views/JournalView';
+import { PalacesView } from '@/components/views/PalacesView';
 import { useRoadmapLoader } from './hooks/useRoadmapLoader';
 import { useTodoLoader } from './hooks/useTodoLoader';
 import { useInsightLoader } from './hooks/useInsightLoader';
 import { useGoalLoader } from './hooks/useGoalLoader';
 import { useJournalLoader } from './hooks/useJournalLoader';
+import { usePalaceLoader } from './hooks/usePalaceLoader';
 import { useUIStore } from './store/uiStore';
 import { DashboardDataProvider } from './hooks/DashboardDataContext';
 import { BottomStatsStrip } from './components/layout/BottomStatsStrip';
@@ -25,6 +27,7 @@ function App() {
   useInsightLoader();
   useGoalLoader();
   useJournalLoader();
+  usePalaceLoader();
 
   const activeView = useUIStore((s) => s.activeView);
 
@@ -41,6 +44,7 @@ function App() {
               {activeView === 'insights' && <InsightsView />}
               {activeView === 'goals' && <GoalsView />}
               {activeView === 'journal' && <JournalView />}
+              {activeView === 'palaces' && <PalacesView />}
             </div>
             <ChatThreadPanel />
             <SlideUpDashboard />

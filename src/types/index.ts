@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal';
+export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal' | 'palaces';
 
 // ── Todo Types ──
 
@@ -197,6 +197,72 @@ export interface JournalEntry {
   forward: string;
   blockers: string;
   tomorrow: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Memory Palace Types ──
+// Tile-based 2D memory palaces (Nintendo-style 8-bit overworld). Each palace
+// is one map; rooms are coloured rectangles for organisation; objects are
+// memory anchors placed at tile coords. Object content is the thing you're
+// trying to remember (a fact, a person, a checklist, a story).
+
+export type PalaceTheme = 'overworld' | 'dungeon' | 'castle' | 'forest' | 'beach' | 'lab';
+
+export type PalaceObjectIcon =
+  | 'chest'
+  | 'book'
+  | 'scroll'
+  | 'crystal'
+  | 'key'
+  | 'tree'
+  | 'sign'
+  | 'lantern'
+  | 'npc'
+  | 'gem'
+  | 'potion'
+  | 'sword'
+  | 'shield'
+  | 'star'
+  | 'heart';
+
+export interface PalaceRoom {
+  id: string;
+  name: string;
+  description?: string;
+  x: number;       // top-left tile coord
+  y: number;
+  width: number;   // tile span
+  height: number;
+  color: string;   // hex — floor tint for the room
+}
+
+export interface PalaceObject {
+  id: string;
+  name: string;
+  content: string;   // the memory itself (free-form text / markdown)
+  x: number;         // tile coord
+  y: number;
+  icon: PalaceObjectIcon;
+  color: string;     // hex — sprite accent
+  roomId?: string;   // optional — assigned to a room
+  link?: string;     // optional URL or page ref
+}
+
+export interface MemoryPalaceData {
+  width: number;     // map size in tiles
+  height: number;
+  rooms: PalaceRoom[];
+  objects: PalaceObject[];
+}
+
+export interface MemoryPalaceRecord {
+  id: string;
+  name: string;
+  theme: PalaceTheme;
+  description: string;
+  data: MemoryPalaceData;
+  archived: boolean;
   created_at: string;
   updated_at: string;
 }
