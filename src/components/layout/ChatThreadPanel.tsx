@@ -30,12 +30,33 @@ const TOOL_LABELS: Record<string, string> = {
   archive_task: 'Archived task',
   delete_task: 'Deleted task',
   reorder_tasks: 'Reordered tasks',
+  list_goals: 'Listed goals',
+  get_goal: 'Read goal',
+  create_goal: 'Created goal',
+  update_goal: 'Updated goal',
+  archive_goal: 'Archived goal',
+  get_journal_entry: 'Read journal',
+  list_recent_journal_entries: 'Reviewed journal',
+  upsert_journal_entry: 'Saved journal',
+  get_today_briefing: 'Today briefing',
+  list_palaces: 'Listed palaces',
+  get_palace: 'Read palace',
+  create_palace: 'Created palace',
+  add_palace_room: 'Added room',
+  add_palace_memory: 'Added memory',
+  update_palace_memory: 'Updated memory',
+  delete_palace_memory: 'Removed memory',
+  search_palace_memories: 'Searched memories',
 };
+
+function clip(text: string, n = 50): string {
+  return text.length > n ? text.slice(0, n) + '…' : text;
+}
 
 function toolDetail(tc: ToolCallSummary): string | null {
   const input = tc.input ?? {};
   if (tc.name === 'create_task' && typeof input.text === 'string') {
-    return input.text.length > 50 ? input.text.slice(0, 50) + '…' : input.text;
+    return clip(input.text);
   }
   if (tc.name === 'update_task' && typeof input.completed === 'boolean') {
     return input.completed ? 'marked complete' : 'marked incomplete';
@@ -43,8 +64,74 @@ function toolDetail(tc: ToolCallSummary): string | null {
   if (tc.name === 'reorder_tasks' && Array.isArray(input.ordered_task_ids)) {
     return `${input.ordered_task_ids.length} items`;
   }
+  if (tc.name === 'create_goal' && typeof input.title === 'string') {
+    return clip(input.title);
+  }
+  if (tc.name === 'update_goal') {
+    if (typeof input.title === 'string') return `title → ${clip(input.title, 32)}`;
+    if (typeof input.body === 'string') {
+      const verb = input.mode === 'append' ? 'appended' : 'replaced body';
+      return `${verb}: ${clip(input.body, 40)}`;
+    }
+    return null;
+  }
+  if (tc.name === 'upsert_journal_entry') {
+    const fields = ['forward', 'blockers', 'tomorrow'].filter((k) => typeof input[k] === 'string');
+    return fields.length ? fields.join(', ') : null;
+  }
+  if (tc.name === 'get_journal_entry' && typeof input.date === 'string') {
+    return input.date;
+  }
+  if (tc.name === 'create_palace' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'add_palace_memory' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'add_palace_room' && typeof input.name === 'string') {
+    return clip(input.name);
+  }
+  if (tc.name === 'search_palace_memories' && typeof input.query === 'string') {
+    return `“${clip(input.query, 30)}”`;
+  }
   return null;
 }
+
+const VIEW_SUGGESTIONS: Record<string, string[]> = {
+  today: [
+    "What's most urgent right now?",
+    'Summarise my day in three bullets',
+    'Any pinned items I should unblock?',
+  ],
+  tasks: [
+    'Summarise this page',
+    'Create a task: ',
+    'What on this page is blocked or stale?',
+  ],
+  goals: [
+    'List my active goals',
+    'Log progress on a goal: ',
+    'Draft a status update for my top goal',
+  ],
+  journal: [
+    "What did I move forward today?",
+    'Log today: forward — …',
+    'Show me last week — what kept blocking me?',
+  ],
+  insights: [
+    'Summarise my recent insights',
+  ],
+  roadmap: [
+    "What's most urgent right now?",
+    'Summarise tasks I should focus on',
+  ],
+  palaces: [
+    'Remember this for me: ',
+    'What was that thing about: ',
+    'Add a memory to this palace: ',
+    'Suggest rooms for this palace',
+  ],
+};
 
 function ToolCallCard({ tc }: { tc: ToolCallSummary }) {
   const label = TOOL_LABELS[tc.name] ?? tc.name;
@@ -99,11 +186,24 @@ export function ChatThreadPanel() {
     }
   }, [chatPanelOpen]);
 
-  const handleSubmit = () => {
-    if (!draft.trim() || isLoading) return;
-    sendMessage(draft.trim(), activePageId);
+  const handleSubmit = (overrideText?: string) => {
+    const text = (overrideText ?? draft).trim();
+    if (!text || isLoading) return;
+    sendMessage(text, activePageId, activeView);
     setDraft('');
   };
+
+  const handleSuggestionClick = (text: string) => {
+    if (text.endsWith(': ') || text.endsWith('— …') || text.endsWith('…')) {
+      // Prefill draft and let the user finish the prompt.
+      setDraft(text);
+      inputRef.current?.focus();
+      return;
+    }
+    handleSubmit(text);
+  };
+
+  const suggestions = VIEW_SUGGESTIONS[activeView] ?? [];
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -111,6 +211,8 @@ export function ChatThreadPanel() {
       handleSubmit();
     }
   };
+
+  const handleSendClick = () => handleSubmit();
 
   const handleNewChat = async () => {
     setMessages([]);
@@ -167,9 +269,24 @@ export function ChatThreadPanel() {
         {/* Message thread */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
           {messages.length === 0 && !isLoading && (
-            <p className="text-[11px] font-mono font-light text-gray-400 text-center pt-8">
-              No messages yet. Ask anything about the current page.
-            </p>
+            <div className="pt-8 flex flex-col items-center gap-3">
+              <p className="text-[11px] font-mono font-light text-gray-400 text-center max-w-md">
+                Ask Claude to act on your tasks, goals, or journal — or just think out loud.
+              </p>
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-1.5 max-w-md">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleSuggestionClick(s)}
+                      className="text-[10px] font-mono uppercase tracking-wider text-gray-500 hover:text-cyan-700 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 rounded-full px-3 py-1 cursor-pointer transition-colors"
+                    >
+                      {s.replace(/[—…]\s*$/, '').trim()}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {messages.map((msg) => (
@@ -233,7 +350,7 @@ export function ChatThreadPanel() {
             style={{ lineHeight: '1.5' }}
           />
           <button
-            onClick={handleSubmit}
+            onClick={handleSendClick}
             disabled={!draft.trim() || isLoading}
             className="flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-blue-500 hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border-none cursor-pointer text-white mb-px"
             title="Send (Enter)"

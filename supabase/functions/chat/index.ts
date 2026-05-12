@@ -15,17 +15,34 @@ const MODEL = "claude-opus-4-6";
 const MAX_TOOL_ITERATIONS = 8;
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `You are an assistant embedded in a personal task/notes app for a senior technical leader.
+const SYSTEM_PROMPT = `You are an embedded productivity assistant for a senior technical leader. You take action inside the app on the user's behalf.
 
-Your scope is the user's PAGES only — task lists and free-form text/heading blocks on those pages. You do NOT have access to roadmap data, goals, or daily insights.
+Your domains:
+- PAGES — task lists (with groups + sub-groups) and free-form text / heading / divider / goal-card blocks. Day-to-day todos and notes live here.
+- GOALS — rich-text intentions the user is working toward.
+- JOURNAL — one daily reflective entry per date, with three prompts: forward (how I moved forward), blockers (what got in the way), tomorrow (one focused thing).
+- TODAY — an aggregated briefing of overdue / due-today / due-tomorrow tasks across all pages.
+- PALACES — 8-bit-style 2D memory palaces. Each palace is a tile map (default 24×16) holding rooms (named coloured zones) and objects (memory anchors with free-form content placed at tile coords). Use these to anchor things the user wants to remember spatially: people, processes, definitions, references.
 
-You can READ pages (list_pages, get_page) and WRITE to them (create_task, update_task, archive_task, delete_task, reorder_tasks). When a task write tool succeeds, confirm the change briefly and cite task text — don't dump IDs back at the user.
+Tools you can call:
+- Pages (read): list_pages, get_page
+- Tasks (write): create_task, update_task, archive_task, delete_task, reorder_tasks
+- Goals: list_goals, get_goal, create_goal, update_goal, archive_goal
+- Journal: get_journal_entry, upsert_journal_entry, list_recent_journal_entries
+- Briefing: get_today_briefing
+- Palaces: list_palaces, get_palace, create_palace, add_palace_room, add_palace_memory, update_palace_memory, delete_palace_memory, search_palace_memories
 
-The user's currently active page (if any) is provided in full below. Prefer answering from that context before calling tools. Use list_pages only when the user references a different page, or asks something that spans pages.
-
-When writing, favour archive_task over delete_task unless the user is explicit about deletion. Always confirm destructive actions (delete_task, archive of many items) before executing them.
-
-Be concise and conversational. Plain English, no jargon. If you don't know, say so.`;
+How to behave:
+- The user's active context (page or view) is provided below. Prefer answering from that context before calling tools.
+- Be action-oriented: when the user asks for something tractable (capture a task, update a goal, summarise a page, draft a journal entry, drop a fact into a palace), do it via tools rather than only describing what they could do.
+- After a successful write, confirm briefly and cite the affected text — never dump raw IDs at the user.
+- Drafting work (handover summaries, status updates, journal reflections, page summaries) should be done in plain prose first; only persist via tools when the user signals "save it" / "add it" / "log it".
+- For journal: when the user reflects on their day, offer to log it. Map their words sensibly to forward / blockers / tomorrow; ask before guessing if it's ambiguous.
+- For goals: keep updates incremental. Use update_goal to append progress notes rather than rewriting unless asked.
+- For palaces: when the user shares something worth remembering ("remember that…", "add this to my palace", "what was X"), reach for palace tools. If they don't specify a palace, pick the most relevant existing one or ask. Choose icons that match content (book = reference, npc = person, key = credential/access, scroll = note, sign = label, crystal = idea, chest = collection). Auto-place inside an appropriate room when one fits the topic.
+- Prefer archive_task / archive_goal over delete_*. Confirm destructive actions before executing them.
+- Markdown is supported in your replies. Use it sparingly — short paragraphs, lists when listing.
+- Keep responses tight, plain English, no jargon. If you don't know, say so.`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,10 +94,51 @@ type PageBlock =
   | { type: "divider"; data: { id: string; order: number } }
   | { type: "goal_card"; data: { id: string; goalId: string; order: number } };
 
+// ─── Palace types ─────────────────────────────────────────────────────
+const VALID_THEMES = ["overworld", "dungeon", "castle", "forest", "beach", "lab"] as const;
+const VALID_ICONS = [
+  "chest", "book", "scroll", "crystal", "key", "tree", "sign",
+  "lantern", "npc", "gem", "potion", "sword", "shield", "star", "heart",
+] as const;
+
+type PalaceRoom = {
+  id: string; name: string; description?: string;
+  x: number; y: number; width: number; height: number; color: string;
+};
+type PalaceObject = {
+  id: string; name: string; content: string;
+  x: number; y: number; icon: string; color: string;
+  roomId?: string; link?: string;
+};
+type PalaceData = { width: number; height: number; rooms: PalaceRoom[]; objects: PalaceObject[] };
+type PalaceRow = {
+  id: string; name: string; theme: string; description: string;
+  data: PalaceData; archived: boolean; updated_at: string;
+};
+
 // ─── Page serialization ────────────────────────────────────────────────
 function stripHtml(html: string | undefined | null): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "").trim();
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function shiftIsoDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split("T")[0];
 }
 
 function serializePage(page: PageRow): string {
@@ -256,6 +314,233 @@ const TOOLS = [
         },
       },
       required: ["page_id", "group_id", "ordered_task_ids"],
+    },
+  },
+  // ─── Goals ────────────────────────────────────────────────────────────
+  {
+    name: "list_goals",
+    description:
+      "List the user's active (non-archived) goals. Returns id, title, a short snippet of body text, and updated_at.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        include_archived: { type: "boolean", description: "Default false" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_goal",
+    description: "Fetch the full body of a goal as plain text (HTML stripped).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  {
+    name: "create_goal",
+    description: "Create a new goal. Body is optional plain text — will be stored as a paragraph.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        title: { type: "string" },
+        body: { type: "string", description: "Optional initial body (plain text)" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_goal",
+    description:
+      "Update a goal's title and/or body. By default `body` REPLACES the existing body; pass `mode: \"append\"` to instead add a new paragraph at the end (preferred for incremental progress notes).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string", description: "Plain text. Will be wrapped in <p>…</p>." },
+        mode: { type: "string", description: "'replace' (default) or 'append'" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  {
+    name: "archive_goal",
+    description: "Archive a goal (preferred over delete).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+      },
+      required: ["goal_id"],
+    },
+  },
+  // ─── Journal ──────────────────────────────────────────────────────────
+  {
+    name: "get_journal_entry",
+    description:
+      "Fetch a single journal entry by date (YYYY-MM-DD). If no date is provided, today is used. Returns the three fields (forward / blockers / tomorrow) or null if no entry exists.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        date: { type: "string", description: "YYYY-MM-DD; defaults to today" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "list_recent_journal_entries",
+    description:
+      "List recent journal entries (most recent first). Useful for spotting trends in what blocks the user week-on-week.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Default 7, max 30" },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "upsert_journal_entry",
+    description:
+      "Create or update a journal entry for a date (defaults to today). All three fields are optional; omitted fields are LEFT ALONE on existing entries (or empty on new ones). Pass an empty string to explicitly clear a field.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        date: { type: "string", description: "YYYY-MM-DD; defaults to today" },
+        forward: { type: "string", description: "How I moved forward today" },
+        blockers: { type: "string", description: "What got in the way" },
+        tomorrow: { type: "string", description: "Tomorrow's one focused thing" },
+      },
+      required: [],
+    },
+  },
+  // ─── Today briefing ───────────────────────────────────────────────────
+  {
+    name: "get_today_briefing",
+    description:
+      "Return an aggregated briefing of tasks across all pages: overdue, due today, due tomorrow, and pinned items. Useful when the user asks 'what should I focus on?' or 'what's due today?'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  // ─── Memory palaces ───────────────────────────────────────────────────
+  {
+    name: "list_palaces",
+    description:
+      "List the user's memory palaces (id, name, theme, room count, object count, updated_at).",
+    input_schema: { type: "object" as const, properties: {}, required: [] },
+  },
+  {
+    name: "get_palace",
+    description:
+      "Fetch a palace's full content: rooms (with coords + colour) and objects (memories — name, content, icon, coords, room).",
+    input_schema: {
+      type: "object" as const,
+      properties: { palace_id: { type: "string" } },
+      required: ["palace_id"],
+    },
+  },
+  {
+    name: "create_palace",
+    description:
+      "Create a new memory palace. Theme is one of: overworld, dungeon, castle, forest, beach, lab. Defaults to overworld. Width × height default to 24×16 tiles.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string" },
+        theme: { type: "string", description: "overworld | dungeon | castle | forest | beach | lab" },
+        description: { type: "string" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "add_palace_room",
+    description:
+      "Add a room (named coloured zone) to a palace at given tile coords. Default size 6×4. Coords are 0-indexed tile positions inside the palace grid.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        name: { type: "string" },
+        description: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        width: { type: "number" },
+        height: { type: "number" },
+        color: { type: "string", description: "Hex (e.g. #7DD3FC)" },
+      },
+      required: ["palace_id", "name"],
+    },
+  },
+  {
+    name: "add_palace_memory",
+    description:
+      "Drop a memory object into a palace. Pass `name` (short label), `content` (the thing to remember), and ideally an `icon` matching the content (book / scroll / chest / crystal / key / tree / sign / lantern / npc / gem / potion / sword / shield / star / heart). If `room_name` is given, the object is placed inside that room (auto-placed if x/y are omitted).",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        name: { type: "string" },
+        content: { type: "string" },
+        icon: { type: "string" },
+        color: { type: "string", description: "Hex accent (default cyan)" },
+        room_name: { type: "string", description: "Place inside a room with this name (case-insensitive)" },
+        x: { type: "number" },
+        y: { type: "number" },
+        link: { type: "string" },
+      },
+      required: ["palace_id", "name", "content"],
+    },
+  },
+  {
+    name: "update_palace_memory",
+    description:
+      "Update fields on an existing memory object. Only provided fields change.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        object_id: { type: "string" },
+        name: { type: "string" },
+        content: { type: "string" },
+        icon: { type: "string" },
+        color: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        link: { type: "string" },
+      },
+      required: ["palace_id", "object_id"],
+    },
+  },
+  {
+    name: "delete_palace_memory",
+    description: "Remove a memory object from a palace.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        palace_id: { type: "string" },
+        object_id: { type: "string" },
+      },
+      required: ["palace_id", "object_id"],
+    },
+  },
+  {
+    name: "search_palace_memories",
+    description:
+      "Search across all palaces for memories whose name or content match a query (case-insensitive substring). Useful when the user asks 'what was…' or 'where did I store…'.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        query: { type: "string" },
+      },
+      required: ["query"],
     },
   },
 ];
@@ -464,6 +749,421 @@ async function runTool(
     return JSON.stringify({ ok: true, count: ordered.length });
   }
 
+  // ─── Goals ──────────────────────────────────────────────────────────
+  if (name === "list_goals") {
+    const includeArchived = input.include_archived === true;
+    let q = supabase.from("goals").select("id, title, body, updated_at, archived").order("updated_at", { ascending: false });
+    if (!includeArchived) q = q.eq("archived", false);
+    const { data, error } = await q;
+    if (error) return JSON.stringify({ error: error.message });
+    const rows = (data ?? []) as Array<{ id: string; title: string; body: string; updated_at: string; archived: boolean }>;
+    return JSON.stringify({
+      goals: rows.map((g) => {
+        const text = stripHtml(g.body ?? "");
+        const snippet = text.length > 140 ? text.slice(0, 140) + "…" : text;
+        return { id: g.id, title: g.title, snippet, updated_at: g.updated_at, archived: g.archived };
+      }),
+    });
+  }
+
+  if (name === "get_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const { data, error } = await supabase.from("goals").select("id, title, body, updated_at, archived").eq("id", id).maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ error: "goal not found" });
+    const g = data as { id: string; title: string; body: string; updated_at: string; archived: boolean };
+    return JSON.stringify({
+      id: g.id,
+      title: g.title,
+      body: stripHtml(g.body ?? ""),
+      updated_at: g.updated_at,
+      archived: g.archived,
+    });
+  }
+
+  if (name === "create_goal") {
+    const title = (input.title as string) ?? "";
+    const bodyText = (input.body as string) ?? "";
+    if (!title.trim()) return JSON.stringify({ error: "title is required" });
+    const body = bodyText.trim() ? `<p>${escapeHtml(bodyText)}</p>` : "";
+    const { data, error } = await supabase.from("goals").insert({ title, body }).select("id").single();
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: (data as { id: string }).id });
+  }
+
+  if (name === "update_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const mode = (input.mode as string) === "append" ? "append" : "replace";
+    const patch: { title?: string; body?: string; updated_at?: string } = {};
+    if (typeof input.title === "string") patch.title = input.title;
+    if (typeof input.body === "string") {
+      const newPara = `<p>${escapeHtml(input.body as string)}</p>`;
+      if (mode === "append") {
+        const { data: cur, error: gErr } = await supabase.from("goals").select("body").eq("id", id).maybeSingle();
+        if (gErr) return JSON.stringify({ error: gErr.message });
+        if (!cur) return JSON.stringify({ error: "goal not found" });
+        const existing = (cur as { body: string }).body ?? "";
+        patch.body = existing ? `${existing}\n${newPara}` : newPara;
+      } else {
+        patch.body = newPara;
+      }
+    }
+    if (Object.keys(patch).length === 0) return JSON.stringify({ error: "nothing to update" });
+    patch.updated_at = new Date().toISOString();
+    const { error } = await supabase.from("goals").update(patch).eq("id", id);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: id, mode });
+  }
+
+  if (name === "archive_goal") {
+    const id = input.goal_id as string;
+    if (!id) return JSON.stringify({ error: "goal_id is required" });
+    const { error } = await supabase
+      .from("goals")
+      .update({ archived: true, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, goal_id: id });
+  }
+
+  // ─── Journal ────────────────────────────────────────────────────────
+  if (name === "get_journal_entry") {
+    const date = (input.date as string) || todayISO();
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow, updated_at")
+      .eq("date", date)
+      .maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ date, entry: null });
+    return JSON.stringify({ date, entry: data });
+  }
+
+  if (name === "list_recent_journal_entries") {
+    const raw = Number(input.limit ?? 7);
+    const limit = Math.min(Math.max(Number.isFinite(raw) ? raw : 7, 1), 30);
+    const { data, error } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow, updated_at")
+      .order("date", { ascending: false })
+      .limit(limit);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ entries: data ?? [] });
+  }
+
+  if (name === "upsert_journal_entry") {
+    const date = (input.date as string) || todayISO();
+    const incoming: Partial<{ forward: string; blockers: string; tomorrow: string }> = {};
+    if (typeof input.forward === "string") incoming.forward = input.forward;
+    if (typeof input.blockers === "string") incoming.blockers = input.blockers;
+    if (typeof input.tomorrow === "string") incoming.tomorrow = input.tomorrow;
+    if (Object.keys(incoming).length === 0) {
+      return JSON.stringify({ error: "Provide at least one of forward / blockers / tomorrow" });
+    }
+    // Read existing so omitted fields are preserved.
+    const { data: existing, error: rErr } = await supabase
+      .from("journal_entries")
+      .select("forward, blockers, tomorrow")
+      .eq("date", date)
+      .maybeSingle();
+    if (rErr) return JSON.stringify({ error: rErr.message });
+    const cur = (existing ?? { forward: "", blockers: "", tomorrow: "" }) as {
+      forward: string; blockers: string; tomorrow: string;
+    };
+    const payload = {
+      date,
+      forward: incoming.forward ?? cur.forward ?? "",
+      blockers: incoming.blockers ?? cur.blockers ?? "",
+      tomorrow: incoming.tomorrow ?? cur.tomorrow ?? "",
+      updated_at: new Date().toISOString(),
+    };
+    const isEmpty = !payload.forward.trim() && !payload.blockers.trim() && !payload.tomorrow.trim();
+    if (isEmpty) {
+      const { error } = await supabase.from("journal_entries").delete().eq("date", date);
+      if (error) return JSON.stringify({ error: error.message });
+      return JSON.stringify({ ok: true, date, deleted: true });
+    }
+    const { error } = await supabase.from("journal_entries").upsert(payload, { onConflict: "date" });
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, date, entry: payload });
+  }
+
+  // ─── Today briefing ─────────────────────────────────────────────────
+  if (name === "get_today_briefing") {
+    const { data, error } = await supabase
+      .from("todo_lists")
+      .select("id, name, data");
+    if (error) return JSON.stringify({ error: error.message });
+    const today = todayISO();
+    const tomorrow = shiftIsoDate(today, 1);
+    const overdue: Array<{ page: string; group: string; text: string; due: string }> = [];
+    const dueToday: Array<{ page: string; group: string; text: string }> = [];
+    const dueTomorrow: Array<{ page: string; group: string; text: string }> = [];
+    const pinned: Array<{ page: string; group: string; text: string }> = [];
+    for (const row of (data ?? []) as PageRow[]) {
+      for (const g of allGroups(row.data ?? { groups: [], blocks: [] })) {
+        for (const it of g.items ?? []) {
+          if (it.archived || it.completed) continue;
+          const text = stripHtml(it.text);
+          if (it.pinned) pinned.push({ page: row.name, group: g.name, text });
+          if (it.dueDate) {
+            if (it.dueDate < today) overdue.push({ page: row.name, group: g.name, text, due: it.dueDate });
+            else if (it.dueDate === today) dueToday.push({ page: row.name, group: g.name, text });
+            else if (it.dueDate === tomorrow) dueTomorrow.push({ page: row.name, group: g.name, text });
+          }
+        }
+      }
+    }
+    return JSON.stringify({
+      date: today,
+      counts: { overdue: overdue.length, due_today: dueToday.length, due_tomorrow: dueTomorrow.length, pinned: pinned.length },
+      overdue,
+      due_today: dueToday,
+      due_tomorrow: dueTomorrow,
+      pinned,
+    });
+  }
+
+  // ─── Palaces ────────────────────────────────────────────────────────
+  if (name === "list_palaces") {
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .select("id, name, theme, description, data, updated_at")
+      .eq("archived", false)
+      .order("updated_at", { ascending: false });
+    if (error) return JSON.stringify({ error: error.message });
+    const rows = (data ?? []) as PalaceRow[];
+    return JSON.stringify({
+      palaces: rows.map((p) => ({
+        id: p.id,
+        name: p.name,
+        theme: p.theme,
+        description: p.description,
+        rooms: p.data?.rooms?.length ?? 0,
+        memories: p.data?.objects?.length ?? 0,
+        updated_at: p.updated_at,
+      })),
+    });
+  }
+
+  if (name === "get_palace") {
+    const id = input.palace_id as string;
+    if (!id) return JSON.stringify({ error: "palace_id is required" });
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .select("id, name, theme, description, data, updated_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) return JSON.stringify({ error: error.message });
+    if (!data) return JSON.stringify({ error: "palace not found" });
+    const p = data as PalaceRow;
+    const roomById = new Map<string, string>();
+    for (const r of p.data.rooms ?? []) roomById.set(r.id, r.name);
+    return JSON.stringify({
+      id: p.id,
+      name: p.name,
+      theme: p.theme,
+      description: p.description,
+      width: p.data.width,
+      height: p.data.height,
+      rooms: (p.data.rooms ?? []).map((r) => ({
+        id: r.id, name: r.name, description: r.description ?? "",
+        x: r.x, y: r.y, width: r.width, height: r.height, color: r.color,
+      })),
+      objects: (p.data.objects ?? []).map((o) => ({
+        id: o.id, name: o.name, content: o.content,
+        x: o.x, y: o.y, icon: o.icon, color: o.color,
+        room: o.roomId ? roomById.get(o.roomId) ?? null : null,
+        link: o.link ?? null,
+      })),
+    });
+  }
+
+  if (name === "create_palace") {
+    const palaceName = (input.name as string)?.trim();
+    if (!palaceName) return JSON.stringify({ error: "name is required" });
+    const themeRaw = (input.theme as string) ?? "overworld";
+    const theme = (VALID_THEMES as readonly string[]).includes(themeRaw) ? themeRaw : "overworld";
+    const description = (input.description as string) ?? "";
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .insert({
+        name: palaceName,
+        theme,
+        description,
+        data: { width: 24, height: 16, rooms: [], objects: [] },
+      })
+      .select("id")
+      .single();
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, palace_id: (data as { id: string }).id, name: palaceName, theme });
+  }
+
+  if (name === "add_palace_room") {
+    const palaceId = input.palace_id as string;
+    if (!palaceId) return JSON.stringify({ error: "palace_id is required" });
+    const { data: row, error: lErr } = await supabase
+      .from("memory_palaces").select("id, data").eq("id", palaceId).maybeSingle();
+    if (lErr) return JSON.stringify({ error: lErr.message });
+    if (!row) return JSON.stringify({ error: "palace not found" });
+    const palace = row as { id: string; data: PalaceData };
+    const palette = ["#7DD3FC","#86EFAC","#FCD34D","#FCA5A5","#C4B5FD","#FDBA74"];
+    const idx = palace.data.rooms.length;
+    const room: PalaceRoom = {
+      id: genId("room"),
+      name: (input.name as string) ?? `Room ${idx + 1}`,
+      description: (input.description as string) ?? "",
+      x: typeof input.x === "number" ? input.x : 1 + (idx % 3) * 7,
+      y: typeof input.y === "number" ? input.y : 1 + Math.floor(idx / 3) * 5,
+      width: typeof input.width === "number" ? input.width : 6,
+      height: typeof input.height === "number" ? input.height : 4,
+      color: (input.color as string) ?? palette[idx % palette.length],
+    };
+    palace.data.rooms.push(room);
+    const { error } = await supabase
+      .from("memory_palaces")
+      .update({ data: palace.data, updated_at: new Date().toISOString() })
+      .eq("id", palaceId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, room_id: room.id, name: room.name });
+  }
+
+  if (name === "add_palace_memory") {
+    const palaceId = input.palace_id as string;
+    const memName = (input.name as string)?.trim();
+    const content = (input.content as string) ?? "";
+    if (!palaceId || !memName) return JSON.stringify({ error: "palace_id and name required" });
+    const { data: row, error: lErr } = await supabase
+      .from("memory_palaces").select("id, data").eq("id", palaceId).maybeSingle();
+    if (lErr) return JSON.stringify({ error: lErr.message });
+    if (!row) return JSON.stringify({ error: "palace not found" });
+    const palace = row as { id: string; data: PalaceData };
+    const iconRaw = (input.icon as string) ?? "chest";
+    const icon = (VALID_ICONS as readonly string[]).includes(iconRaw) ? iconRaw : "chest";
+    const color = (input.color as string) ?? "#06B6D4";
+    let roomId: string | undefined;
+    const roomName = (input.room_name as string)?.trim().toLowerCase();
+    if (roomName) {
+      const r = palace.data.rooms.find((r) => r.name.toLowerCase() === roomName);
+      if (r) roomId = r.id;
+    }
+    let x = typeof input.x === "number" ? input.x : undefined;
+    let y = typeof input.y === "number" ? input.y : undefined;
+    if (x == null || y == null) {
+      const room = roomId ? palace.data.rooms.find((r) => r.id === roomId) : palace.data.rooms[0];
+      if (room) {
+        const taken = new Set(
+          palace.data.objects.filter((o) => o.roomId === room.id).map((o) => `${o.x},${o.y}`)
+        );
+        outer: for (let oy = room.y + 1; oy < room.y + room.height - 1; oy++) {
+          for (let ox = room.x + 1; ox < room.x + room.width - 1; ox++) {
+            if (!taken.has(`${ox},${oy}`)) { x = ox; y = oy; break outer; }
+          }
+        }
+      }
+      if (x == null || y == null) {
+        x = Math.min(palace.data.width - 2, 2 + (palace.data.objects.length % (palace.data.width - 4)));
+        y = Math.min(palace.data.height - 2, 2 + Math.floor(palace.data.objects.length / (palace.data.width - 4)));
+      }
+    }
+    const obj: PalaceObject = {
+      id: genId("mem"),
+      name: memName,
+      content,
+      x, y, icon, color,
+      roomId,
+      link: typeof input.link === "string" && input.link ? input.link : undefined,
+    };
+    palace.data.objects.push(obj);
+    const { error } = await supabase
+      .from("memory_palaces")
+      .update({ data: palace.data, updated_at: new Date().toISOString() })
+      .eq("id", palaceId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, object_id: obj.id, name: obj.name, x, y, icon });
+  }
+
+  if (name === "update_palace_memory") {
+    const palaceId = input.palace_id as string;
+    const objectId = input.object_id as string;
+    if (!palaceId || !objectId) return JSON.stringify({ error: "palace_id and object_id required" });
+    const { data: row, error: lErr } = await supabase
+      .from("memory_palaces").select("id, data").eq("id", palaceId).maybeSingle();
+    if (lErr) return JSON.stringify({ error: lErr.message });
+    if (!row) return JSON.stringify({ error: "palace not found" });
+    const palace = row as { id: string; data: PalaceData };
+    const obj = palace.data.objects.find((o) => o.id === objectId);
+    if (!obj) return JSON.stringify({ error: "memory object not found" });
+    if (typeof input.name === "string") obj.name = input.name;
+    if (typeof input.content === "string") obj.content = input.content;
+    if (typeof input.icon === "string" && (VALID_ICONS as readonly string[]).includes(input.icon)) {
+      obj.icon = input.icon;
+    }
+    if (typeof input.color === "string") obj.color = input.color;
+    if (typeof input.x === "number") obj.x = input.x;
+    if (typeof input.y === "number") obj.y = input.y;
+    if (typeof input.link === "string") obj.link = input.link || undefined;
+    // Re-link to a room based on new coords.
+    const inRoom = palace.data.rooms.find(
+      (r) => obj.x >= r.x && obj.x < r.x + r.width && obj.y >= r.y && obj.y < r.y + r.height
+    );
+    obj.roomId = inRoom?.id;
+    const { error } = await supabase
+      .from("memory_palaces")
+      .update({ data: palace.data, updated_at: new Date().toISOString() })
+      .eq("id", palaceId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, object_id: objectId });
+  }
+
+  if (name === "delete_palace_memory") {
+    const palaceId = input.palace_id as string;
+    const objectId = input.object_id as string;
+    if (!palaceId || !objectId) return JSON.stringify({ error: "palace_id and object_id required" });
+    const { data: row, error: lErr } = await supabase
+      .from("memory_palaces").select("id, data").eq("id", palaceId).maybeSingle();
+    if (lErr) return JSON.stringify({ error: lErr.message });
+    if (!row) return JSON.stringify({ error: "palace not found" });
+    const palace = row as { id: string; data: PalaceData };
+    palace.data.objects = palace.data.objects.filter((o) => o.id !== objectId);
+    const { error } = await supabase
+      .from("memory_palaces")
+      .update({ data: palace.data, updated_at: new Date().toISOString() })
+      .eq("id", palaceId);
+    if (error) return JSON.stringify({ error: error.message });
+    return JSON.stringify({ ok: true, object_id: objectId });
+  }
+
+  if (name === "search_palace_memories") {
+    const q = ((input.query as string) ?? "").trim().toLowerCase();
+    if (!q) return JSON.stringify({ error: "query is required" });
+    const { data, error } = await supabase
+      .from("memory_palaces")
+      .select("id, name, data")
+      .eq("archived", false);
+    if (error) return JSON.stringify({ error: error.message });
+    const hits: Array<{ palace_id: string; palace: string; object_id: string; name: string; snippet: string; icon: string; room: string | null }> = [];
+    for (const row of (data ?? []) as Array<{ id: string; name: string; data: PalaceData }>) {
+      const roomById = new Map<string, string>();
+      for (const r of row.data.rooms ?? []) roomById.set(r.id, r.name);
+      for (const o of row.data.objects ?? []) {
+        const hay = `${o.name}\n${o.content}`.toLowerCase();
+        if (hay.includes(q)) {
+          const snippet = o.content.length > 140 ? o.content.slice(0, 140) + "…" : o.content;
+          hits.push({
+            palace_id: row.id, palace: row.name,
+            object_id: o.id, name: o.name, snippet,
+            icon: o.icon,
+            room: o.roomId ? roomById.get(o.roomId) ?? null : null,
+          });
+        }
+      }
+    }
+    return JSON.stringify({ query: q, count: hits.length, hits });
+  }
+
   return JSON.stringify({ error: `unknown tool: ${name}` });
 }
 
@@ -544,7 +1244,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { user_message, active_page_id } = await req.json();
+    const { user_message, active_page_id, active_view } = await req.json();
     if (!user_message || typeof user_message !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing or invalid 'user_message'" }),
@@ -560,8 +1260,12 @@ Deno.serve(async (req) => {
     const prior = await loadMessages(supabase, conversationId);
     let nextSeq = prior.length > 0 ? prior[prior.length - 1].sequence + 1 : 0;
 
-    // Build active-page context for system prompt.
-    let activePageBlock = "";
+    // Build active-context for the system prompt.
+    let activeBlock = "";
+    const today = todayISO();
+    const viewLabel = typeof active_view === "string" && active_view ? active_view : "unknown";
+    activeBlock += `\n\n─── ACTIVE CONTEXT ───\nDate: ${today}\nCurrent view: ${viewLabel}`;
+
     if (active_page_id) {
       const { data: pageRow } = await supabase
         .from("todo_lists")
@@ -569,12 +1273,54 @@ Deno.serve(async (req) => {
         .eq("id", active_page_id)
         .maybeSingle();
       if (pageRow) {
-        activePageBlock = `\n\n─── ACTIVE PAGE ───\n${serializePage(pageRow as PageRow)}\n─── END ACTIVE PAGE ───`;
+        activeBlock += `\n\n${serializePage(pageRow as PageRow)}`;
+      }
+    } else if (viewLabel === "journal") {
+      const { data: je } = await supabase
+        .from("journal_entries")
+        .select("date, forward, blockers, tomorrow")
+        .eq("date", today)
+        .maybeSingle();
+      activeBlock += je
+        ? `\n\nToday's journal entry:\n- forward: ${je.forward}\n- blockers: ${je.blockers}\n- tomorrow: ${je.tomorrow}`
+        : "\n\nToday's journal entry: (empty)";
+    } else if (viewLabel === "goals") {
+      const { data: gs } = await supabase
+        .from("goals")
+        .select("id, title, body")
+        .eq("archived", false)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (gs && gs.length) {
+        const lines = (gs as Array<{ id: string; title: string; body: string }>).map(
+          (g) => `- ${g.title} (id: ${g.id})${g.body ? ` — ${stripHtml(g.body).slice(0, 120)}` : ""}`
+        );
+        activeBlock += `\n\nActive goals:\n${lines.join("\n")}`;
+      } else {
+        activeBlock += "\n\nActive goals: (none)";
+      }
+    } else if (viewLabel === "today") {
+      activeBlock += "\n\n(User is viewing the Today briefing — feel free to call get_today_briefing to ground answers.)";
+    } else if (viewLabel === "palaces") {
+      const { data: ps } = await supabase
+        .from("memory_palaces")
+        .select("id, name, theme, data")
+        .eq("archived", false)
+        .order("updated_at", { ascending: false })
+        .limit(8);
+      if (ps && ps.length) {
+        const lines = (ps as Array<{ id: string; name: string; theme: string; data: PalaceData }>).map(
+          (p) => `- ${p.name} (${p.theme}, id: ${p.id}) — ${p.data?.rooms?.length ?? 0} rooms, ${p.data?.objects?.length ?? 0} memories`
+        );
+        activeBlock += `\n\nMemory palaces:\n${lines.join("\n")}\n\n(Call get_palace for the full layout, or search_palace_memories to find a stored memory.)`;
+      } else {
+        activeBlock += "\n\nMemory palaces: (none yet — offer to create one when the user wants to start remembering things spatially.)";
       }
     } else {
-      activePageBlock = "\n\n(No active page — user is on a non-page view.)";
+      activeBlock += "\n\n(No active page — call list_pages / list_goals / etc. as needed.)";
     }
-    const system = SYSTEM_PROMPT + activePageBlock;
+    activeBlock += "\n─── END ACTIVE CONTEXT ───";
+    const system = SYSTEM_PROMPT + activeBlock;
 
     // Build message array: prior history + new user turn.
     const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
@@ -646,9 +1392,20 @@ Deno.serve(async (req) => {
 
     await appendMessages(supabase, conversationId, nextSeq, toPersist);
 
-    const mutated = toolCallsUsed.some((t) =>
-      ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"].includes(t.name)
-    );
+    const TASK_MUTATIONS = ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"];
+    const GOAL_MUTATIONS = ["create_goal", "update_goal", "archive_goal"];
+    const JOURNAL_MUTATIONS = ["upsert_journal_entry"];
+    const PALACE_MUTATIONS = [
+      "create_palace", "add_palace_room", "add_palace_memory",
+      "update_palace_memory", "delete_palace_memory",
+    ];
+    const mutatedDomains = {
+      tasks: toolCallsUsed.some((t) => t.ok && TASK_MUTATIONS.includes(t.name)),
+      goals: toolCallsUsed.some((t) => t.ok && GOAL_MUTATIONS.includes(t.name)),
+      journal: toolCallsUsed.some((t) => t.ok && JOURNAL_MUTATIONS.includes(t.name)),
+      palaces: toolCallsUsed.some((t) => t.ok && PALACE_MUTATIONS.includes(t.name)),
+    };
+    const mutated = mutatedDomains.tasks || mutatedDomains.goals || mutatedDomains.journal || mutatedDomains.palaces;
 
     return new Response(
       JSON.stringify({
@@ -656,6 +1413,7 @@ Deno.serve(async (req) => {
         conversation_id: conversationId,
         tool_calls: toolCallsUsed,
         mutated,
+        mutated_domains: mutatedDomains,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
