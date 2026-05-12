@@ -143,11 +143,11 @@ export function JournalHeatmap({
                   if (cell.isFuture) {
                     cls += 'bg-transparent border border-gray-100 cursor-default';
                   } else if (cell.filled) {
-                    cls += 'bg-cyan-500 hover:bg-cyan-400 cursor-pointer';
+                    cls += 'bg-blue-500 hover:bg-blue-400 cursor-pointer';
                   } else {
                     cls += 'bg-gray-100 hover:bg-gray-200 cursor-pointer';
                   }
-                  if (isSelected) cls += ' ring-1 ring-cyan-600 ring-offset-1';
+                  if (isSelected) cls += ' ring-1 ring-blue-600 ring-offset-1';
                   if (cell.isToday) cls += ' outline outline-1 outline-gray-400';
                   return (
                     <button
@@ -174,7 +174,7 @@ function Stat({ value, label, highlight }: { value: number; label: string; highl
     <div className="flex items-baseline gap-1.5">
       <span
         className={`text-lg font-mono font-light tabular-nums ${
-          highlight ? 'text-cyan-600' : 'text-gray-700'
+          highlight ? 'text-blue-600' : 'text-gray-700'
         }`}
       >
         {value}

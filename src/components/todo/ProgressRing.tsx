@@ -19,7 +19,7 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
       <svg
         width={size}
         height={size}
-        className={`-rotate-90 transition-all duration-500 ${isComplete ? 'scale-110' : ''}`}
+        className="-rotate-90 transition-all duration-500"
       >
         {/* Background circle */}
         <circle
@@ -46,18 +46,18 @@ export function ProgressRing({ completed, total, size = 20 }: Props) {
             isComplete
               ? 'text-emerald-500'
               : percentage >= 0.5
-                ? 'text-cyan-600'
-                : 'text-cyan-500'
+                ? 'text-blue-600'
+                : 'text-blue-500'
           }`}
         />
         {/* Checkmark for 100% */}
         {isComplete && (
-          <g className="animate-in fade-in zoom-in duration-300" transform={`rotate(90 ${size / 2} ${size / 2})`}>
+          <g transform={`rotate(90 ${size / 2} ${size / 2})`}>
             <path
               d={`M${size * 0.3} ${size * 0.5} L${size * 0.45} ${size * 0.65} L${size * 0.7} ${size * 0.35}`}
               fill="none"
               stroke="currentColor"
-              strokeWidth={2}
+              strokeWidth={strokeWidth}
               strokeLinecap="round"
               strokeLinejoin="round"
               className="text-emerald-500"

@@ -70,11 +70,11 @@ export function RoadmapToolbar() {
 
       {/* Roadmap name */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow flex-shrink-0" />
         <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-400 flex-shrink-0">Roadmap</span>
         {isEditing ? (
           <input
-            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-blue-400 rounded-sm outline-none"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onBlur={handleNameBlur}
@@ -83,7 +83,7 @@ export function RoadmapToolbar() {
           />
         ) : (
           <h1
-            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-blue-600 truncate max-w-64"
             onClick={handleNameClick}
             title="Click to rename"
           >
@@ -95,7 +95,7 @@ export function RoadmapToolbar() {
       {/* Milestone button */}
       <button
         onClick={handleOpenMilestoneForm}
-        className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-white text-gray-600 rounded-sm hover:bg-cyan-50/40 hover:text-cyan-700 border border-gray-200 hover:border-cyan-300 transition-colors"
+        className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-white text-gray-600 rounded-sm hover:bg-blue-50/40 hover:text-blue-700 border border-gray-200 hover:border-blue-300 transition-colors"
         title="Add a milestone marker to a stream"
       >
         + Milestone
@@ -116,7 +116,7 @@ export function RoadmapToolbar() {
         onClick={toggleMonthColors}
         className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border transition-colors ${
           showMonthColors
-            ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+            ? 'bg-blue-50 text-blue-700 border-blue-200'
             : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-gray-700'
         }`}
         title={showMonthColors ? 'Hide month colors' : 'Show month colors'}
@@ -130,7 +130,7 @@ export function RoadmapToolbar() {
           onClick={() => setZoom('week')}
           className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'week'
-              ? 'bg-white shadow-sm text-cyan-700 font-medium'
+              ? 'bg-white shadow-sm text-blue-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -140,7 +140,7 @@ export function RoadmapToolbar() {
           onClick={() => setZoom('month')}
           className={`text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded-sm border-none transition-colors ${
             zoom === 'month'
-              ? 'bg-white shadow-sm text-cyan-700 font-medium'
+              ? 'bg-white shadow-sm text-blue-700 font-medium'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -166,7 +166,7 @@ export function RoadmapToolbar() {
             <div className="text-sm font-medium text-gray-700 mb-3">Add Milestone</div>
             <label className="block text-xs text-gray-500 mb-1">Name</label>
             <input
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-cyan-500"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-blue-500"
               placeholder="Milestone name..."
               value={msName}
               onChange={(e) => setMsName(e.target.value)}
@@ -176,13 +176,13 @@ export function RoadmapToolbar() {
             <label className="block text-xs text-gray-500 mb-1">Date</label>
             <input
               type="date"
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-cyan-500"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 outline-none focus:border-blue-500"
               value={msDate}
               onChange={(e) => setMsDate(e.target.value)}
             />
             <label className="block text-xs text-gray-500 mb-1">Stream</label>
             <select
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 bg-white outline-none focus:border-cyan-500"
+              className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 mb-3 bg-white outline-none focus:border-blue-500"
               value={msStreamId}
               onChange={(e) => setMsStreamId(e.target.value)}
             >
@@ -191,7 +191,7 @@ export function RoadmapToolbar() {
               ))}
             </select>
             <div className="flex gap-2">
-              <button onClick={handleAddMilestone} className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-cyan-600 text-white rounded-sm hover:bg-cyan-700 border-none cursor-pointer">Add</button>
+              <button onClick={handleAddMilestone} className="text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 bg-blue-600 text-white rounded-sm hover:bg-blue-700 border-none cursor-pointer">Add</button>
               <button onClick={() => setShowMilestoneForm(false)} className="text-sm px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 border-none cursor-pointer">Cancel</button>
             </div>
           </div>

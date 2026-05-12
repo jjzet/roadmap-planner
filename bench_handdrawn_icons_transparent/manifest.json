@@ -1,0 +1,65 @@
+{
+  "avocado": [
+    "/mnt/data/bench_handdrawn_icons_transparent/avocado_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/avocado_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/avocado_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/avocado_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/avocado_64.png"
+  ],
+  "document": [
+    "/mnt/data/bench_handdrawn_icons_transparent/document_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/document_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/document_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/document_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/document_64.png"
+  ],
+  "checklist": [
+    "/mnt/data/bench_handdrawn_icons_transparent/checklist_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/checklist_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/checklist_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/checklist_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/checklist_64.png"
+  ],
+  "folder": [
+    "/mnt/data/bench_handdrawn_icons_transparent/folder_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/folder_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/folder_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/folder_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/folder_64.png"
+  ],
+  "search": [
+    "/mnt/data/bench_handdrawn_icons_transparent/search_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/search_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/search_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/search_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/search_64.png"
+  ],
+  "pencil": [
+    "/mnt/data/bench_handdrawn_icons_transparent/pencil_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/pencil_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/pencil_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/pencil_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/pencil_64.png"
+  ],
+  "bookmark": [
+    "/mnt/data/bench_handdrawn_icons_transparent/bookmark_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/bookmark_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/bookmark_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/bookmark_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/bookmark_64.png"
+  ],
+  "calendar": [
+    "/mnt/data/bench_handdrawn_icons_transparent/calendar_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/calendar_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/calendar_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/calendar_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/calendar_64.png"
+  ],
+  "idea": [
+    "/mnt/data/bench_handdrawn_icons_transparent/idea_1024.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/idea_512.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/idea_256.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/idea_128.png",
+    "/mnt/data/bench_handdrawn_icons_transparent/idea_64.png"
+  ]
+}

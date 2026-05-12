@@ -83,10 +83,18 @@ export function JournalView() {
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-cyan-600 font-semibold">Journal</p>
+          <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-blue-600 font-semibold">Journal</p>
           <h1 className="text-2xl font-mono font-light text-gray-800 tracking-tight mt-1">
             Reflect on goal progress
           </h1>
+        </div>
+
+        {/* Heatmap */}
+        <div className="bg-white border border-gray-200 rounded-md px-4 py-4">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-3">
+            Habit
+          </p>
+          <JournalHeatmap entries={entries} selectedDate={selectedDate} onSelect={setSelectedDate} />
         </div>
 
         {/* Active goals strip */}
@@ -101,7 +109,7 @@ export function JournalView() {
                   key={g.id}
                   className="flex items-start gap-2 bg-white border border-gray-200 rounded-md px-3 py-2 max-w-xs"
                 >
-                  <Target className="w-3.5 h-3.5 text-cyan-500 flex-shrink-0 mt-0.5" />
+                  <Target className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
                   <span className="text-[12px] font-mono text-gray-700 leading-snug">{g.title}</span>
                 </div>
               ))}
@@ -126,7 +134,7 @@ export function JournalView() {
             {!isToday && (
               <button
                 onClick={() => setSelectedDate(todayISO())}
-                className="text-[10px] font-mono uppercase tracking-wider text-cyan-600 hover:text-cyan-700 ml-2 bg-transparent border-none cursor-pointer p-0"
+                className="text-[10px] font-mono uppercase tracking-wider text-blue-600 hover:text-blue-700 ml-2 bg-transparent border-none cursor-pointer p-0"
               >
                 jump to today
               </button>
@@ -169,7 +177,7 @@ export function JournalView() {
             <div className="flex items-center justify-end gap-3 text-[10px] font-mono uppercase tracking-wider text-gray-400">
               <span>{wordCount} words</span>
               <span className="text-gray-300">·</span>
-              <span className={isSaving ? 'text-cyan-500' : 'text-gray-400'}>
+              <span className={isSaving ? 'text-blue-500' : 'text-gray-400'}>
                 {isSaving ? 'saving…' : dirty ? 'unsaved' : 'saved'}
               </span>
             </div>
@@ -182,13 +190,6 @@ export function JournalView() {
           </div>
         )}
 
-        {/* Heatmap */}
-        <div className="bg-white border border-gray-200 rounded-md px-4 py-4">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-3">
-            Habit
-          </p>
-          <JournalHeatmap entries={entries} selectedDate={selectedDate} onSelect={setSelectedDate} />
-        </div>
       </div>
     </div>
   );
@@ -208,7 +209,7 @@ function Prompt({
   accentColor: 'cyan' | 'amber' | 'green';
 }) {
   const dotColors: Record<string, string> = {
-    cyan: 'bg-cyan-500',
+    cyan: 'bg-blue-500',
     amber: 'bg-amber-500',
     green: 'bg-green-500',
   };

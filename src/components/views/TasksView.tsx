@@ -3,14 +3,24 @@ import { TodoListContent } from '../todo/TodoListContent';
 import { CleanupPanel } from '../todo/CleanupPanel';
 import { useTodoAutoSave } from '../../hooks/useTodoAutoSave';
 import { useTodoStore } from '../../store/todoStore';
+import { useUIStore } from '../../store/uiStore';
 import { DailyInsightWidget } from '../dashboard/DailyInsightWidget';
 import { useListCleanup } from '../../hooks/useListCleanup';
+import { FileText, Plus } from 'lucide-react';
 
 export function TasksView() {
   useTodoAutoSave();
 
   const isLoading = useTodoStore((s) => s.isLoading);
   const currentTodoId = useTodoStore((s) => s.currentTodoId);
+  const todoList = useTodoStore((s) => s.todoList);
+  const loadTodo = useTodoStore((s) => s.loadTodo);
+  const createSubPage = useTodoStore((s) => s.createSubPage);
+  const setActiveView = useUIStore((s) => s.setActiveView);
+
+  const subPages = currentTodoId
+    ? todoList.filter((t) => t.parentId === currentTodoId)
+    : [];
 
   const { suggestions, isAnalysing, error, isDone, analyse, applySelected, dismiss } =
     useListCleanup();
@@ -60,6 +70,44 @@ export function TasksView() {
           )}
         </div>
         <TodoListContent />
+
+        {/* Sub-pages section */}
+        <div className="px-8 pb-8">
+          <div className="mt-2 border-t border-gray-100 pt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-gray-400 font-semibold">Sub-pages</span>
+              <button
+                onClick={async () => {
+                  const name = prompt('Enter sub-page name:');
+                  if (name?.trim() && currentTodoId) {
+                    await createSubPage(currentTodoId, name.trim());
+                    setActiveView('tasks');
+                  }
+                }}
+                className="ml-1 flex items-center gap-1 text-[10px] text-gray-400 hover:text-blue-600 border-none bg-transparent cursor-pointer px-0"
+              >
+                <Plus className="w-3 h-3" />
+                Add
+              </button>
+            </div>
+            {subPages.length === 0 ? (
+              <p className="text-xs text-gray-300 font-mono">No sub-pages yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {subPages.map((page) => (
+                  <button
+                    key={page.id}
+                    onClick={() => { loadTodo(page.id); setActiveView('tasks'); }}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 text-left transition-colors cursor-pointer group"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 flex-shrink-0" />
+                    <span className="text-xs font-mono text-gray-700 group-hover:text-blue-700 truncate">{page.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );

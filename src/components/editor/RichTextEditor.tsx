@@ -20,6 +20,7 @@ import {
 interface Props {
   content: string;
   onBlur: (html: string) => void;
+  onChange?: (html: string, text: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   className?: string;
@@ -28,13 +29,16 @@ interface Props {
 export function RichTextEditor({
   content,
   onBlur,
+  onChange,
   placeholder = "Write something, or type '/' for commands…",
   autoFocus = false,
   className = '',
 }: Props) {
-  // Latest onBlur ref so the editor effect doesn't need to rebind.
+  // Latest callbacks in refs so editor effects don't need to rebind.
   const onBlurRef = useRef(onBlur);
   useEffect(() => { onBlurRef.current = onBlur; }, [onBlur]);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   const editor = useEditor({
     extensions: [
@@ -52,7 +56,7 @@ export function RichTextEditor({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: {
-          class: 'text-cyan-600 underline underline-offset-2 hover:text-cyan-700',
+          class: 'text-blue-600 underline underline-offset-2 hover:text-blue-700',
         },
       }),
     ],
@@ -63,6 +67,9 @@ export function RichTextEditor({
         class:
           'prose prose-sm max-w-none focus:outline-none text-[12px] font-mono font-light leading-relaxed text-gray-700 rte-content',
       },
+    },
+    onUpdate: ({ editor }) => {
+      onChangeRef.current?.(editor.getHTML(), editor.getText());
     },
     onBlur: ({ editor }) => {
       onBlurRef.current(editor.getHTML());
@@ -82,7 +89,7 @@ export function RichTextEditor({
 
   const btn = (active: boolean) =>
     `p-1.5 rounded transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center ${
-      active ? 'text-cyan-600 bg-cyan-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+      active ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
     }`;
 
   const handleLink = () => {

@@ -38,7 +38,7 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
         </div>
         <div className="flex items-center gap-2">
           {hasAnyData && (
-            <span className="text-[10px] font-mono font-medium tabular-nums text-cyan-600 bg-cyan-50 border border-cyan-100 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono font-medium tabular-nums text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
               {total} total
             </span>
           )}
@@ -50,7 +50,7 @@ export function CompletionTrendChart({ data, timeRange, onTimeRangeChange }: Pro
                 onClick={() => onTimeRangeChange(r)}
                 className={`text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-1 rounded-sm border-none cursor-pointer transition-colors ${
                   timeRange === r
-                    ? 'bg-white text-cyan-700 shadow-sm'
+                    ? 'bg-white text-blue-700 shadow-sm'
                     : 'bg-transparent text-gray-400 hover:text-gray-600'
                 }`}
               >

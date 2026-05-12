@@ -46,11 +46,11 @@ export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) 
 
       {/* Todo list name */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 tech-glow flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow flex-shrink-0" />
         <span className="text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-400 flex-shrink-0">Page</span>
         {isEditing ? (
           <input
-            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-cyan-400 rounded-sm outline-none"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 px-2 py-0.5 border border-blue-400 rounded-sm outline-none"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             onBlur={handleNameBlur}
@@ -59,7 +59,7 @@ export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) 
           />
         ) : (
           <h1
-            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-cyan-600 truncate max-w-64"
+            className="text-[13px] font-mono font-semibold uppercase tracking-[0.15em] text-gray-800 cursor-pointer hover:text-blue-600 truncate max-w-64"
             onClick={handleNameClick}
             title="Click to rename"
           >
@@ -76,7 +76,7 @@ export function TasksToolbar({ onCleanup, isAnalysing, cleanupVisible }: Props) 
         <button
           onClick={onCleanup}
           disabled={isAnalysing || cleanupVisible}
-          className="text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-cyan-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none bg-transparent cursor-pointer px-2 py-1 rounded-sm hover:bg-cyan-50/40"
+          className="text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors border-none bg-transparent cursor-pointer px-2 py-1 rounded-sm hover:bg-blue-50/40"
         >
           {isAnalysing ? 'Reviewing…' : 'Review'}
         </button>

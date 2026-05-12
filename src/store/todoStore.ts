@@ -14,6 +14,8 @@ function emptyTodoData(): TodoData {
 interface TodoListItem {
   id: string;
   name: string;
+  parentId: string | null;
+  orderIndex: number;
 }
 
 // Default sub-group colour palette
@@ -24,7 +26,7 @@ export const SUBGROUP_COLORS = [
   '#EF4444', // red
   '#8B5CF6', // violet
   '#EC4899', // pink
-  '#06B6D4', // cyan
+  '#1e3a8a', // cyan
   '#F97316', // orange
 ];
 
@@ -85,10 +87,12 @@ interface TodoStore {
   // Persistence
   fetchTodoList: () => Promise<void>;
   loadTodo: (id: string) => Promise<void>;
-  createTodo: (name: string) => Promise<string | null>;
+  createTodo: (name: string, parentId?: string | null) => Promise<string | null>;
+  createSubPage: (parentId: string, name: string) => Promise<string | null>;
   deleteTodo: (id: string) => Promise<void>;
   saveTodo: () => Promise<void>;
   renameTodo: (name: string) => void;
+  reorderTodos: (updates: { id: string; parentId: string | null; orderIndex: number }[]) => Promise<void>;
   setDirty: () => void;
 }
 
@@ -545,13 +549,26 @@ export const useTodoStore = create<TodoStore>()(
     fetchTodoList: async () => {
       const { data, error } = await supabase
         .from('todo_lists')
-        .select('id, name')
-        .order('updated_at', { ascending: false });
+        .select('id, name, parent_id, order_index')
+        .order('order_index', { ascending: true });
       if (error) {
-        console.error('Failed to fetch todo list:', error);
+        // Migration not yet applied — fall back to basic fetch
+        const { data: fallback, error: err2 } = await supabase
+          .from('todo_lists')
+          .select('id, name')
+          .order('updated_at', { ascending: false });
+        if (err2) { console.error('Failed to fetch todo list:', err2); return; }
+        set({ todoList: (fallback || []).map((t) => ({ id: t.id, name: t.name, parentId: null, orderIndex: 0 })) });
         return;
       }
-      set({ todoList: data || [] });
+      set({
+        todoList: (data || []).map((t) => ({
+          id: t.id,
+          name: t.name,
+          parentId: (t as { parent_id?: string | null }).parent_id ?? null,
+          orderIndex: (t as { order_index?: number }).order_index ?? 0,
+        })),
+      });
     },
 
     loadTodo: async (id) => {
@@ -598,25 +615,35 @@ export const useTodoStore = create<TodoStore>()(
       }
     },
 
-    createTodo: async (name) => {
+    createTodo: async (name, parentId = null) => {
       const newData = emptyTodoData();
+      const { todoList } = get();
+      const siblings = todoList.filter((t) => t.parentId === parentId);
+      const nextOrder = siblings.length > 0 ? Math.max(...siblings.map((t) => t.orderIndex)) + 1 : 0;
       const { data, error } = await supabase
         .from('todo_lists')
-        .insert({ name, data: newData })
+        .insert({ name, data: newData, parent_id: parentId, order_index: nextOrder })
         .select()
         .single();
       if (error) {
-        console.error('Failed to create todo list:', error);
-        return null;
+        // Column may not exist yet — fall back to basic insert
+        const { data: fallback, error: err2 } = await supabase
+          .from('todo_lists')
+          .insert({ name, data: newData })
+          .select()
+          .single();
+        if (err2) { console.error('Failed to create todo list:', err2); return null; }
+        set({ currentTodoId: fallback.id, todoName: fallback.name, todo: newData, isDirty: false });
+        get().fetchTodoList();
+        return fallback.id;
       }
-      set({
-        currentTodoId: data.id,
-        todoName: data.name,
-        todo: newData,
-        isDirty: false,
-      });
+      set({ currentTodoId: data.id, todoName: data.name, todo: newData, isDirty: false });
       get().fetchTodoList();
       return data.id;
+    },
+
+    createSubPage: async (parentId, name) => {
+      return get().createTodo(name, parentId);
     },
 
     deleteTodo: async (id) => {
@@ -635,6 +662,36 @@ export const useTodoStore = create<TodoStore>()(
         });
       }
       get().fetchTodoList();
+    },
+
+    reorderTodos: async (updates) => {
+      // Optimistic local update
+      set((s) => {
+        updates.forEach(({ id, parentId, orderIndex }) => {
+          const item = s.todoList.find((t) => t.id === id);
+          if (item) {
+            item.parentId = parentId;
+            item.orderIndex = orderIndex;
+          }
+        });
+        // Re-sort the list
+        s.todoList.sort((a, b) => {
+          if (a.parentId === b.parentId) return a.orderIndex - b.orderIndex;
+          return 0;
+        });
+      });
+      // Persist
+      const { error } = await supabase.from('todo_lists').upsert(
+        updates.map(({ id, parentId, orderIndex }) => ({
+          id,
+          parent_id: parentId,
+          order_index: orderIndex,
+        }))
+      );
+      if (error) {
+        console.error('Failed to reorder todos:', error);
+        get().fetchTodoList(); // Revert on error
+      }
     },
 
     saveTodo: async () => {

@@ -16,7 +16,7 @@ function formatDueDate(dateStr: string): { label: string; color: string } {
   if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, color: 'text-red-500' };
   if (diffDays === 0) return { label: 'Today', color: 'text-orange-500' };
   if (diffDays === 1) return { label: 'Tomorrow', color: 'text-amber-500' };
-  if (diffDays <= 7) return { label: `${diffDays}d`, color: 'text-cyan-600' };
+  if (diffDays <= 7) return { label: `${diffDays}d`, color: 'text-blue-600' };
   const m = due.toLocaleString('default', { month: 'short' });
   return { label: `${m} ${due.getDate()}`, color: 'text-gray-400' };
 }
@@ -49,7 +49,7 @@ export function PinnedItemsWidget({ items }: Props) {
             return (
               <div
                 key={item.id}
-                className="flex items-center gap-2 py-1.5 px-2 rounded-sm hover:bg-cyan-50/40 group/pin cursor-pointer"
+                className="flex items-center gap-2 py-1.5 px-2 rounded-sm hover:bg-blue-50/40 group/pin cursor-pointer"
                 onClick={() => handleNavigate(pageId)}
               >
                 <Pin className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
@@ -66,7 +66,7 @@ export function PinnedItemsWidget({ items }: Props) {
                     href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-cyan-500 flex-shrink-0"
+                    className="text-blue-500 flex-shrink-0"
                     onClick={(e) => e.stopPropagation()}
                     title={item.link}
                   >

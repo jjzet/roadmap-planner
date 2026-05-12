@@ -314,16 +314,24 @@ export function TodoGroupBlock({ group }: Props) {
     : null;
 
   return (
-    <div ref={setNodeRef} style={style} className="mb-6">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="mb-4 flex items-start gap-1 group"
+    >
+      {/* Drag handle — outside the pill container */}
+      <span
+        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-2.5 flex-shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
+
+      {/* Pill container */}
+      <div className="flex-1 min-w-0 border border-gray-200 rounded-xl bg-white overflow-hidden">
       {/* Group Header */}
-      <div className="flex items-center gap-2 group py-1.5">
-        <span
-          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-transparent">
         <button
           className="cursor-pointer text-gray-400 hover:text-gray-600 border-none bg-transparent p-0"
           onClick={() => toggleGroupCollapse(group.id)}
@@ -347,7 +355,7 @@ export function TodoGroupBlock({ group }: Props) {
           />
         ) : (
           <h3
-            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] flex-1 cursor-pointer"
+            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] cursor-pointer"
             onClick={() => toggleGroupCollapse(group.id)}
             onDoubleClick={() => { setNameInput(group.name); setIsEditingName(true); }}
           >
@@ -355,18 +363,7 @@ export function TodoGroupBlock({ group }: Props) {
           </h3>
         )}
 
-        <ProgressRing completed={completedCount} total={totalCount} />
-
-        {hasCompletedItems && (
-          <button
-            onClick={() => archiveCompletedItems(group.id)}
-            className="text-gray-300 hover:text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
-            title="Archive completed items"
-          >
-            <Archive className="w-3.5 h-3.5" />
-          </button>
-        )}
-
+        {/* Trash — next to title */}
         <button
           onClick={() => {
             if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
@@ -377,6 +374,21 @@ export function TodoGroupBlock({ group }: Props) {
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
+
+        {/* Spacer pushes ring to far right */}
+        <div className="flex-1" />
+
+        {hasCompletedItems && (
+          <button
+            onClick={() => archiveCompletedItems(group.id)}
+            className="text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
+            title="Archive completed items"
+          >
+            <Archive className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        <ProgressRing completed={completedCount} total={totalCount} />
       </div>
 
       {/* Items — interleaved with sub-groups */}
@@ -394,7 +406,7 @@ export function TodoGroupBlock({ group }: Props) {
             items={sortableIds}
             strategy={verticalListSortingStrategy}
           >
-            <div className="ml-6">
+            <div className="px-4 pb-3">
               {renderSlots.map((slot) => {
                 if (slot.type === 'subgroup') {
                   return (
@@ -411,13 +423,14 @@ export function TodoGroupBlock({ group }: Props) {
                     key={slot.item.id}
                     className={
                       mergeTargetId === slot.item.id
-                        ? 'rounded-lg border-2 border-dashed border-cyan-300 bg-cyan-50/30 transition-all'
+                        ? 'rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 transition-all'
                         : ''
                     }
                   >
                     <TodoItemRow
                       item={slot.item}
                       groupId={group.id}
+                      subGroups={subGroups}
                     />
                   </div>
                 );
@@ -446,7 +459,7 @@ export function TodoGroupBlock({ group }: Props) {
               ) : (
                 <button
                   onClick={() => setIsAddingItem(true)}
-                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-cyan-600 cursor-pointer border-none bg-transparent py-1.5 pl-6"
+                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-600 cursor-pointer border-none bg-transparent py-1.5 pl-6"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add item
@@ -455,13 +468,13 @@ export function TodoGroupBlock({ group }: Props) {
 
               {/* Multi-select action bar */}
               {showSelectionBar && (
-                <div className="flex items-center gap-3 mt-2 px-4 py-2.5 bg-cyan-50 border border-cyan-200 rounded-lg">
-                  <span className="text-xs font-medium text-cyan-700">
+                <div className="flex items-center gap-3 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                  <span className="text-xs font-medium text-blue-700">
                     {selectedItemIds.length} items selected
                   </span>
                   <button
                     onClick={handleGroupSelected}
-                    className="text-xs font-medium text-white bg-cyan-500 hover:bg-cyan-700 px-3 py-1 rounded-md border-none cursor-pointer transition-colors"
+                    className="text-xs font-medium text-white bg-blue-500 hover:bg-blue-700 px-3 py-1 rounded-md border-none cursor-pointer transition-colors"
                   >
                     Group
                   </button>
@@ -474,33 +487,34 @@ export function TodoGroupBlock({ group }: Props) {
                 </div>
               )}
 
-              {/* Archived section */}
-              {archivedItems.length > 0 && (
-                <div className="mt-2 border-t border-gray-100 pt-2">
-                  <button
-                    onClick={() => setShowArchived(!showArchived)}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent py-1 pl-6"
-                  >
-                    <ChevronRight
-                      className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
-                    />
-                    Archived ({archivedItems.length})
-                  </button>
-                  {showArchived && (
-                    <div className="opacity-60">
-                      {archivedItems.map((item) => (
-                        <TodoItemRow
-                          key={item.id}
-                          item={item}
-                          groupId={group.id}
-                          isArchived
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Archived section — full-width footer with clear separator */}
+            {archivedItems.length > 0 && (
+              <div className="border-t border-gray-200 bg-gray-50/50">
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent w-full px-4 py-2 text-left"
+                >
+                  <ChevronRight
+                    className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
+                  />
+                  Archived ({archivedItems.length})
+                </button>
+                {showArchived && (
+                  <div className="px-4 pb-3 opacity-60">
+                    {archivedItems.map((item) => (
+                      <TodoItemRow
+                        key={item.id}
+                        item={item}
+                        groupId={group.id}
+                        isArchived
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </SortableContext>
 
           {/* Drag overlay */}
@@ -513,6 +527,7 @@ export function TodoGroupBlock({ group }: Props) {
           </DragOverlay>
         </DndContext>
       )}
+      </div>{/* end pill container */}
     </div>
   );
 }
