@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: room-unique object presets
 
 - **Branch:** `claude/festive-sagan-dpB1B`.
-- **Commit SHA:** _filled in by commit_.
+- **Commit SHA:** `af6368e`.
 - **PR:** _not opened._
 
 ### What changed
