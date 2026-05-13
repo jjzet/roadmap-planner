@@ -4,6 +4,28 @@ Newest entries on top.
 
 ---
 
+## 2026-05-13 — Memory Palaces: room-unique object presets
+
+- **Branch:** `claude/festive-sagan-dpB1B`.
+- **Commit SHA:** _filled in by commit_.
+- **PR:** _not opened._
+
+### What changed
+Per user feedback, every object kind must belong to exactly one room — no cross-room sharing. Three duplicates existed in the previous preset registry:
+- `banner` was in **throne-room** and **tower** → renamed to **Royal Banner** (`royal-banner`) and **Tower Pennant** (`tower-pennant`).
+- `lantern` was in **pier** and **bridge** → renamed to **Pier Lantern** (`pier-lantern`) and **Bridge Lantern** (`bridge-lantern`).
+- `treasure-chest` was in **cove** and **treasure-vault** → cove's renamed to **Pirate's Chest** (`pirates-chest`); treasure-vault keeps `treasure-chest`.
+
+Also added a module-load integrity check in `presets.ts` that scans `ROOM_OBJECTS`, warns to the browser console if any object kind id appears in more than one room. Catches the same mistake the next time someone edits the registry.
+
+### Verification
+- `tsc -b` clean.
+- `eslint src/components/palace` clean.
+- `vite build` clean.
+- Re-ran the `grep -oE "id: '[a-z-]+'"` and `grep -oE "name: '[^']+'"` audits over `presets.ts` — zero duplicates remain.
+
+---
+
 ## 2026-05-13 — Memory Palaces: theme-aligned presets + label fix
 
 - **Branch:** `claude/festive-sagan-dpB1B`.

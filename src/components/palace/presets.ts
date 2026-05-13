@@ -91,7 +91,7 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
   ],
   'pier': [
     { id: 'fishing-pole', name: 'Fishing Pole', icon: 'sword',   color: '#3B82F6' },
-    { id: 'lantern',      name: 'Lantern',      icon: 'lantern', color: '#F59E0B' },
+    { id: 'pier-lantern', name: 'Pier Lantern', icon: 'lantern', color: '#F59E0B' },
     { id: 'rope-coil',    name: 'Rope Coil',    icon: 'scroll',  color: '#A8A29E' },
     { id: 'crate',        name: 'Crate',        icon: 'chest',   color: '#92400E' },
   ],
@@ -107,7 +107,7 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
     { id: 'shovel',      name: 'Shovel',      icon: 'sword', color: '#F59E0B' },
   ],
   'cove': [
-    { id: 'treasure-chest',  name: 'Treasure Chest',     icon: 'chest',   color: '#F59E0B' },
+    { id: 'pirates-chest',   name: 'Pirate\'s Chest',    icon: 'chest',   color: '#F59E0B' },
     { id: 'message-bottle',  name: 'Message in Bottle',  icon: 'potion',  color: '#06B6D4' },
     { id: 'compass',         name: 'Compass',            icon: 'crystal', color: '#3B82F6' },
   ],
@@ -116,7 +116,7 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
   'throne-room': [
     { id: 'throne',        name: 'Throne',        icon: 'sign',   color: '#F59E0B' },
     { id: 'crown',         name: 'Crown',         icon: 'gem',    color: '#FCD34D' },
-    { id: 'banner',        name: 'Banner',        icon: 'sign',   color: '#EF4444' },
+    { id: 'royal-banner',  name: 'Royal Banner',  icon: 'sign',   color: '#EF4444' },
     { id: 'goblet',        name: 'Goblet',        icon: 'potion', color: '#FCD34D' },
     { id: 'royal-decree',  name: 'Royal Decree',  icon: 'scroll', color: '#8B5CF6' },
   ],
@@ -152,10 +152,10 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
     { id: 'astrolabe', name: 'Astrolabe', icon: 'gem',     color: '#FCD34D' },
   ],
   'tower': [
-    { id: 'spyglass', name: 'Spyglass', icon: 'crystal', color: '#06B6D4' },
-    { id: 'beacon',   name: 'Beacon',   icon: 'lantern', color: '#F59E0B' },
-    { id: 'banner',   name: 'Banner',   icon: 'sign',    color: '#EF4444' },
-    { id: 'wizard',   name: 'Wizard',   icon: 'npc',     color: '#8B5CF6' },
+    { id: 'spyglass',       name: 'Spyglass',       icon: 'crystal', color: '#06B6D4' },
+    { id: 'tower-beacon',   name: 'Tower Beacon',   icon: 'lantern', color: '#F59E0B' },
+    { id: 'tower-pennant',  name: 'Tower Pennant',  icon: 'sign',    color: '#EF4444' },
+    { id: 'wizard',         name: 'Wizard',         icon: 'npc',     color: '#8B5CF6' },
   ],
   'courtyard': [
     { id: 'fountain', name: 'Fountain', icon: 'crystal', color: '#06B6D4' },
@@ -237,9 +237,9 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
     { id: 'wild-berries', name: 'Wild Berries', icon: 'gem',  color: '#EF4444' },
   ],
   'bridge': [
-    { id: 'troll',     name: 'Troll',     icon: 'npc',     color: '#10B981' },
-    { id: 'lantern',   name: 'Lantern',   icon: 'lantern', color: '#F59E0B' },
-    { id: 'toll-sign', name: 'Toll Sign', icon: 'sign',    color: '#92400E' },
+    { id: 'troll',          name: 'Troll',          icon: 'npc',     color: '#10B981' },
+    { id: 'bridge-lantern', name: 'Bridge Lantern', icon: 'lantern', color: '#F59E0B' },
+    { id: 'toll-sign',      name: 'Toll Sign',      icon: 'sign',    color: '#92400E' },
   ],
   'crossroads': [
     { id: 'signpost',          name: 'Signpost',           icon: 'sign',    color: '#92400E' },
@@ -302,3 +302,28 @@ export function objectsForRoomKind(kind: string | undefined): ObjectKind[] {
   if (!kind) return FALLBACK_OBJECTS;
   return ROOM_OBJECTS[kind] ?? FALLBACK_OBJECTS;
 }
+
+// Integrity check: every object kind must be unique across all rooms. The
+// memory-palace metaphor relies on each locus being specific to its room —
+// shared types blur the spatial mnemonic. Runs at module load so adding a
+// duplicate during editing surfaces immediately in the browser console.
+(function assertObjectKindsAreRoomUnique() {
+  const seen = new Map<string, string>(); // objectKindId -> roomKindId
+  const dupes: { id: string; rooms: string[] }[] = [];
+  for (const [roomKindId, kinds] of Object.entries(ROOM_OBJECTS)) {
+    for (const k of kinds) {
+      const prev = seen.get(k.id);
+      if (prev && prev !== roomKindId) {
+        dupes.push({ id: k.id, rooms: [prev, roomKindId] });
+      } else {
+        seen.set(k.id, roomKindId);
+      }
+    }
+  }
+  if (dupes.length) {
+    console.warn(
+      '[palace presets] duplicate object kinds across rooms — each room must own its objects:',
+      dupes,
+    );
+  }
+})();
