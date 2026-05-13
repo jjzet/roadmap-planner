@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: type-picker for legacy rooms
 
 - **Branch:** `claude/festive-sagan-dpB1B`.
-- **Commit SHA:** _filled in by commit_.
+- **Commit SHA:** `4535883`.
 - **PR:** _not opened._
 
 ### Signal
