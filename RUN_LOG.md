@@ -7,8 +7,9 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: spaced repetition surface
 
 - **Branch:** `claude/festive-sagan-dpB1B` (session-pinned, same as previous run).
-- **Commit SHA:** _filled in by commit_
+- **Commit SHA:** `8b53562`
 - **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
+- **Migration to apply:** run `supabase/migrations/007_palace_reviews.sql` in the Supabase SQL editor before using the review surface.
 
 ### Signal observed
 - Same-session note from the user: the prior memory-palace builds were undone on their side, and they asked to keep advancing the feature per the run spec. The code on this branch still has steps 1–6 (schema, list, canvas, rooms, loci, walk-through), so the next incomplete step is **step 7 — spaced repetition**.
