@@ -1,12 +1,30 @@
 import { useMemo, useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen, Footprints } from 'lucide-react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
 import { PalaceWalk } from '@/components/palace/PalaceWalk';
+import { PixelSprite } from '@/components/palace/PixelSprite';
 import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
-import type { PalaceTheme } from '@/types';
+import {
+  THEME_ROOMS,
+  objectsForRoomKind,
+  type ObjectKind,
+  type RoomKind,
+} from '@/components/palace/presets';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu';
+import type { PalaceRoom, PalaceTheme } from '@/types';
 
 export function PalacesView() {
   const palaces = usePalaceStore((s) => s.palaces);
@@ -38,18 +56,24 @@ export function PalacesView() {
     await createPalace(name.trim());
   };
 
-  const handleAddRoom = async () => {
+  const handleAddRoomKind = async (kind: RoomKind) => {
     if (!palace) return;
-    const name = window.prompt('Room name:', 'New room');
-    if (!name?.trim()) return;
-    await addRoom(palace.id, { name: name.trim() });
+    // If a room of this kind already exists, suffix with a counter — palaces
+    // can hold multiple rooms of the same type ("Tower", "Tower 2").
+    const existing = palace.data.rooms.filter((r) => r.kind === kind.id).length;
+    const name = existing === 0 ? kind.name : `${kind.name} ${existing + 1}`;
+    await addRoom(palace.id, { name, kind: kind.id, color: kind.color });
   };
 
-  const handleAddObject = async () => {
+  const handleAddObjectKind = async (room: PalaceRoom, kind: ObjectKind) => {
     if (!palace) return;
-    const name = window.prompt('Memory name:', 'New memory');
-    if (!name?.trim()) return;
-    await addObject(palace.id, { name: name.trim() });
+    await addObject(palace.id, {
+      name: kind.name,
+      icon: kind.icon,
+      color: kind.color,
+      kind: kind.id,
+      roomId: room.id,
+    });
   };
 
   const handleDelete = async () => {
@@ -168,8 +192,15 @@ export function PalacesView() {
               <div className="flex items-center gap-2">
                 {!walkMode && (
                   <>
-                    <ToolbarButton onClick={handleAddRoom} icon={<DoorOpen className="w-3 h-3" />} label="Add room" />
-                    <ToolbarButton onClick={handleAddObject} icon={<Box className="w-3 h-3" />} label="Add memory" />
+                    <AddRoomMenu
+                      theme={palace.theme}
+                      existingKinds={palace.data.rooms.map((r) => r.kind)}
+                      onPick={handleAddRoomKind}
+                    />
+                    <AddMemoryMenu
+                      rooms={palace.data.rooms}
+                      onPick={handleAddObjectKind}
+                    />
                   </>
                 )}
                 <button
@@ -260,19 +291,138 @@ export function PalacesView() {
   );
 }
 
-function ToolbarButton({
-  onClick, icon, label,
+// ── Toolbar pickers ──────────────────────────────────────────────────────
+
+const TOOLBAR_BTN_CLS =
+  'flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-600 hover:text-cyan-700 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 rounded px-2 py-1 cursor-pointer transition-colors';
+
+function AddRoomMenu({
+  theme, existingKinds, onPick,
 }: {
-  onClick: () => void; icon: React.ReactNode; label: string;
+  theme: PalaceTheme;
+  existingKinds: (string | undefined)[];
+  onPick: (kind: RoomKind) => void;
 }) {
+  const kinds = THEME_ROOMS[theme] ?? [];
   return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-600 hover:text-cyan-700 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 rounded px-2 py-1 cursor-pointer transition-colors"
-    >
-      {icon}
-      {label}
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={TOOLBAR_BTN_CLS} title={`Add a ${themeLabel(theme).toLowerCase()} room`}>
+          <DoorOpen className="w-3 h-3" />
+          Add room
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[180px]">
+        <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-500">
+          {themeLabel(theme)} rooms
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {kinds.map((k) => {
+          const count = existingKinds.filter((id) => id === k.id).length;
+          return (
+            <DropdownMenuItem
+              key={k.id}
+              onSelect={() => onPick(k)}
+              className="text-[12px] font-mono"
+            >
+              <span
+                className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+                style={{ background: k.color }}
+              />
+              <span className="flex-1 truncate">{k.name}</span>
+              {count > 0 && (
+                <span className="ml-2 text-[10px] text-gray-400">×{count}</span>
+              )}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function AddMemoryMenu({
+  rooms, onPick,
+}: {
+  rooms: PalaceRoom[];
+  onPick: (room: PalaceRoom, kind: ObjectKind) => void;
+}) {
+  if (rooms.length === 0) {
+    return (
+      <button
+        className={TOOLBAR_BTN_CLS + ' opacity-50 cursor-not-allowed'}
+        disabled
+        title="Add a room before placing memories"
+      >
+        <Box className="w-3 h-3" />
+        Add memory
+      </button>
+    );
+  }
+
+  // Single room: flat list of object kinds. Multiple: nested submenu per room.
+  const single = rooms.length === 1 ? rooms[0] : null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={TOOLBAR_BTN_CLS} title="Drop a memory anchor in a room">
+          <Box className="w-3 h-3" />
+          Add memory
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[200px]">
+        {single ? (
+          <FlatRoomObjects room={single} onPick={onPick} />
+        ) : (
+          rooms.map((r) => (
+            <DropdownMenuSub key={r.id}>
+              <DropdownMenuSubTrigger className="text-[12px] font-mono">
+                <span
+                  className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+                  style={{ background: r.color }}
+                />
+                <span className="flex-1 truncate">{r.name}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="min-w-[180px]">
+                <FlatRoomObjects room={r} onPick={onPick} />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function FlatRoomObjects({
+  room, onPick,
+}: {
+  room: PalaceRoom;
+  onPick: (room: PalaceRoom, kind: ObjectKind) => void;
+}) {
+  const kinds = objectsForRoomKind(room.kind);
+  return (
+    <>
+      <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-500">
+        {room.name}
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {kinds.map((k) => (
+        <DropdownMenuItem
+          key={k.id}
+          onSelect={() => onPick(room, k)}
+          className="text-[12px] font-mono"
+        >
+          <span className="inline-block w-4 h-4 mr-2 flex-shrink-0">
+            <PixelSprite icon={k.icon} color={k.color} size={16} />
+          </span>
+          <span className="flex-1 truncate">{k.name}</span>
+        </DropdownMenuItem>
+      ))}
+    </>
   );
 }
 

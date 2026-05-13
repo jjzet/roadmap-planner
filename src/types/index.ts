@@ -235,6 +235,7 @@ export interface PalaceRoom {
   width: number;   // tile span
   height: number;
   color: string;   // hex — floor tint for the room
+  kind?: string;   // RoomKind.id from presets — drives object picker
 }
 
 export interface PalaceObject {
@@ -247,6 +248,7 @@ export interface PalaceObject {
   color: string;     // hex — sprite accent
   roomId?: string;   // optional — assigned to a room
   link?: string;     // optional URL or page ref
+  kind?: string;     // ObjectKind.id from presets
 }
 
 export interface MemoryPalaceData {

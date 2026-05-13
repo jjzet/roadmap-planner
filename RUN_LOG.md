@@ -4,6 +4,37 @@ Newest entries on top.
 
 ---
 
+## 2026-05-13 — Memory Palaces: theme-aligned presets + label fix
+
+- **Branch:** `claude/festive-sagan-dpB1B`.
+- **Commit SHA:** _filled in by commit_.
+- **PR:** _not opened._
+
+### Tweaks shipped
+1. **Room label clipping fixed.** The label was hard-clipped by a foreignObject sized to the room width; now rendered as a centered pill inside a 300px-wide overflow-visible foreignObject anchored on the room's centre, so the name reads even when the room is narrow.
+2. **Free-form room/object creation removed.** Replaced both `window.prompt` flows with `DropdownMenu` pickers:
+   - **Add room** — lists fixed rooms per palace theme (e.g. Castle → Throne Room / Armoury / Dungeon / Grain Store / Kitchen / Library / Tower / Courtyard). Existing kinds in the palace get an `×N` counter.
+   - **Add memory** — lists rooms; for each room, a submenu lists the objects that belong in that room kind (e.g. Armoury → Weapon Rack / Shield Stand / Helmet / Arms Chest). When the palace has a single room, the menu flattens to a one-level list. Disabled when there are no rooms.
+3. Schema is additive — added optional `kind?: string` to `PalaceRoom` and `PalaceObject`. Existing rooms with no `kind` fall back to a small generic object preset (Note / Item / Marker / Gem) so legacy data still works.
+
+### Files touched
+- `src/components/palace/presets.ts` (new) — `THEME_ROOMS`, `ROOM_OBJECTS`, `FALLBACK_OBJECTS`, `objectsForRoomKind`.
+- `src/types/index.ts` — `kind?` on PalaceRoom + PalaceObject.
+- `src/components/palace/PalaceMap.tsx` — overflow-safe centered room label.
+- `src/components/views/PalacesView.tsx` — new `AddRoomMenu`, `AddMemoryMenu`, `FlatRoomObjects` components; old `ToolbarButton` removed.
+
+### Verification
+- `tsc -b` clean.
+- `eslint` on `src/components/palace` + `PalacesView.tsx` clean.
+- `vite build` clean.
+- Supabase smoke test (now deleted): created a palace, wrote a room with `kind: 'armoury'` and an object with `kind: 'weapon-rack'`, read it back — both `kind` fields roundtripped intact.
+
+### Deferred
+- **PNG sidebar icon** for Palaces (still using `Castle` Lucide icon).
+- **Renaming presets / extending the registry from the UI** — by design, presets are the source of truth.
+
+---
+
 ## 2026-05-13 — Memory Palaces: wire core feature into sidebar (correction)
 
 - **Branch:** `claude/festive-sagan-dpB1B`.

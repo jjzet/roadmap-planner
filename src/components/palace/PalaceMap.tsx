@@ -117,27 +117,40 @@ export function PalaceMap({
               strokeWidth={3}
               opacity={0.95}
             />
+            {/* Centered overflow-safe pill — sits at the top of the room and
+                can hang past the room edges if the name is wider than the
+                room. Wide foreignObject + flex-center so the inline pill
+                sizes to its content. */}
             <foreignObject
-              x={r.x * TILE + 2}
+              x={r.x * TILE + (r.width * TILE) / 2 - 150}
               y={r.y * TILE + 2}
-              width={r.width * TILE - 4}
+              width={300}
               height={14}
+              style={{ pointerEvents: 'none', overflow: 'visible' }}
             >
               <div
                 style={{
-                  fontFamily: "'JetBrains Mono Variable', monospace",
-                  fontSize: 9,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#1f2937',
-                  background: 'rgba(255,255,255,0.7)',
-                  display: 'inline-block',
-                  padding: '0 4px',
-                  borderRadius: 2,
-                  fontWeight: 600,
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
                 }}
               >
-                {r.name}
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono Variable', monospace",
+                    fontSize: 9,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: '#1f2937',
+                    background: 'rgba(255,255,255,0.85)',
+                    padding: '0 4px',
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r.name}
+                </span>
               </div>
             </foreignObject>
           </g>
