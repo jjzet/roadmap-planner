@@ -4,6 +4,29 @@ Newest entries on top.
 
 ---
 
+## 2026-05-13 — Memory Palaces: type-picker for legacy rooms
+
+- **Branch:** `claude/festive-sagan-dpB1B`.
+- **Commit SHA:** _filled in by commit_.
+- **PR:** _not opened._
+
+### Signal
+User reported: every room's Add Memory list was showing the same four items (Note / Item / Marker / Gem). Root cause — those are `FALLBACK_OBJECTS`, surfaced for any room with no `kind` field. Their existing room "Change Hut" was created before the presets landed so has no kind, and the fallback list is by definition shared across all kind-less rooms.
+
+### What shipped
+- `AddMemoryMenu` now branches by whether the room has a kind:
+  - **Has kind:** unchanged — show the room-specific object list.
+  - **No kind:** show a **Set "<room name>" type** picker listing the room kinds for the palace theme. Picking one calls `updateRoom` to commit `kind` + `color` to the room (the user's chosen name like "Change Hut" is preserved). The next click on Add Memory then shows that room's own object set.
+- Submenu trigger for a kind-less room shows a small amber "no type" pill so the affordance is obvious before you click in.
+- `FALLBACK_OBJECTS` remains as a defensive fallback inside `objectsForRoomKind`, but no longer reaches a user — a kind-less room can't get into the object picker at all.
+
+### Verification
+- `tsc -b` clean.
+- `eslint` on touched files clean.
+- `vite build` clean.
+
+---
+
 ## 2026-05-13 — Memory Palaces: room-unique object presets
 
 - **Branch:** `claude/festive-sagan-dpB1B`.

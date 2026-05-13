@@ -39,6 +39,7 @@ export function PalacesView() {
   const deletePalace = usePalaceStore((s) => s.deletePalace);
   const addRoom = usePalaceStore((s) => s.addRoom);
   const addObject = usePalaceStore((s) => s.addObject);
+  const updateRoom = usePalaceStore((s) => s.updateRoom);
   const updateObject = usePalaceStore((s) => s.updateObject);
   const removeObject = usePalaceStore((s) => s.removeObject);
   const removeRoom = usePalaceStore((s) => s.removeRoom);
@@ -74,6 +75,13 @@ export function PalacesView() {
       kind: kind.id,
       roomId: room.id,
     });
+  };
+
+  // Assign a kind to a legacy room (no name overwrite — user-chosen names
+  // like "Change Hut" stay; only the kind + floor colour adopt the preset).
+  const handleAssignRoomKind = async (room: PalaceRoom, kind: RoomKind) => {
+    if (!palace) return;
+    await updateRoom(palace.id, room.id, { kind: kind.id, color: kind.color });
   };
 
   const handleDelete = async () => {
@@ -198,8 +206,10 @@ export function PalacesView() {
                       onPick={handleAddRoomKind}
                     />
                     <AddMemoryMenu
+                      theme={palace.theme}
                       rooms={palace.data.rooms}
                       onPick={handleAddObjectKind}
+                      onAssignKind={handleAssignRoomKind}
                     />
                   </>
                 )}
@@ -343,10 +353,12 @@ function AddRoomMenu({
 }
 
 function AddMemoryMenu({
-  rooms, onPick,
+  theme, rooms, onPick, onAssignKind,
 }: {
+  theme: PalaceTheme;
   rooms: PalaceRoom[];
   onPick: (room: PalaceRoom, kind: ObjectKind) => void;
+  onAssignKind: (room: PalaceRoom, kind: RoomKind) => void;
 }) {
   if (rooms.length === 0) {
     return (
@@ -361,8 +373,9 @@ function AddMemoryMenu({
     );
   }
 
-  // Single room: flat list of object kinds. Multiple: nested submenu per room.
-  const single = rooms.length === 1 ? rooms[0] : null;
+  // If there's exactly one room with a kind, skip the room layer and show
+  // its object kinds directly. Any other shape gets the per-room submenu.
+  const single = rooms.length === 1 && rooms[0].kind ? rooms[0] : null;
 
   return (
     <DropdownMenu>
@@ -375,7 +388,7 @@ function AddMemoryMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[200px]">
         {single ? (
-          <FlatRoomObjects room={single} onPick={onPick} />
+          <RoomObjectList room={single} onPick={onPick} />
         ) : (
           rooms.map((r) => (
             <DropdownMenuSub key={r.id}>
@@ -385,9 +398,22 @@ function AddMemoryMenu({
                   style={{ background: r.color }}
                 />
                 <span className="flex-1 truncate">{r.name}</span>
+                {!r.kind && (
+                  <span className="ml-2 text-[9px] font-mono uppercase tracking-wider text-amber-600">
+                    no type
+                  </span>
+                )}
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="min-w-[180px]">
-                <FlatRoomObjects room={r} onPick={onPick} />
+              <DropdownMenuSubContent className="min-w-[200px]">
+                {r.kind ? (
+                  <RoomObjectList room={r} onPick={onPick} />
+                ) : (
+                  <RoomKindPicker
+                    theme={theme}
+                    room={r}
+                    onAssign={onAssignKind}
+                  />
+                )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
           ))
@@ -397,7 +423,7 @@ function AddMemoryMenu({
   );
 }
 
-function FlatRoomObjects({
+function RoomObjectList({
   room, onPick,
 }: {
   room: PalaceRoom;
@@ -419,6 +445,40 @@ function FlatRoomObjects({
           <span className="inline-block w-4 h-4 mr-2 flex-shrink-0">
             <PixelSprite icon={k.icon} color={k.color} size={16} />
           </span>
+          <span className="flex-1 truncate">{k.name}</span>
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
+// Surfaced when a room has no `kind` assigned yet (legacy data, before the
+// presets landed). Picking a kind here commits it to the room so the next
+// "Add memory" click on this room shows the room-specific object list.
+function RoomKindPicker({
+  theme, room, onAssign,
+}: {
+  theme: PalaceTheme;
+  room: PalaceRoom;
+  onAssign: (room: PalaceRoom, kind: RoomKind) => void;
+}) {
+  const kinds = THEME_ROOMS[theme] ?? [];
+  return (
+    <>
+      <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-amber-700">
+        Set "{room.name}" type
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {kinds.map((k) => (
+        <DropdownMenuItem
+          key={k.id}
+          onSelect={() => onAssign(room, k)}
+          className="text-[12px] font-mono"
+        >
+          <span
+            className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+            style={{ background: k.color }}
+          />
           <span className="flex-1 truncate">{k.name}</span>
         </DropdownMenuItem>
       ))}
