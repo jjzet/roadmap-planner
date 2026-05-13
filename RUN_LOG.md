@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: wire core feature into sidebar (correction)
 
 - **Branch:** `claude/festive-sagan-dpB1B`.
-- **Commit SHA:** _filled in by commit_.
+- **Commit SHA:** `863115b`.
 - **PR:** _not opened._
 
 ### Why this entry exists
