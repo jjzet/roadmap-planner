@@ -271,6 +271,14 @@ export const usePalaceStore = create<PalaceStore>()(
         if (s.selectedObjectId === objectId) s.selectedObjectId = null;
       });
       await persist(palaceId, { data });
+      // Best-effort cleanup of the spaced-repetition record for this locus.
+      // Loaded lazily so the palace store stays decoupled from review state.
+      try {
+        const { usePalaceReviewStore } = await import('./palaceReviewStore');
+        await usePalaceReviewStore.getState().removeReviewsForObject(palaceId, objectId);
+      } catch (e) {
+        console.warn('failed to clear review for removed object:', e);
+      }
     },
   }))
 );

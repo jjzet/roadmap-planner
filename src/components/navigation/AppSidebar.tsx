@@ -10,7 +10,7 @@ import {
   SidebarFooter,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Plus, Trash2, ChevronRight, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, GripVertical, Castle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { useTodoStore } from '@/store/todoStore';
@@ -409,6 +409,21 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {/* Palaces — Lucide icon for now (no PNG yet); cyan accent matches
+                  the new direction's palace UI. */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeView === 'palaces'}
+                  onClick={() => setActiveView('palaces')}
+                  tooltip="Palaces"
+                  className="gap-2 h-8 px-2"
+                >
+                  <span className="w-7 h-7 shrink-0 flex items-center justify-center">
+                    <Castle className="w-5 h-5 text-cyan-600" strokeWidth={1.75} />
+                  </span>
+                  <span className="text-[11px] font-medium uppercase tracking-wider">Palaces</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

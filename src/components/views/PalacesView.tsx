@@ -1,10 +1,30 @@
-import { useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
-import type { PalaceTheme } from '@/types';
+import { PalaceWalk } from '@/components/palace/PalaceWalk';
+import { PixelSprite } from '@/components/palace/PixelSprite';
+import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
+import {
+  THEME_ROOMS,
+  objectsForRoomKind,
+  type ObjectKind,
+  type RoomKind,
+} from '@/components/palace/presets';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+} from '@/components/ui/dropdown-menu';
+import type { PalaceRoom, PalaceTheme } from '@/types';
 
 export function PalacesView() {
   const palaces = usePalaceStore((s) => s.palaces);
@@ -19,6 +39,7 @@ export function PalacesView() {
   const deletePalace = usePalaceStore((s) => s.deletePalace);
   const addRoom = usePalaceStore((s) => s.addRoom);
   const addObject = usePalaceStore((s) => s.addObject);
+  const updateRoom = usePalaceStore((s) => s.updateRoom);
   const updateObject = usePalaceStore((s) => s.updateObject);
   const removeObject = usePalaceStore((s) => s.removeObject);
   const removeRoom = usePalaceStore((s) => s.removeRoom);
@@ -28,6 +49,7 @@ export function PalacesView() {
 
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [walkMode, setWalkMode] = useState(false);
 
   const handleNew = async () => {
     const name = window.prompt('Name your palace:', 'Untitled palace');
@@ -35,18 +57,31 @@ export function PalacesView() {
     await createPalace(name.trim());
   };
 
-  const handleAddRoom = async () => {
+  const handleAddRoomKind = async (kind: RoomKind) => {
     if (!palace) return;
-    const name = window.prompt('Room name:', 'New room');
-    if (!name?.trim()) return;
-    await addRoom(palace.id, { name: name.trim() });
+    // If a room of this kind already exists, suffix with a counter — palaces
+    // can hold multiple rooms of the same type ("Tower", "Tower 2").
+    const existing = palace.data.rooms.filter((r) => r.kind === kind.id).length;
+    const name = existing === 0 ? kind.name : `${kind.name} ${existing + 1}`;
+    await addRoom(palace.id, { name, kind: kind.id, color: kind.color });
   };
 
-  const handleAddObject = async () => {
+  const handleAddObjectKind = async (room: PalaceRoom, kind: ObjectKind) => {
     if (!palace) return;
-    const name = window.prompt('Memory name:', 'New memory');
-    if (!name?.trim()) return;
-    await addObject(palace.id, { name: name.trim() });
+    await addObject(palace.id, {
+      name: kind.name,
+      icon: kind.icon,
+      color: kind.color,
+      kind: kind.id,
+      roomId: room.id,
+    });
+  };
+
+  // Assign a kind to a legacy room (no name overwrite — user-chosen names
+  // like "Change Hut" stay; only the kind + floor colour adopt the preset).
+  const handleAssignRoomKind = async (room: PalaceRoom, kind: RoomKind) => {
+    if (!palace) return;
+    await updateRoom(palace.id, room.id, { kind: kind.id, color: kind.color });
   };
 
   const handleDelete = async () => {
@@ -101,29 +136,19 @@ export function PalacesView() {
               </button>
             </div>
           )}
-          {palaces.map((p) => {
-            const objCount = p.data.objects.length;
-            const roomCount = p.data.rooms.length;
-            const active = p.id === currentPalaceId;
-            return (
-              <button
-                key={p.id}
-                onClick={() => selectPalace(p.id)}
-                className={`w-full text-left px-3 py-2 cursor-pointer border-l-2 ${
-                  active
-                    ? 'bg-cyan-50/50 border-cyan-500'
-                    : 'border-transparent hover:bg-gray-50 bg-transparent'
-                }`}
-              >
-                <p className={`text-[12px] font-mono ${active ? 'text-cyan-800 font-semibold' : 'text-gray-700'} truncate`}>
-                  {p.name}
-                </p>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">
-                  {themeLabel(p.theme)} · {roomCount}r · {objCount}m
-                </p>
-              </button>
-            );
-          })}
+          {palaces.map((p) => (
+            <PalaceListItem
+              key={p.id}
+              palaceId={p.id}
+              name={p.name}
+              theme={p.theme}
+              roomCount={p.data.rooms.length}
+              objectCount={p.data.objects.length}
+              objectIds={p.data.objects.map((o) => o.id)}
+              active={p.id === currentPalaceId}
+              onSelect={() => selectPalace(p.id)}
+            />
+          ))}
         </div>
       </div>
 
@@ -173,68 +198,102 @@ export function PalacesView() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <ToolbarButton onClick={handleAddRoom} icon={<DoorOpen className="w-3 h-3" />} label="Add room" />
-                <ToolbarButton onClick={handleAddObject} icon={<Box className="w-3 h-3" />} label="Add memory" />
+                {!walkMode && (
+                  <>
+                    <AddRoomMenu
+                      theme={palace.theme}
+                      existingKinds={palace.data.rooms.map((r) => r.kind)}
+                      onPick={handleAddRoomKind}
+                    />
+                    <AddMemoryMenu
+                      theme={palace.theme}
+                      rooms={palace.data.rooms}
+                      onPick={handleAddObjectKind}
+                      onAssignKind={handleAssignRoomKind}
+                    />
+                  </>
+                )}
                 <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
-                  title="Delete palace"
+                  onClick={() => {
+                    if (!walkMode) selectObject(null);
+                    setWalkMode((v) => !v);
+                  }}
+                  className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                    walkMode
+                      ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                      : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
+                  }`}
+                  title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace'}
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Footprints className="w-3 h-3" />
+                  {walkMode ? 'Exit walk' : 'Walk'}
                 </button>
-              </div>
-            </div>
-
-            {/* Canvas + side editor */}
-            <div className="flex-1 overflow-auto bg-gray-100/60">
-              <div className="flex items-start gap-4 p-6 min-w-max">
-                <div>
-                  <PalaceMap
-                    data={palace.data}
-                    theme={palace.theme}
-                    selectedObjectId={selectedObjectId}
-                    onSelectObject={selectObject}
-                  />
-                  <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
-                    {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
-                  </p>
-                  {palace.data.rooms.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">
-                      {palace.data.rooms.map((r) => (
-                        <div
-                          key={r.id}
-                          className="group flex items-center gap-1.5 bg-white border border-gray-200 rounded-full pl-2 pr-1 py-0.5 text-[10px] font-mono"
-                        >
-                          <span className="w-2 h-2 rounded-sm" style={{ background: r.color }} />
-                          <span className="text-gray-600">{r.name}</span>
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`Remove room "${r.name}"? Memories inside stay on the map.`)) {
-                                removeRoom(palace.id, r.id);
-                              }
-                            }}
-                            className="text-gray-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Remove room"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedObject && (
-                  <ObjectEditor
-                    object={selectedObject}
-                    data={palace.data}
-                    onPatch={(patch) => updateObject(palace.id, selectedObject.id, patch)}
-                    onDelete={() => removeObject(palace.id, selectedObject.id)}
-                    onClose={() => selectObject(null)}
-                  />
+                {!walkMode && (
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
+                    title="Delete palace"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 )}
               </div>
             </div>
+
+            {walkMode ? (
+              <PalaceWalk key={palace.id} palace={palace} onExit={() => setWalkMode(false)} />
+            ) : (
+              /* Canvas + side editor */
+              <div className="flex-1 overflow-auto bg-gray-100/60">
+                <div className="flex items-start gap-4 p-6 min-w-max">
+                  <div>
+                    <PalaceMap
+                      data={palace.data}
+                      theme={palace.theme}
+                      selectedObjectId={selectedObjectId}
+                      onSelectObject={selectObject}
+                    />
+                    <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
+                      {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
+                    </p>
+                    {palace.data.rooms.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">
+                        {palace.data.rooms.map((r) => (
+                          <div
+                            key={r.id}
+                            className="group flex items-center gap-1.5 bg-white border border-gray-200 rounded-full pl-2 pr-1 py-0.5 text-[10px] font-mono"
+                          >
+                            <span className="w-2 h-2 rounded-sm" style={{ background: r.color }} />
+                            <span className="text-gray-600">{r.name}</span>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Remove room "${r.name}"? Memories inside stay on the map.`)) {
+                                  removeRoom(palace.id, r.id);
+                                }
+                              }}
+                              className="text-gray-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Remove room"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedObject && (
+                    <ObjectEditor
+                      object={selectedObject}
+                      data={palace.data}
+                      onPatch={(patch) => updateObject(palace.id, selectedObject.id, patch)}
+                      onDelete={() => removeObject(palace.id, selectedObject.id)}
+                      onClose={() => selectObject(null)}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -242,18 +301,241 @@ export function PalacesView() {
   );
 }
 
-function ToolbarButton({
-  onClick, icon, label,
+// ── Toolbar pickers ──────────────────────────────────────────────────────
+
+const TOOLBAR_BTN_CLS =
+  'flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-600 hover:text-cyan-700 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 rounded px-2 py-1 cursor-pointer transition-colors';
+
+function AddRoomMenu({
+  theme, existingKinds, onPick,
 }: {
-  onClick: () => void; icon: React.ReactNode; label: string;
+  theme: PalaceTheme;
+  existingKinds: (string | undefined)[];
+  onPick: (kind: RoomKind) => void;
 }) {
+  const kinds = THEME_ROOMS[theme] ?? [];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={TOOLBAR_BTN_CLS} title={`Add a ${themeLabel(theme).toLowerCase()} room`}>
+          <DoorOpen className="w-3 h-3" />
+          Add room
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[180px]">
+        <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-500">
+          {themeLabel(theme)} rooms
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {kinds.map((k) => {
+          const count = existingKinds.filter((id) => id === k.id).length;
+          return (
+            <DropdownMenuItem
+              key={k.id}
+              onSelect={() => onPick(k)}
+              className="text-[12px] font-mono"
+            >
+              <span
+                className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+                style={{ background: k.color }}
+              />
+              <span className="flex-1 truncate">{k.name}</span>
+              {count > 0 && (
+                <span className="ml-2 text-[10px] text-gray-400">×{count}</span>
+              )}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function AddMemoryMenu({
+  theme, rooms, onPick, onAssignKind,
+}: {
+  theme: PalaceTheme;
+  rooms: PalaceRoom[];
+  onPick: (room: PalaceRoom, kind: ObjectKind) => void;
+  onAssignKind: (room: PalaceRoom, kind: RoomKind) => void;
+}) {
+  if (rooms.length === 0) {
+    return (
+      <button
+        className={TOOLBAR_BTN_CLS + ' opacity-50 cursor-not-allowed'}
+        disabled
+        title="Add a room before placing memories"
+      >
+        <Box className="w-3 h-3" />
+        Add memory
+      </button>
+    );
+  }
+
+  // If there's exactly one room with a kind, skip the room layer and show
+  // its object kinds directly. Any other shape gets the per-room submenu.
+  const single = rooms.length === 1 && rooms[0].kind ? rooms[0] : null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={TOOLBAR_BTN_CLS} title="Drop a memory anchor in a room">
+          <Box className="w-3 h-3" />
+          Add memory
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[200px]">
+        {single ? (
+          <RoomObjectList room={single} onPick={onPick} />
+        ) : (
+          rooms.map((r) => (
+            <DropdownMenuSub key={r.id}>
+              <DropdownMenuSubTrigger className="text-[12px] font-mono">
+                <span
+                  className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+                  style={{ background: r.color }}
+                />
+                <span className="flex-1 truncate">{r.name}</span>
+                {!r.kind && (
+                  <span className="ml-2 text-[9px] font-mono uppercase tracking-wider text-amber-600">
+                    no type
+                  </span>
+                )}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="min-w-[200px]">
+                {r.kind ? (
+                  <RoomObjectList room={r} onPick={onPick} />
+                ) : (
+                  <RoomKindPicker
+                    theme={theme}
+                    room={r}
+                    onAssign={onAssignKind}
+                  />
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ))
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function RoomObjectList({
+  room, onPick,
+}: {
+  room: PalaceRoom;
+  onPick: (room: PalaceRoom, kind: ObjectKind) => void;
+}) {
+  const kinds = objectsForRoomKind(room.kind);
+  return (
+    <>
+      <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-gray-500">
+        {room.name}
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {kinds.map((k) => (
+        <DropdownMenuItem
+          key={k.id}
+          onSelect={() => onPick(room, k)}
+          className="text-[12px] font-mono"
+        >
+          <span className="inline-block w-4 h-4 mr-2 flex-shrink-0">
+            <PixelSprite icon={k.icon} color={k.color} size={16} />
+          </span>
+          <span className="flex-1 truncate">{k.name}</span>
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
+// Surfaced when a room has no `kind` assigned yet (legacy data, before the
+// presets landed). Picking a kind here commits it to the room so the next
+// "Add memory" click on this room shows the room-specific object list.
+function RoomKindPicker({
+  theme, room, onAssign,
+}: {
+  theme: PalaceTheme;
+  room: PalaceRoom;
+  onAssign: (room: PalaceRoom, kind: RoomKind) => void;
+}) {
+  const kinds = THEME_ROOMS[theme] ?? [];
+  return (
+    <>
+      <DropdownMenuLabel className="text-[10px] font-mono uppercase tracking-[0.18em] text-amber-700">
+        Set "{room.name}" type
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator />
+      {kinds.map((k) => (
+        <DropdownMenuItem
+          key={k.id}
+          onSelect={() => onAssign(room, k)}
+          className="text-[12px] font-mono"
+        >
+          <span
+            className="inline-block w-3 h-3 rounded-sm mr-2 flex-shrink-0"
+            style={{ background: k.color }}
+          />
+          <span className="flex-1 truncate">{k.name}</span>
+        </DropdownMenuItem>
+      ))}
+    </>
+  );
+}
+
+interface PalaceListItemProps {
+  palaceId: string;
+  name: string;
+  theme: PalaceTheme;
+  roomCount: number;
+  objectCount: number;
+  objectIds: string[];
+  active: boolean;
+  onSelect: () => void;
+}
+
+function PalaceListItem({
+  palaceId, name, theme, roomCount, objectCount, objectIds, active, onSelect,
+}: PalaceListItemProps) {
+  const reviews = usePalaceReviewStore((s) => s.reviews);
+  const dueCount = useMemo(() => {
+    const now = new Date();
+    let n = 0;
+    for (const oid of objectIds) {
+      const r = reviews[reviewKey(palaceId, oid)] ?? null;
+      if (isDue(r, now)) n++;
+    }
+    return n;
+  }, [palaceId, objectIds, reviews]);
+
   return (
     <button
-      onClick={onClick}
-      className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-600 hover:text-cyan-700 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 rounded px-2 py-1 cursor-pointer transition-colors"
+      onClick={onSelect}
+      className={`w-full text-left px-3 py-2 cursor-pointer border-l-2 ${
+        active
+          ? 'bg-cyan-50/50 border-cyan-500'
+          : 'border-transparent hover:bg-gray-50 bg-transparent'
+      }`}
     >
-      {icon}
-      {label}
+      <div className="flex items-center justify-between gap-2">
+        <p className={`text-[12px] font-mono ${active ? 'text-cyan-800 font-semibold' : 'text-gray-700'} truncate`}>
+          {name}
+        </p>
+        {dueCount > 0 && (
+          <span
+            className="text-[9px] font-mono font-semibold tracking-wider text-amber-800 bg-amber-100 border border-amber-200 rounded-full px-1.5 py-0.5 leading-none"
+            title={`${dueCount} memories due for review`}
+          >
+            {dueCount} due
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">
+        {themeLabel(theme)} · {roomCount}r · {objectCount}m
+      </p>
     </button>
   );
 }
