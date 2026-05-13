@@ -266,3 +266,19 @@ export interface MemoryPalaceRecord {
   created_at: string;
   updated_at: string;
 }
+
+// Spaced repetition record for a single locus inside a palace. One row per
+// (palace_id, object_id). See supabase/migrations/007_palace_reviews.sql.
+export type ReviewQuality = 'hard' | 'good' | 'easy';
+
+export interface PalaceReview {
+  id: string;
+  palace_id: string;
+  object_id: string;
+  last_seen: string;       // ISO timestamp
+  next_due: string;        // ISO timestamp
+  ease: number;            // [1.3, 3.0]
+  interval_days: number;   // >= 1
+  created_at: string;
+  updated_at: string;
+}

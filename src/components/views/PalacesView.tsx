@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Castle, Plus, Trash2, Box, DoorOpen, Footprints } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
 import { PalaceWalk } from '@/components/palace/PalaceWalk';
+import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
 import type { PalaceTheme } from '@/types';
 
 export function PalacesView() {
@@ -103,29 +104,19 @@ export function PalacesView() {
               </button>
             </div>
           )}
-          {palaces.map((p) => {
-            const objCount = p.data.objects.length;
-            const roomCount = p.data.rooms.length;
-            const active = p.id === currentPalaceId;
-            return (
-              <button
-                key={p.id}
-                onClick={() => selectPalace(p.id)}
-                className={`w-full text-left px-3 py-2 cursor-pointer border-l-2 ${
-                  active
-                    ? 'bg-cyan-50/50 border-cyan-500'
-                    : 'border-transparent hover:bg-gray-50 bg-transparent'
-                }`}
-              >
-                <p className={`text-[12px] font-mono ${active ? 'text-cyan-800 font-semibold' : 'text-gray-700'} truncate`}>
-                  {p.name}
-                </p>
-                <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">
-                  {themeLabel(p.theme)} · {roomCount}r · {objCount}m
-                </p>
-              </button>
-            );
-          })}
+          {palaces.map((p) => (
+            <PalaceListItem
+              key={p.id}
+              palaceId={p.id}
+              name={p.name}
+              theme={p.theme}
+              roomCount={p.data.rooms.length}
+              objectCount={p.data.objects.length}
+              objectIds={p.data.objects.map((o) => o.id)}
+              active={p.id === currentPalaceId}
+              onSelect={() => selectPalace(p.id)}
+            />
+          ))}
         </div>
       </div>
 
@@ -281,6 +272,60 @@ function ToolbarButton({
     >
       {icon}
       {label}
+    </button>
+  );
+}
+
+interface PalaceListItemProps {
+  palaceId: string;
+  name: string;
+  theme: PalaceTheme;
+  roomCount: number;
+  objectCount: number;
+  objectIds: string[];
+  active: boolean;
+  onSelect: () => void;
+}
+
+function PalaceListItem({
+  palaceId, name, theme, roomCount, objectCount, objectIds, active, onSelect,
+}: PalaceListItemProps) {
+  const reviews = usePalaceReviewStore((s) => s.reviews);
+  const dueCount = useMemo(() => {
+    const now = new Date();
+    let n = 0;
+    for (const oid of objectIds) {
+      const r = reviews[reviewKey(palaceId, oid)] ?? null;
+      if (isDue(r, now)) n++;
+    }
+    return n;
+  }, [palaceId, objectIds, reviews]);
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full text-left px-3 py-2 cursor-pointer border-l-2 ${
+        active
+          ? 'bg-cyan-50/50 border-cyan-500'
+          : 'border-transparent hover:bg-gray-50 bg-transparent'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className={`text-[12px] font-mono ${active ? 'text-cyan-800 font-semibold' : 'text-gray-700'} truncate`}>
+          {name}
+        </p>
+        {dueCount > 0 && (
+          <span
+            className="text-[9px] font-mono font-semibold tracking-wider text-amber-800 bg-amber-100 border border-amber-200 rounded-full px-1.5 py-0.5 leading-none"
+            title={`${dueCount} memories due for review`}
+          >
+            {dueCount} due
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mt-0.5">
+        {themeLabel(theme)} · {roomCount}r · {objectCount}m
+      </p>
     </button>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, ChevronRight, Footprints, Compass } from 'lucide-react';
-import type { MemoryPalaceRecord, PalaceObject } from '@/types';
+import { X, ChevronRight, Footprints, Compass, Sparkles } from 'lucide-react';
+import type { MemoryPalaceRecord, PalaceObject, ReviewQuality } from '@/types';
 import { PalaceMap } from './PalaceMap';
 import { PixelSprite } from './PixelSprite';
+import { usePalaceReviewStore, reviewKey, dueState, isDue } from '@/store/palaceReviewStore';
 
 interface PalaceWalkProps {
   palace: MemoryPalaceRecord;
@@ -96,6 +97,26 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
     (r) => pos.x >= r.x && pos.x < r.x + r.width && pos.y >= r.y && pos.y < r.y + r.height,
   );
 
+  const reviews = usePalaceReviewStore((s) => s.reviews);
+  const recordReview = usePalaceReviewStore((s) => s.recordReview);
+  const currentReview = standingOn ? reviews[reviewKey(palace.id, standingOn.id)] ?? null : null;
+
+  // Snapshot "now" once per mount so render stays pure. Good enough for a
+  // walk session that lasts seconds-to-minutes, not days.
+  const [nowMs] = useState(() => Date.now());
+
+  // Loci that are due now (or unreviewed). Drives the dashed amber rings on
+  // the map so the user knows what to walk to without scanning the panel.
+  const dueObjectIds = useMemo(() => {
+    const now = new Date(nowMs);
+    const set = new Set<string>();
+    for (const o of palace.data.objects) {
+      const r = reviews[reviewKey(palace.id, o.id)] ?? null;
+      if (isDue(r, now)) set.add(o.id);
+    }
+    return set;
+  }, [palace.id, palace.data.objects, reviews, nowMs]);
+
   const goNext = () => {
     if (!ordered.length) return;
     // Find the next object in canonical order after the current position. If
@@ -103,6 +124,25 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
     const i = standingOn ? ordered.findIndex((o) => o.id === standingOn.id) : -1;
     const next = ordered[(i + 1) % ordered.length];
     setPos({ x: next.x, y: next.y });
+  };
+
+  const goNextDue = () => {
+    if (dueObjectIds.size === 0) return;
+    // Walk the canonical order starting just after the current locus, return
+    // to the first due item we find. Wraps around.
+    const startIdx = standingOn ? ordered.findIndex((o) => o.id === standingOn.id) : -1;
+    for (let step = 1; step <= ordered.length; step++) {
+      const cand = ordered[(startIdx + step + ordered.length) % ordered.length];
+      if (dueObjectIds.has(cand.id)) {
+        setPos({ x: cand.x, y: cand.y });
+        return;
+      }
+    }
+  };
+
+  const handleReview = (q: ReviewQuality) => {
+    if (!standingOn) return;
+    void recordReview(palace.id, standingOn.id, q);
   };
 
   return (
@@ -115,6 +155,7 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
             selectedObjectId={null}
             onSelectObject={() => {}}
             walkAvatar={pos}
+            dueObjectIds={dueObjectIds}
           />
           <div className="mt-2 flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-gray-500">
             <span className="flex items-center gap-1">
@@ -162,7 +203,8 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
                     {standingOn.name}
                   </p>
                 </div>
-                <p className="text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap leading-relaxed">
+                <DueBadge review={currentReview} nowMs={nowMs} />
+                <p className="mt-2 text-[12px] font-mono font-light text-gray-700 whitespace-pre-wrap leading-relaxed">
                   {standingOn.content || (
                     <span className="text-gray-400 italic">No memory recorded yet.</span>
                   )}
@@ -177,6 +219,16 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
                     {standingOn.link}
                   </a>
                 )}
+                <div className="mt-4">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1.5">
+                    How well did you recall it?
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <ReviewButton label="Hard"  tone="rose"   onClick={() => handleReview('hard')} />
+                    <ReviewButton label="OK"    tone="cyan"   onClick={() => handleReview('good')} />
+                    <ReviewButton label="Easy"  tone="emerald" onClick={() => handleReview('easy')} />
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-4">
@@ -190,7 +242,7 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
           </div>
 
           {ordered.length > 0 && (
-            <div className="border-t border-gray-100 px-3 py-2">
+            <div className="border-t border-gray-100 px-3 py-2 flex flex-col gap-1.5">
               <button
                 onClick={goNext}
                 className="w-full flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-cyan-700 hover:text-cyan-900 bg-white border border-cyan-200 hover:border-cyan-400 hover:bg-cyan-50/40 rounded py-1.5 cursor-pointer transition-colors"
@@ -199,10 +251,72 @@ export function PalaceWalk({ palace, onExit }: PalaceWalkProps) {
                 Next memory
                 <ChevronRight className="w-3 h-3" />
               </button>
+              {dueObjectIds.size > 0 && (
+                <button
+                  onClick={goNextDue}
+                  className="w-full flex items-center justify-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-amber-700 hover:text-amber-900 bg-white border border-amber-200 hover:border-amber-400 hover:bg-amber-50/40 rounded py-1.5 cursor-pointer transition-colors"
+                  title="Jump to the next memory that's due for review"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Next due ({dueObjectIds.size})
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function DueBadge({
+  review, nowMs,
+}: {
+  review: import('@/types').PalaceReview | null;
+  nowMs: number;
+}) {
+  const state = dueState(review, new Date(nowMs));
+  const STYLES: Record<typeof state, { label: string; cls: string }> = {
+    overdue:    { label: 'Overdue',    cls: 'text-rose-700 bg-rose-50 border-rose-200' },
+    today:      { label: 'Due today',  cls: 'text-amber-700 bg-amber-50 border-amber-200' },
+    soon:       { label: 'Due soon',   cls: 'text-cyan-700 bg-cyan-50 border-cyan-200' },
+    fresh:      { label: 'Fresh',      cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+    unreviewed: { label: 'Unreviewed', cls: 'text-gray-600 bg-gray-50 border-gray-200' },
+  };
+  const s = STYLES[state];
+  let suffix = '';
+  if (review) {
+    const days = Math.round((new Date(review.next_due).getTime() - nowMs) / 86400_000);
+    if (state === 'fresh' || state === 'soon') suffix = ` · ${days}d`;
+    else if (state === 'overdue') suffix = ` · ${Math.abs(days)}d ago`;
+  }
+  return (
+    <span
+      className={`inline-block text-[9px] font-mono uppercase tracking-[0.18em] border rounded-full px-2 py-0.5 ${s.cls}`}
+    >
+      {s.label}{suffix}
+    </span>
+  );
+}
+
+function ReviewButton({
+  label, tone, onClick,
+}: {
+  label: string;
+  tone: 'rose' | 'cyan' | 'emerald';
+  onClick: () => void;
+}) {
+  const TONES = {
+    rose:    'text-rose-700 border-rose-200 hover:border-rose-400 hover:bg-rose-50/40',
+    cyan:    'text-cyan-700 border-cyan-200 hover:border-cyan-400 hover:bg-cyan-50/40',
+    emerald: 'text-emerald-700 border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/40',
+  } as const;
+  return (
+    <button
+      onClick={onClick}
+      className={`text-[10px] font-mono uppercase tracking-wider bg-white border rounded py-1.5 cursor-pointer transition-colors ${TONES[tone]}`}
+    >
+      {label}
+    </button>
   );
 }

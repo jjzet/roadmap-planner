@@ -25,6 +25,9 @@ interface PalaceMapProps {
   // Walk mode — when set, render the hero avatar at this tile coord and
   // highlight objects standing on the same tile.
   walkAvatar?: { x: number; y: number } | null;
+  // Optional set of object ids that are due for review — drawn with an amber
+  // pulsing ring so the user can spot what to walk to next.
+  dueObjectIds?: Set<string>;
 }
 
 export function PalaceMap({
@@ -34,6 +37,7 @@ export function PalaceMap({
   onSelectObject,
   onTileClick,
   walkAvatar,
+  dueObjectIds,
 }: PalaceMapProps) {
   const palette = THEMES[theme];
   const widthPx = data.width * TILE;
@@ -149,6 +153,7 @@ export function PalaceMap({
               tile={TILE}
               selected={o.id === selectedObjectId}
               highlighted={!!standingOn}
+              due={!!dueObjectIds?.has(o.id)}
               onSelect={() => onSelectObject(o.id === selectedObjectId ? null : o.id)}
             />
           );
@@ -178,10 +183,11 @@ interface ObjectMarkerProps {
   tile: number;
   selected: boolean;
   highlighted?: boolean;  // avatar is standing on this object
+  due?: boolean;          // locus is due for review
   onSelect: () => void;
 }
 
-function ObjectMarker({ obj, tile, selected, highlighted, onSelect }: ObjectMarkerProps) {
+function ObjectMarker({ obj, tile, selected, highlighted, due, onSelect }: ObjectMarkerProps) {
   return (
     <g
       data-role="object"
@@ -191,6 +197,16 @@ function ObjectMarker({ obj, tile, selected, highlighted, onSelect }: ObjectMark
         onSelect();
       }}
     >
+      {due && !highlighted && (
+        <circle
+          cx={obj.x * tile + tile - 3}
+          cy={obj.y * tile + 3}
+          r={3}
+          fill="#F59E0B"
+          stroke="#fff"
+          strokeWidth={1}
+        />
+      )}
       {highlighted && (
         <rect
           x={obj.x * tile - 3}

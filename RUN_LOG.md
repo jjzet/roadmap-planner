@@ -4,6 +4,54 @@ Newest entries on top.
 
 ---
 
+## 2026-05-13 — Memory Palaces: spaced repetition surface
+
+- **Branch:** `claude/festive-sagan-dpB1B` (session-pinned, same as previous run).
+- **Commit SHA:** _filled in by commit_
+- **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
+
+### Signal observed
+- Same-session note from the user: the prior memory-palace builds were undone on their side, and they asked to keep advancing the feature per the run spec. The code on this branch still has steps 1–6 (schema, list, canvas, rooms, loci, walk-through), so the next incomplete step is **step 7 — spaced repetition**.
+
+### What shipped
+Build-order step **7 — Spaced repetition surface**.
+- **Migration `007_palace_reviews.sql`** — new `palace_reviews(palace_id, object_id, last_seen, next_due, ease, interval_days)` table, FK to `memory_palaces(id) ON DELETE CASCADE`, unique `(palace_id, object_id)`, indexed on `next_due` and `palace_id`. RLS anon_all in line with the rest of the app. **Additive only — no destructive change.**
+- **`palaceReviewStore`** — SM-2-lite scoring (Hard / OK / Easy). Hard resets interval to 1d and shaves ease; OK multiplies interval by ease; Easy multiplies by `ease × 1.5` and adds ease. Ease clamped to [1.3, 3.0]. Reviews keyed by `${palace_id}:${object_id}` for O(1) lookups. Helpers `dueState()` and `isDue()` exported for views. **Fetch failures are non-fatal** so the app keeps working even before the migration is applied to Supabase.
+- **Walk mode (`PalaceWalk`)**:
+  - Due-state badge in the side panel (Overdue / Due today / Due soon / Fresh / Unreviewed) with relative-day suffix.
+  - Three review buttons (Hard / OK / Easy) — colour-coded rose / cyan / emerald to match the rest of the palette.
+  - Second toolbar action **Next due** that jumps along the canonical path to the next locus that's due, with a live count.
+- **`PalaceMap`**: optional `dueObjectIds` set — due loci get an amber dot in their corner so the user can spot them at a glance without scanning the side panel.
+- **Palace sidebar (`PalaceListItem`)**: an amber `N due` pill on any palace that has work waiting, so the entry point to a review session is one click from anywhere.
+- **`palaceStore.removeObject`** now best-effort-deletes the review row when its locus is deleted, so orphans don't accumulate (the FK's cascade also handles this on palace delete).
+- **`usePalaceReviewLoader`** fires on app mount alongside the other store loaders.
+
+### Why this was the right next step
+- Method of Loci without spacing is just placement — recall decays. Spacing is the principle that turns a one-time encoding into durable memory; without it the prior steps don't pay off.
+- Additive schema, no breaking changes, no migrations to existing data.
+- Walk-through (shipped previously) is the natural surface for review actions — no new view needed.
+
+### Deliberately deferred
+- **Today-view "due today" strip** — the palace sidebar badge is the lightweight version. A dedicated strip on Today is the next obvious surface but lives in a different view's data context; cut to keep this run scoped.
+- **Auto-pulse animation on due dots** — kept static for now; CSS-only pulse can land as part of the next aesthetic polish run.
+- **Configurable review intervals / scheduler tuning** — SM-2-lite defaults are fine for v1; instrument once we have data.
+- **Step 8 — agent integration** (locus suggestion + vivid mnemonic prompting) — depends on having review data to draw on; one more run of usage first.
+- **Vivid-association prompt at capture time** — design principle from the spec; should land with step 8 since both touch the locus-creation flow.
+
+### Suggested next step
+**Step 8 — Agent integration.** With a `palace_reviews` table in place, the agent can:
+1. Read review state to surface "what's due in your palaces" inside the Today briefing or chat.
+2. Propose a locus + vivid mnemonic when the user asks to remember something new (uses room contents + existing loci as context).
+3. Mark reviewed via the agent (`record_palace_review` tool).
+
+### Verification
+- `tsc -b`: clean.
+- `vite build`: clean (existing chunk-size warning unchanged).
+- `eslint` on all touched files: clean. The 30 pre-existing repo-wide errors (unrelated files) are untouched.
+- No destructive schema changes. Migration is `IF NOT EXISTS`-guarded; the store tolerates the table being absent until applied.
+
+---
+
 ## 2026-05-13 — Memory Palaces: walk-through mode
 
 - **Branch:** `claude/festive-sagan-dpB1B` (session-pinned; convention deviates from `auto/YYYY-MM-DD-<slug>` because the bootstrap instructions explicitly disallow pushing to a different branch — noted for future runs).
