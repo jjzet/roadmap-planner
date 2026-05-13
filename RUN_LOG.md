@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: walk-through mode
 
 - **Branch:** `claude/festive-sagan-dpB1B` (session-pinned; convention deviates from `auto/YYYY-MM-DD-<slug>` because the bootstrap instructions explicitly disallow pushing to a different branch — noted for future runs).
-- **Commit SHA:** _filled in by commit_
+- **Commit SHA:** `fab0901`
 - **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
 
 ### Signal observed
