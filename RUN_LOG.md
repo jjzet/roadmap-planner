@@ -4,6 +4,46 @@ Newest entries on top.
 
 ---
 
+## 2026-05-13 — Memory Palaces: wire core feature into sidebar (correction)
+
+- **Branch:** `claude/festive-sagan-dpB1B`.
+- **Commit SHA:** _filled in by commit_.
+- **PR:** _not opened._
+
+### Why this entry exists
+User clarification mid-session: the earlier "memory palace" merge into `main` had been deleted because it was missing a previous icon-update merge. The two prior entries in this log (walk-through, spaced repetition) were shipped on top of palace code that *exists on this branch* (`src/components/palace/*`, `src/store/palaceStore.ts`, `supabase/migrations/006_memory_palaces.sql`, `PalacesView` already rendered for `activeView === 'palaces'`) **but was unreachable from the UI** — no sidebar entry. So from the user's perspective the feature was not implemented. The log overstated completion.
+
+### What shipped this entry
+- Added a **Palaces** entry to the primary nav in `AppSidebar` (Castle Lucide icon, cyan accent matching the recent direction). One click navigates to `PalacesView`.
+
+### What's already on the branch and now reachable
+- Schema (`006_memory_palaces.sql`) — applied in Supabase (verified via smoke test).
+- `palaceStore` — `fetchPalaces`, `createPalace`, `renamePalace`, `setTheme`, `deletePalace`, `addRoom`, `updateRoom`, `removeRoom`, `addObject`, `updateObject`, `removeObject`.
+- `PalacesView` — sidebar list, create palace, theme switch, add room, add memory, delete.
+- `PalaceMap` — 24×16 tile grid, themed two-tone checker floor, room rectangles with name pill, 8-bit pixel object sprites.
+- `ObjectEditor` — name, memory content, link, icon picker, colour picker, x/y position.
+
+### Verified end-to-end against Supabase
+Smoke test (now deleted) performed: insert a `memory_palaces` row → add a room → add an object → read back → cleanup. All four operations returned no error and the roundtrip showed 1 room + 1 object.
+
+```
+CREATED {"id":"c38c1de5-…","name":"SMOKE TEST","theme":"overworld"}
+ROOM ADDED   {"roomId":"34f12e8d-…"}
+OBJECT ADDED {"objId":"3389155a-…"}
+ROUNDTRIP    {"rooms":1,"objects":1}
+CLEANED UP
+```
+
+### Limitations + deferred
+- Sidebar icon is a Lucide `Castle` rather than a hand-drawn PNG to match the other sidebar items. Visually it's distinct from the cartoon icons — a proper PNG is a small follow-up, not a blocker.
+- Room editing today is "add a named room, auto-positioned" — no walls/doors yet (spec build-order step 4 is partial). Loci placement works without walls; this is on the next-run shortlist.
+- Walk-through (step 6) and spaced-repetition surface (step 7) ship in this branch but assume the user has at least one palace + a few loci to exercise.
+
+### Next step
+With the core feature reachable and exercised: actually use it for a few days, then look at step 4 (proper room walls + doors) or step 8 (agent integration) based on which friction shows up first.
+
+---
+
 ## 2026-05-13 — Memory Palaces: spaced repetition surface
 
 - **Branch:** `claude/festive-sagan-dpB1B` (session-pinned, same as previous run).
