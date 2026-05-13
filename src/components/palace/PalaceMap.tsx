@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { MemoryPalaceData, PalaceObject, PalaceTheme } from '@/types';
 import { PixelSprite } from './PixelSprite';
+import { HeroSprite } from './HeroSprite';
 
 const TILE = 24; // px per tile — rendered map cell size
 
@@ -21,9 +22,19 @@ interface PalaceMapProps {
   selectedObjectId: string | null;
   onSelectObject: (id: string | null) => void;
   onTileClick?: (x: number, y: number) => void;
+  // Walk mode — when set, render the hero avatar at this tile coord and
+  // highlight objects standing on the same tile.
+  walkAvatar?: { x: number; y: number } | null;
 }
 
-export function PalaceMap({ data, theme, selectedObjectId, onSelectObject, onTileClick }: PalaceMapProps) {
+export function PalaceMap({
+  data,
+  theme,
+  selectedObjectId,
+  onSelectObject,
+  onTileClick,
+  walkAvatar,
+}: PalaceMapProps) {
   const palette = THEMES[theme];
   const widthPx = data.width * TILE;
   const heightPx = data.height * TILE;
@@ -129,15 +140,34 @@ export function PalaceMap({ data, theme, selectedObjectId, onSelectObject, onTil
         ))}
 
         {/* Objects */}
-        {data.objects.map((o) => (
-          <ObjectMarker
-            key={o.id}
-            obj={o}
-            tile={TILE}
-            selected={o.id === selectedObjectId}
-            onSelect={() => onSelectObject(o.id === selectedObjectId ? null : o.id)}
-          />
-        ))}
+        {data.objects.map((o) => {
+          const standingOn = walkAvatar && walkAvatar.x === o.x && walkAvatar.y === o.y;
+          return (
+            <ObjectMarker
+              key={o.id}
+              obj={o}
+              tile={TILE}
+              selected={o.id === selectedObjectId}
+              highlighted={!!standingOn}
+              onSelect={() => onSelectObject(o.id === selectedObjectId ? null : o.id)}
+            />
+          );
+        })}
+
+        {/* Walk avatar — drawn last so it sits on top of objects */}
+        {walkAvatar && (
+          <foreignObject
+            x={walkAvatar.x * TILE}
+            y={walkAvatar.y * TILE}
+            width={TILE}
+            height={TILE}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div style={{ width: TILE, height: TILE }}>
+              <HeroSprite size={TILE} />
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );
@@ -147,10 +177,11 @@ interface ObjectMarkerProps {
   obj: PalaceObject;
   tile: number;
   selected: boolean;
+  highlighted?: boolean;  // avatar is standing on this object
   onSelect: () => void;
 }
 
-function ObjectMarker({ obj, tile, selected, onSelect }: ObjectMarkerProps) {
+function ObjectMarker({ obj, tile, selected, highlighted, onSelect }: ObjectMarkerProps) {
   return (
     <g
       data-role="object"
@@ -160,6 +191,18 @@ function ObjectMarker({ obj, tile, selected, onSelect }: ObjectMarkerProps) {
         onSelect();
       }}
     >
+      {highlighted && (
+        <rect
+          x={obj.x * tile - 3}
+          y={obj.y * tile - 3}
+          width={tile + 6}
+          height={tile + 6}
+          fill="none"
+          stroke="#FACC15"
+          strokeWidth={2}
+          strokeDasharray="3 2"
+        />
+      )}
       {selected && (
         <rect
           x={obj.x * tile - 2}

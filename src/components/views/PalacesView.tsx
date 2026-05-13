@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen } from 'lucide-react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
+import { PalaceWalk } from '@/components/palace/PalaceWalk';
 import type { PalaceTheme } from '@/types';
 
 export function PalacesView() {
@@ -28,6 +29,7 @@ export function PalacesView() {
 
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [walkMode, setWalkMode] = useState(false);
 
   const handleNew = async () => {
     const name = window.prompt('Name your palace:', 'Untitled palace');
@@ -173,68 +175,93 @@ export function PalacesView() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <ToolbarButton onClick={handleAddRoom} icon={<DoorOpen className="w-3 h-3" />} label="Add room" />
-                <ToolbarButton onClick={handleAddObject} icon={<Box className="w-3 h-3" />} label="Add memory" />
+                {!walkMode && (
+                  <>
+                    <ToolbarButton onClick={handleAddRoom} icon={<DoorOpen className="w-3 h-3" />} label="Add room" />
+                    <ToolbarButton onClick={handleAddObject} icon={<Box className="w-3 h-3" />} label="Add memory" />
+                  </>
+                )}
                 <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
-                  title="Delete palace"
+                  onClick={() => {
+                    if (!walkMode) selectObject(null);
+                    setWalkMode((v) => !v);
+                  }}
+                  className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                    walkMode
+                      ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                      : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
+                  }`}
+                  title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace'}
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Footprints className="w-3 h-3" />
+                  {walkMode ? 'Exit walk' : 'Walk'}
                 </button>
-              </div>
-            </div>
-
-            {/* Canvas + side editor */}
-            <div className="flex-1 overflow-auto bg-gray-100/60">
-              <div className="flex items-start gap-4 p-6 min-w-max">
-                <div>
-                  <PalaceMap
-                    data={palace.data}
-                    theme={palace.theme}
-                    selectedObjectId={selectedObjectId}
-                    onSelectObject={selectObject}
-                  />
-                  <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
-                    {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
-                  </p>
-                  {palace.data.rooms.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">
-                      {palace.data.rooms.map((r) => (
-                        <div
-                          key={r.id}
-                          className="group flex items-center gap-1.5 bg-white border border-gray-200 rounded-full pl-2 pr-1 py-0.5 text-[10px] font-mono"
-                        >
-                          <span className="w-2 h-2 rounded-sm" style={{ background: r.color }} />
-                          <span className="text-gray-600">{r.name}</span>
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`Remove room "${r.name}"? Memories inside stay on the map.`)) {
-                                removeRoom(palace.id, r.id);
-                              }
-                            }}
-                            className="text-gray-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Remove room"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedObject && (
-                  <ObjectEditor
-                    object={selectedObject}
-                    data={palace.data}
-                    onPatch={(patch) => updateObject(palace.id, selectedObject.id, patch)}
-                    onDelete={() => removeObject(palace.id, selectedObject.id)}
-                    onClose={() => selectObject(null)}
-                  />
+                {!walkMode && (
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
+                    title="Delete palace"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 )}
               </div>
             </div>
+
+            {walkMode ? (
+              <PalaceWalk key={palace.id} palace={palace} onExit={() => setWalkMode(false)} />
+            ) : (
+              /* Canvas + side editor */
+              <div className="flex-1 overflow-auto bg-gray-100/60">
+                <div className="flex items-start gap-4 p-6 min-w-max">
+                  <div>
+                    <PalaceMap
+                      data={palace.data}
+                      theme={palace.theme}
+                      selectedObjectId={selectedObjectId}
+                      onSelectObject={selectObject}
+                    />
+                    <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
+                      {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
+                    </p>
+                    {palace.data.rooms.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">
+                        {palace.data.rooms.map((r) => (
+                          <div
+                            key={r.id}
+                            className="group flex items-center gap-1.5 bg-white border border-gray-200 rounded-full pl-2 pr-1 py-0.5 text-[10px] font-mono"
+                          >
+                            <span className="w-2 h-2 rounded-sm" style={{ background: r.color }} />
+                            <span className="text-gray-600">{r.name}</span>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Remove room "${r.name}"? Memories inside stay on the map.`)) {
+                                  removeRoom(palace.id, r.id);
+                                }
+                              }}
+                              className="text-gray-300 hover:text-red-500 bg-transparent border-none cursor-pointer p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Remove room"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedObject && (
+                    <ObjectEditor
+                      object={selectedObject}
+                      data={palace.data}
+                      onPatch={(patch) => updateObject(palace.id, selectedObject.id, patch)}
+                      onDelete={() => removeObject(palace.id, selectedObject.id)}
+                      onClose={() => selectObject(null)}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
