@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-13 — Memory Palaces: theme-aligned presets + label fix
 
 - **Branch:** `claude/festive-sagan-dpB1B`.
-- **Commit SHA:** _filled in by commit_.
+- **Commit SHA:** `8b0764b`.
 - **PR:** _not opened._
 
 ### Tweaks shipped
