@@ -4,6 +4,68 @@ Newest entries on top.
 
 ---
 
+## 2026-05-14 — Agent Skills pattern + draft-review capability
+
+- **Branch:** `claude/affectionate-cori-DFQQX` (session-pinned, per bootstrap instructions).
+- **Commit SHA:** `a7fb15f`.
+- **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
+- **Deploy needed:** `supabase functions deploy chat` so the new tools and skill loader ship to prod.
+
+### Signal observed
+- `ai_messages` (30 rows): only 4 tool calls in recent history — all task-related (`create_task`, `update_task`, `get_page`, `list_pages`). Goal / journal / palace tools are present but not invoked by the user.
+- Journal: 0 entries ever — no friction to surface from prose.
+- Goals: 1 goal, untouched since 2026-04-09.
+- Palaces: 1 palace, 2 rooms, 2 memories, 0 reviews.
+- Daily insights: 28 generated; agent has never been asked to recap them.
+- Five consecutive runs landed on Memory Palaces. Spec's Priority 1 (agent action capability) hadn't been touched since the original April expansion, and "Draft daily / weekly review summaries" — one of the four explicit Priority 1 capabilities — had **no** tool today.
+
+### What shipped
+Established the **Anthropic Agent Skills pattern** in the in-app agent and shipped the first Skill: `draft-review`.
+
+- **New folder: `supabase/functions/chat/skills/draft-review/SKILL.md`**
+  - YAML frontmatter (`name`, `description`, `tools`). Description is written as a trigger ("Use when the user asks for a daily review, weekly review, recap…").
+  - Body is the full procedure: when to invoke, which window to pick, which tools to call in what order, drafting structure (Shipped / In flight / Themes / Goal progress / Worth remembering / One thing next), style rules, and a "persist on request only" rule.
+- **`supabase/functions/chat/index.ts`** — additive only:
+  - Skill loader at cold-start: `Deno.readTextFile` over the `skills/<slug>/SKILL.md` files listed in `SKILL_SLUGS`. Parses YAML frontmatter (name + multi-line description), keeps the body separate.
+  - New tool `load_skill(name)` — progressive disclosure. The system prompt only advertises the trigger; the assistant must call `load_skill` once it matches a request, then follow the procedure.
+  - New tool `get_review_context(days_back?)` — one call returns the whole picture for a review draft:
+    - tasks: `completed` snapshot, `pinned` (open), `overdue`, `due_in_window`
+    - `journal` entries in `[start, end]`
+    - `goals_updated` with `updated_at >= start`
+    - `insights` (daily insights with concept + lesson) in window
+    - `palaces_touched` (memory_palaces with `updated_at` in window) plus current room/memory counts
+    - All lists capped at 50; `days_back` clamped to `[1, 30]`; default 7.
+  - System prompt:
+    - New bullets advertising `get_review_context` and `load_skill`.
+    - New `─── REGISTERED SKILLS ───` block rendered at request time from the loaded `SKILLS` registry — adding a new skill folder + slug auto-surfaces it; no further prompt edits.
+
+### Why this was the right next step
+- Priority 1 capability with zero tool coverage today. The other three (create/edit/complete tasks, summarise journal by date range, link goals to todos) either already work or have an empty input domain (0 journal entries).
+- Pattern enables future runs: each new capability lands as one folder + one tool, with the system prompt updating itself from the loaded registry.
+- Non-breaking: zero schema changes, no removed/renamed tools, no client changes needed (the new tools are server-side; the chat hook's mutated-domain refresh logic is unaffected — `get_review_context` and `load_skill` are read-only).
+
+### Verification
+- `npm run build` (tsc -b && vite build): clean. Existing bundle-size warning unchanged.
+- `npm run lint`: same 34 problems before and after my changes. Lint on `supabase/functions/chat/index.ts` alone: same 2 pre-existing errors (`nextSeq` const, one `any` in the handler) — neither introduced by this run.
+- YAML frontmatter parser tested against the new SKILL.md: extracts `name` and the full multi-line `description` correctly, stopping at the next top-level YAML key (`tools:`).
+- Live Supabase smoke test of every read query `get_review_context` issues (journal range, goals updated_at, insights range, palaces updated_at): all four returned valid responses against the 7-day window.
+
+### Deliberately deferred
+- **Edge function deploy** — code is committed; running `supabase functions deploy chat` is a single step but requires the user's local Supabase CLI auth. Surfaced explicitly above. Until then, the new tools live in source only.
+- **More Skills** — `draft-review` is the first. The next obvious candidates: `summarise-journal-themes` (waits for journal entries to exist), `link-goal-to-todo` (needs an additive `goalId?: string` field on TodoItem), `palace-locus-suggestion` (Memory Palaces spec step 8). All deferrable to future runs.
+- **Per-Skill tool gating** — `SKILL.md` frontmatter lists `tools:` but the runtime doesn't yet narrow the tool list when a skill is loaded. The single-skill case doesn't need it; once a second skill ships, the loader can return a filtered tool subset alongside the body.
+- **Anthropic SDK / model bump** — model still `claude-opus-4-6`; leaving alone to keep this run scoped to the Skills pattern.
+- **Frontend surfacing of Skills** — no UI today; the assistant invokes them transparently. Surfacing a "/draft-review" command in the chat input is a follow-up.
+
+### Suggested next step
+With one Skill landed and the pattern proved out, the highest-signal Priority 1 capability still missing is **link-goal-to-todo**. The user has one stale goal and todo IDs that never reference it. Concrete next-run scope:
+1. Additive `goalId?: string` on `TodoItem` (no migration — `todo_lists.data` is jsonb).
+2. Two tools: `link_task_to_goal(page_id, task_id, goal_id)` and `list_tasks_for_goal(goal_id)`.
+3. New Skill `link-goals-and-todos/SKILL.md` describing when to suggest a link.
+4. Optional: a small badge in `TodoItemRow` showing the linked goal title.
+
+---
+
 ## 2026-05-13 — Memory Palaces: type-picker for legacy rooms
 
 - **Branch:** `claude/festive-sagan-dpB1B`.
