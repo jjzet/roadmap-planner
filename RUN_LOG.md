@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-14 — Agent Skills pattern + draft-review capability
 
 - **Branch:** `claude/affectionate-cori-DFQQX` (session-pinned, per bootstrap instructions).
-- **Commit SHA:** _to be filled after commit._
+- **Commit SHA:** `a7fb15f`.
 - **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
 - **Deploy needed:** `supabase functions deploy chat` so the new tools and skill loader ship to prod.
 
