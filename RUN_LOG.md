@@ -7,7 +7,7 @@ Newest entries on top.
 ## 2026-05-15 — Skills #2: link-goals-and-todos
 
 - **Branch:** `claude/modest-edison-LJOLj` (session-pinned, per bootstrap instructions).
-- **Commit SHA:** _pending — will be appended after commit._
+- **Commit SHA:** `1fc0143`.
 - **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
 - **Deploy needed:** `supabase functions deploy chat` so the new tools and skill ship to prod.
 
