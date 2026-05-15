@@ -4,6 +4,58 @@ Newest entries on top.
 
 ---
 
+## 2026-05-15 — Skills #2: link-goals-and-todos
+
+- **Branch:** `claude/modest-edison-LJOLj` (session-pinned, per bootstrap instructions).
+- **Commit SHA:** _pending — will be appended after commit._
+- **PR:** _not opened — guardrail says do not auto-merge; awaiting user._
+- **Deploy needed:** `supabase functions deploy chat` so the new tools and skill ship to prod.
+
+### Signal observed
+- Supabase: 1 goal ("Automate the roles of 100 people using AI agents"), untouched since 2026-04-09. 3 active task pages — "ToDo" (last touched 2026-05-06), "Test Sub Page", "Handover Items". 0 journal entries. 0 palaces (the one from earlier runs has been deleted).
+- Recent `ai_messages` (sequences 10–29 inspected) — every tool call was a task / page operation (`get_page`, `update_task`, `create_task`). The agent drafted a substantial 7-item handover email but never had a way to express "this task is toward goal X" in the data layer, even though the user has both goals and tasks live.
+- Holiday caveat noted — anchoring on the user's standing request from the previous RUN_LOG entry's "Suggested next step" rather than on raw volumes.
+
+### What shipped
+Second Agent Skill on top of the pattern established yesterday: **`link-goals-and-todos`**. Tasks can now be linked to a goal, and the agent can answer "what am I doing toward goal X?" with one call.
+
+- **New folder: `supabase/functions/chat/skills/link-goals-and-todos/SKILL.md`**
+  - YAML frontmatter (`name`, `description`, `tools`). Trigger covers "link this to my goal", "is for the X goal", "what am I doing toward X", "progress on X", "which tasks are part of X", "unlink it from the goal".
+  - Body covers: resolve the goal (substring match, ask if ambiguous, never invent ids); resolve the task (prefer active page); linking (single + bulk, idempotent, confirm in plain English); surfacing progress (cap lists, group by open / completed); unlinking (always confirm bulk counts); style + don'ts.
+- **`src/types/index.ts`** — additive `goalId?: string` on `TodoItem`. No migration: `todo_lists.data` is jsonb.
+- **`supabase/functions/chat/index.ts`** — additive only:
+  - New tools `link_task_to_goal`, `unlink_task_from_goal`, `list_tasks_for_goal`.
+    - `link_task_to_goal` validates that the goal exists and is not archived before saving.
+    - `list_tasks_for_goal` scans `todo_lists.data`, returns `{ goal, counts: {open, completed, total}, open[], completed[] }`. `open[]` carries `due` + `pinned` so the assistant can lead with overdue / due-this-week / pinned per the skill body.
+  - `create_task` and `update_task` accept optional `goal_id` (empty string on update unlinks).
+  - `serializePage` now emits `goal: <id>` in the inline meta block so the assistant can see existing links when reading a page.
+  - System prompt advertises the new tool family; `SKILL_SLUGS` registry adds `link-goals-and-todos` (auto-rendered in the `─── REGISTERED SKILLS ───` block).
+  - `TASK_MUTATIONS` updated so the client's chat hook refreshes `todo_lists` after a link/unlink — keeping the new goal badge in sync without a page reload.
+- **`src/components/todo/TodoItemRow.tsx`** — small amber goal badge using `lucide-react/Target`, shown next to the existing due-date / link badges when `item.goalId` resolves. Click → navigates to the Goals view. On row hover, a tiny × appears for inline unlink. Truncates at 180px and uses the same amber palette as `GoalCardBlock` for consistency.
+
+### Why this was the right next step
+- Direct execution of the prior run's logged "Suggested next step". The Skills pattern needed a second consumer to prove the registry / progressive-disclosure split (system prompt advertises the trigger; assistant calls `load_skill`); shipping the second one now closes that loop.
+- One stale goal + many open tasks is the canonical place a "what am I doing on this goal?" answer pays off. Without a link, the agent had no way to answer it except by reading prose.
+- Schema is purely additive (jsonb field on existing data — no migration). No tool was renamed or removed. The chat hook's mutated-domain refresh logic continues to work because both new write tools are in the `tasks` domain.
+
+### Verification
+- `npm run build`: clean (`tsc -b && vite build`). Existing chunk-size warning unchanged.
+- `npm run lint`: 34 problems before and after — count unchanged. The 2 pre-existing errors in `supabase/functions/chat/index.ts` (`nextSeq` const, one `any` in the handler) are untouched. Lint on touched UI files (`TodoItemRow.tsx`, `types/index.ts`, `goalStore.ts`) is clean.
+- YAML frontmatter parser test: both `draft-review` and `link-goals-and-todos` parse correctly through the same regex the chat function uses — `name`, multi-line `description`, body separated.
+- Live Supabase round-trip test (now deleted): inserted a throwaway page with one task, PATCHed the task's `goalId` into the existing goal id, read it back — `goalId` field preserved exactly. Then cleaned up.
+
+### Deliberately deferred
+- **Per-Skill tool gating at runtime** — `SKILL.md` declares a `tools:` list, but the loader still hands the full tool set to the model. Worth implementing only when a Skill needs to *restrict* access; the two Skills today share most of their tool surface, so the cost outweighs the value.
+- **Surface linked tasks on the Goal card / Goal view** — today, link visibility flows from the task → goal direction (badge on `TodoItemRow`). The reverse direction (a list of linked tasks under each goal in `GoalsView`, or a count badge on `GoalCardBlock`) is the natural next polish — left for a future run because it touches GoalsView layout and the small surface today is enough to validate the link concept.
+- **Suggested-link surface in the UI** — the agent can propose links via chat; a UI affordance ("link this task to a goal" inline) would speed that up. Deferred to keep this run scoped to the agent side.
+- **Edge function deploy** — code is committed; running `supabase functions deploy chat` requires the user's local Supabase CLI auth (same as previous run).
+- **Model bump** — chat still on `claude-opus-4-6`; not touched.
+
+### Suggested next step
+The reverse direction. With the link now real on the task side, the natural follow-up is surfacing a goal's task progress in the **Goals view**: a small "N tasks linked · M complete" footer on each `GoalCard`, plus an expand-to-list affordance. That uses the same `list_tasks_for_goal` data path the agent now consumes, so the Skill and the UI share one source of truth.
+
+---
+
 ## 2026-05-14 — Agent Skills pattern + draft-review capability
 
 - **Branch:** `claude/affectionate-cori-DFQQX` (session-pinned, per bootstrap instructions).

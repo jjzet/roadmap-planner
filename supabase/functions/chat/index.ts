@@ -20,7 +20,7 @@ const MAX_TOKENS = 4096;
 // YAML frontmatter (`name`, `description`). Progressive disclosure: the
 // system prompt only advertises the trigger description; the assistant must
 // call `load_skill` to fetch the full procedure when it matches.
-const SKILL_SLUGS = ["draft-review"] as const;
+const SKILL_SLUGS = ["draft-review", "link-goals-and-todos"] as const;
 
 type SkillRecord = { slug: string; name: string; description: string; body: string };
 
@@ -71,6 +71,7 @@ Your domains:
 Tools you can call:
 - Pages (read): list_pages, get_page
 - Tasks (write): create_task, update_task, archive_task, delete_task, reorder_tasks
+- Goal ↔ task links: link_task_to_goal, unlink_task_from_goal, list_tasks_for_goal
 - Goals: list_goals, get_goal, create_goal, update_goal, archive_goal
 - Journal: get_journal_entry, upsert_journal_entry, list_recent_journal_entries
 - Briefing: get_today_briefing
@@ -133,6 +134,7 @@ type TodoItem = {
   tags?: string[];
   link?: string;
   expanded?: boolean;
+  goalId?: string;
 };
 
 type PageBlock =
@@ -247,6 +249,7 @@ function serializePage(page: PageRow): string {
         if (it.dueDate) meta.push(`due: ${it.dueDate}`);
         if (it.pinned) meta.push("pinned");
         if (it.devStatus) meta.push(`status: ${it.devStatus}`);
+        if (it.goalId) meta.push(`goal: ${it.goalId}`);
         lines.push(`- ${box} ${stripHtml(it.text)}  {${meta.join(", ")}}`);
         if (it.notes) {
           const noteTxt = stripHtml(it.notes);
@@ -298,6 +301,7 @@ const TOOLS = [
         pinned: { type: "boolean" },
         notes: { type: "string" },
         sub_group_id: { type: "string", description: "Optional sub-group id within the group" },
+        goal_id: { type: "string", description: "Optional goal id to link the new task to (see list_goals)" },
       },
       required: ["page_id", "group_id", "text"],
     },
@@ -316,6 +320,7 @@ const TOOLS = [
         due_date: { type: "string", description: "YYYY-MM-DD, or empty string to clear" },
         pinned: { type: "boolean" },
         notes: { type: "string" },
+        goal_id: { type: "string", description: "Goal id to link to, or empty string to unlink" },
       },
       required: ["page_id", "task_id"],
     },
@@ -607,6 +612,46 @@ const TOOLS = [
       required: [],
     },
   },
+  // ─── Goal ↔ task links ──────────────────────────────────────────────
+  {
+    name: "link_task_to_goal",
+    description:
+      "Link an existing task to a goal so the task counts toward that goal. Idempotent — re-linking to the same goal is a no-op; linking to a different goal replaces the link.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        page_id: { type: "string" },
+        task_id: { type: "string" },
+        goal_id: { type: "string" },
+      },
+      required: ["page_id", "task_id", "goal_id"],
+    },
+  },
+  {
+    name: "unlink_task_from_goal",
+    description: "Remove a task's link to whatever goal it's currently associated with.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        page_id: { type: "string" },
+        task_id: { type: "string" },
+      },
+      required: ["page_id", "task_id"],
+    },
+  },
+  {
+    name: "list_tasks_for_goal",
+    description:
+      "List every task linked to a goal across all pages, plus completion stats. Use this for 'what am I doing toward goal X?' / 'show me progress on goal Y'. By default open tasks come first; pass include_completed=false to skip completed.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+        include_completed: { type: "boolean", description: "Default true." },
+      },
+      required: ["goal_id"],
+    },
+  },
   // ─── Skills (progressive disclosure) ────────────────────────────────
   {
     name: "load_skill",
@@ -741,6 +786,9 @@ async function runTool(
     if (input.pinned) newItem.pinned = true;
     if (input.notes) newItem.notes = input.notes as string;
     if (input.sub_group_id) newItem.subGroupId = input.sub_group_id as string;
+    if (typeof input.goal_id === "string" && input.goal_id) {
+      newItem.goalId = input.goal_id;
+    }
 
     group.items.push(newItem);
     const saveErr = await savePageData(supabase, pageId, page.data);
@@ -766,6 +814,10 @@ async function runTool(
     if (typeof input.due_date === "string") {
       if (input.due_date === "") delete it.dueDate;
       else it.dueDate = input.due_date;
+    }
+    if (typeof input.goal_id === "string") {
+      if (input.goal_id === "") delete it.goalId;
+      else it.goalId = input.goal_id;
     }
 
     const saveErr = await savePageData(supabase, pageId, page.data);
@@ -965,6 +1017,90 @@ async function runTool(
     const { error } = await supabase.from("journal_entries").upsert(payload, { onConflict: "date" });
     if (error) return JSON.stringify({ error: error.message });
     return JSON.stringify({ ok: true, date, entry: payload });
+  }
+
+  // ─── Goal ↔ task links ──────────────────────────────────────────────
+  if (name === "link_task_to_goal" || name === "unlink_task_from_goal") {
+    const pageId = input.page_id as string;
+    const taskId = input.task_id as string;
+    if (!pageId || !taskId) return JSON.stringify({ error: "page_id and task_id required" });
+
+    const isLink = name === "link_task_to_goal";
+    const goalId = isLink ? (input.goal_id as string) : "";
+    if (isLink && !goalId) return JSON.stringify({ error: "goal_id required" });
+
+    if (isLink) {
+      const { data: goalRow, error: gErr } = await supabase
+        .from("goals")
+        .select("id, title, archived")
+        .eq("id", goalId)
+        .maybeSingle();
+      if (gErr) return JSON.stringify({ error: gErr.message });
+      if (!goalRow) return JSON.stringify({ error: "goal not found" });
+      if ((goalRow as { archived: boolean }).archived) {
+        return JSON.stringify({ error: "goal is archived — un-archive it first" });
+      }
+    }
+
+    const { page, error } = await loadPageForMutation(supabase, pageId);
+    if (error || !page) return JSON.stringify({ error: error ?? "page not found" });
+
+    const found = findTask(page.data, taskId);
+    if (!found) return JSON.stringify({ error: "task not found on page" });
+
+    if (isLink) found.item.goalId = goalId;
+    else delete found.item.goalId;
+
+    const saveErr = await savePageData(supabase, pageId, page.data);
+    if (saveErr) return JSON.stringify({ error: saveErr });
+    return JSON.stringify({ ok: true, task_id: taskId, goal_id: isLink ? goalId : null });
+  }
+
+  if (name === "list_tasks_for_goal") {
+    const goalId = (input.goal_id as string) ?? "";
+    if (!goalId) return JSON.stringify({ error: "goal_id is required" });
+    const includeCompleted = input.include_completed === false ? false : true;
+
+    const { data: goalRow, error: gErr } = await supabase
+      .from("goals")
+      .select("id, title, archived")
+      .eq("id", goalId)
+      .maybeSingle();
+    if (gErr) return JSON.stringify({ error: gErr.message });
+    if (!goalRow) return JSON.stringify({ error: "goal not found" });
+
+    const { data: pages, error: pErr } = await supabase
+      .from("todo_lists")
+      .select("id, name, data");
+    if (pErr) return JSON.stringify({ error: pErr.message });
+
+    const open: Array<{ page_id: string; page: string; group: string; task_id: string; text: string; due?: string; pinned?: boolean }> = [];
+    const completed: Array<{ page_id: string; page: string; group: string; task_id: string; text: string }> = [];
+    for (const row of (pages ?? []) as PageRow[]) {
+      for (const g of allGroups(row.data ?? { groups: [], blocks: [] })) {
+        for (const it of g.items ?? []) {
+          if (it.goalId !== goalId) continue;
+          if (it.archived) continue;
+          const text = stripHtml(it.text);
+          if (it.completed) {
+            if (includeCompleted) {
+              completed.push({ page_id: row.id, page: row.name, group: g.name, task_id: it.id, text });
+            }
+          } else {
+            open.push({
+              page_id: row.id, page: row.name, group: g.name, task_id: it.id, text,
+              due: it.dueDate, pinned: it.pinned,
+            });
+          }
+        }
+      }
+    }
+    return JSON.stringify({
+      goal: { id: goalRow.id, title: (goalRow as { title: string }).title },
+      counts: { open: open.length, completed: completed.length, total: open.length + completed.length },
+      open,
+      completed,
+    });
   }
 
   // ─── Today briefing ─────────────────────────────────────────────────
@@ -1613,7 +1749,10 @@ Deno.serve(async (req) => {
 
     await appendMessages(supabase, conversationId, nextSeq, toPersist);
 
-    const TASK_MUTATIONS = ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"];
+    const TASK_MUTATIONS = [
+      "create_task", "update_task", "archive_task", "delete_task", "reorder_tasks",
+      "link_task_to_goal", "unlink_task_from_goal",
+    ];
     const GOAL_MUTATIONS = ["create_goal", "update_goal", "archive_goal"];
     const JOURNAL_MUTATIONS = ["upsert_journal_entry"];
     const PALACE_MUTATIONS = [

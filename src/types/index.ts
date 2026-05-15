@@ -95,6 +95,7 @@ export interface TodoItem {
   archived?: boolean;
   devStatus?: DevStatus;
   subGroupId?: string; // if set, item belongs to this sub-group
+  goalId?: string;     // if set, task is linked to a GoalRecord
 }
 
 export interface SubGroup {
