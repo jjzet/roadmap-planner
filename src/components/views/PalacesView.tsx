@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown, Sparkles } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown, Sparkles, Mountain } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
 import { PalaceWalk } from '@/components/palace/PalaceWalk';
 import { PalaceBuilder } from '@/components/palace/PalaceBuilder';
+
+// three.js is a heavy chunk — load it only when someone steps inside.
+const Palace3D = lazy(() => import('@/components/palace/three/Palace3D'));
 import { PixelSprite } from '@/components/palace/PixelSprite';
 import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
 import {
@@ -52,6 +55,7 @@ export function PalacesView() {
   const [walkMode, setWalkMode] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [threeD, setThreeD] = useState(false);
 
   // Due count for the current palace — powers the "Review" call to action.
   const reviews = usePalaceReviewStore((s) => s.reviews);
@@ -219,7 +223,7 @@ export function PalacesView() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                {!walkMode && (
+                {!walkMode && !threeD && (
                   <>
                     <AddRoomMenu
                       theme={palace.theme}
@@ -234,7 +238,7 @@ export function PalacesView() {
                     />
                   </>
                 )}
-                {!walkMode && dueCount > 0 && (
+                {!walkMode && !threeD && dueCount > 0 && (
                   <button
                     onClick={() => enterWalk(true)}
                     className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white bg-amber-500 hover:bg-amber-600 border border-amber-500 rounded px-2 py-1 cursor-pointer transition-colors"
@@ -244,19 +248,35 @@ export function PalacesView() {
                     Review {dueCount}
                   </button>
                 )}
-                <button
-                  onClick={() => (walkMode ? exitWalk() : enterWalk(false))}
-                  className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
-                    walkMode
-                      ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
-                      : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
-                  }`}
-                  title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace'}
-                >
-                  <Footprints className="w-3 h-3" />
-                  {walkMode ? 'Exit walk' : 'Walk'}
-                </button>
+                {!threeD && (
+                  <button
+                    onClick={() => (walkMode ? exitWalk() : enterWalk(false))}
+                    className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                      walkMode
+                        ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                        : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
+                    }`}
+                    title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace (2D)'}
+                  >
+                    <Footprints className="w-3 h-3" />
+                    {walkMode ? 'Exit walk' : 'Walk'}
+                  </button>
+                )}
                 {!walkMode && (
+                  <button
+                    onClick={() => setThreeD((v) => !v)}
+                    className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                      threeD
+                        ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                        : 'text-white bg-cyan-600 hover:bg-cyan-700 border-cyan-600'
+                    }`}
+                    title={threeD ? 'Back to the 2D map' : 'Step inside this palace in 3D'}
+                  >
+                    <Mountain className="w-3 h-3" />
+                    {threeD ? 'Exit 3D' : 'Enter'}
+                  </button>
+                )}
+                {!walkMode && !threeD && (
                   <button
                     onClick={handleDelete}
                     className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
@@ -268,7 +288,19 @@ export function PalacesView() {
               </div>
             </div>
 
-            {walkMode ? (
+            {threeD ? (
+              <Suspense
+                fallback={
+                  <div className="flex-1 flex items-center justify-center bg-gray-900">
+                    <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400 animate-pulse">
+                      Raising the walls…
+                    </p>
+                  </div>
+                }
+              >
+                <Palace3D key={palace.id} palace={palace} onExit={() => setThreeD(false)} />
+              </Suspense>
+            ) : walkMode ? (
               <PalaceWalk
                 key={`${palace.id}-${reviewMode ? 'review' : 'walk'}`}
                 palace={palace}
@@ -285,9 +317,11 @@ export function PalacesView() {
                       theme={palace.theme}
                       selectedObjectId={selectedObjectId}
                       onSelectObject={selectObject}
+                      onTileClick={() => setThreeD(true)}
                     />
                     <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
                       {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
+                      <span className="text-cyan-600"> · click the map to step inside</span>
                     </p>
                     {palace.data.rooms.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">

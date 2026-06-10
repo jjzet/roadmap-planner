@@ -22,7 +22,7 @@ interface Props {
   onDismiss: () => void;
 }
 
-const TYPE_META: Record<SuggestionType, { label: string; Icon: React.ElementType; colour: string }> = {
+const TYPE_META: Record<SuggestionType, { label: string; Icon: React.ComponentType<{ className?: string }>; colour: string }> = {
   archive:        { label: 'Archive',    Icon: Archive,   colour: 'text-gray-400' },
   set_dev_status: { label: 'Dev status', Icon: GitBranch, colour: 'text-blue-500' },
   set_due_date:   { label: 'Due dates',  Icon: Calendar,  colour: 'text-amber-400' },
