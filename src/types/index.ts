@@ -95,6 +95,7 @@ export interface TodoItem {
   archived?: boolean;
   devStatus?: DevStatus;
   subGroupId?: string; // if set, item belongs to this sub-group
+  goalId?: string;     // if set, task is linked to a GoalRecord
 }
 
 export interface SubGroup {
@@ -235,6 +236,7 @@ export interface PalaceRoom {
   width: number;   // tile span
   height: number;
   color: string;   // hex — floor tint for the room
+  kind?: string;   // RoomKind.id from presets — drives object picker
 }
 
 export interface PalaceObject {
@@ -247,6 +249,7 @@ export interface PalaceObject {
   color: string;     // hex — sprite accent
   roomId?: string;   // optional — assigned to a room
   link?: string;     // optional URL or page ref
+  kind?: string;     // ObjectKind.id from presets
 }
 
 export interface MemoryPalaceData {
@@ -263,6 +266,22 @@ export interface MemoryPalaceRecord {
   description: string;
   data: MemoryPalaceData;
   archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Spaced repetition record for a single locus inside a palace. One row per
+// (palace_id, object_id). See supabase/migrations/007_palace_reviews.sql.
+export type ReviewQuality = 'hard' | 'good' | 'easy';
+
+export interface PalaceReview {
+  id: string;
+  palace_id: string;
+  object_id: string;
+  last_seen: string;       // ISO timestamp
+  next_due: string;        // ISO timestamp
+  ease: number;            // [1.3, 3.0]
+  interval_days: number;   // >= 1
   created_at: string;
   updated_at: string;
 }

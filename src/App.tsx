@@ -14,6 +14,7 @@ import { useInsightLoader } from './hooks/useInsightLoader';
 import { useGoalLoader } from './hooks/useGoalLoader';
 import { useJournalLoader } from './hooks/useJournalLoader';
 import { usePalaceLoader } from './hooks/usePalaceLoader';
+import { usePalaceReviewLoader } from './hooks/usePalaceReviewLoader';
 import { useUIStore } from './store/uiStore';
 import { DashboardDataProvider } from './hooks/DashboardDataContext';
 import { BottomStatsStrip } from './components/layout/BottomStatsStrip';
@@ -28,6 +29,7 @@ function App() {
   useGoalLoader();
   useJournalLoader();
   usePalaceLoader();
+  usePalaceReviewLoader();
 
   const activeView = useUIStore((s) => s.activeView);
 

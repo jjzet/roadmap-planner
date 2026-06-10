@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { MemoryPalaceData, PalaceObject, PalaceTheme } from '@/types';
 import { PixelSprite } from './PixelSprite';
+import { HeroSprite } from './HeroSprite';
 
 const TILE = 24; // px per tile — rendered map cell size
 
@@ -21,9 +22,23 @@ interface PalaceMapProps {
   selectedObjectId: string | null;
   onSelectObject: (id: string | null) => void;
   onTileClick?: (x: number, y: number) => void;
+  // Walk mode — when set, render the hero avatar at this tile coord and
+  // highlight objects standing on the same tile.
+  walkAvatar?: { x: number; y: number } | null;
+  // Optional set of object ids that are due for review — drawn with an amber
+  // pulsing ring so the user can spot what to walk to next.
+  dueObjectIds?: Set<string>;
 }
 
-export function PalaceMap({ data, theme, selectedObjectId, onSelectObject, onTileClick }: PalaceMapProps) {
+export function PalaceMap({
+  data,
+  theme,
+  selectedObjectId,
+  onSelectObject,
+  onTileClick,
+  walkAvatar,
+  dueObjectIds,
+}: PalaceMapProps) {
   const palette = THEMES[theme];
   const widthPx = data.width * TILE;
   const heightPx = data.height * TILE;
@@ -102,42 +117,75 @@ export function PalaceMap({ data, theme, selectedObjectId, onSelectObject, onTil
               strokeWidth={3}
               opacity={0.95}
             />
+            {/* Centered overflow-safe pill — sits at the top of the room and
+                can hang past the room edges if the name is wider than the
+                room. Wide foreignObject + flex-center so the inline pill
+                sizes to its content. */}
             <foreignObject
-              x={r.x * TILE + 2}
+              x={r.x * TILE + (r.width * TILE) / 2 - 150}
               y={r.y * TILE + 2}
-              width={r.width * TILE - 4}
+              width={300}
               height={14}
+              style={{ pointerEvents: 'none', overflow: 'visible' }}
             >
               <div
                 style={{
-                  fontFamily: "'JetBrains Mono Variable', monospace",
-                  fontSize: 9,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#1f2937',
-                  background: 'rgba(255,255,255,0.7)',
-                  display: 'inline-block',
-                  padding: '0 4px',
-                  borderRadius: 2,
-                  fontWeight: 600,
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
                 }}
               >
-                {r.name}
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono Variable', monospace",
+                    fontSize: 9,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    color: '#1f2937',
+                    background: 'rgba(255,255,255,0.85)',
+                    padding: '0 4px',
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r.name}
+                </span>
               </div>
             </foreignObject>
           </g>
         ))}
 
         {/* Objects */}
-        {data.objects.map((o) => (
-          <ObjectMarker
-            key={o.id}
-            obj={o}
-            tile={TILE}
-            selected={o.id === selectedObjectId}
-            onSelect={() => onSelectObject(o.id === selectedObjectId ? null : o.id)}
-          />
-        ))}
+        {data.objects.map((o) => {
+          const standingOn = walkAvatar && walkAvatar.x === o.x && walkAvatar.y === o.y;
+          return (
+            <ObjectMarker
+              key={o.id}
+              obj={o}
+              tile={TILE}
+              selected={o.id === selectedObjectId}
+              highlighted={!!standingOn}
+              due={!!dueObjectIds?.has(o.id)}
+              onSelect={() => onSelectObject(o.id === selectedObjectId ? null : o.id)}
+            />
+          );
+        })}
+
+        {/* Walk avatar — drawn last so it sits on top of objects */}
+        {walkAvatar && (
+          <foreignObject
+            x={walkAvatar.x * TILE}
+            y={walkAvatar.y * TILE}
+            width={TILE}
+            height={TILE}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div style={{ width: TILE, height: TILE }}>
+              <HeroSprite size={TILE} />
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   );
@@ -147,10 +195,12 @@ interface ObjectMarkerProps {
   obj: PalaceObject;
   tile: number;
   selected: boolean;
+  highlighted?: boolean;  // avatar is standing on this object
+  due?: boolean;          // locus is due for review
   onSelect: () => void;
 }
 
-function ObjectMarker({ obj, tile, selected, onSelect }: ObjectMarkerProps) {
+function ObjectMarker({ obj, tile, selected, highlighted, due, onSelect }: ObjectMarkerProps) {
   return (
     <g
       data-role="object"
@@ -160,6 +210,28 @@ function ObjectMarker({ obj, tile, selected, onSelect }: ObjectMarkerProps) {
         onSelect();
       }}
     >
+      {due && !highlighted && (
+        <circle
+          cx={obj.x * tile + tile - 3}
+          cy={obj.y * tile + 3}
+          r={3}
+          fill="#F59E0B"
+          stroke="#fff"
+          strokeWidth={1}
+        />
+      )}
+      {highlighted && (
+        <rect
+          x={obj.x * tile - 3}
+          y={obj.y * tile - 3}
+          width={tile + 6}
+          height={tile + 6}
+          fill="none"
+          stroke="#FACC15"
+          strokeWidth={2}
+          strokeDasharray="3 2"
+        />
+      )}
       {selected && (
         <rect
           x={obj.x * tile - 2}

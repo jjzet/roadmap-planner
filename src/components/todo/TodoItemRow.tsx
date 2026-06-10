@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useTodoStore } from '@/store/todoStore';
+import { useGoalStore } from '@/store/goalStore';
+import { useUIStore } from '@/store/uiStore';
 import type { TodoItem, DevStatus } from '@/types';
-import { GripVertical, ExternalLink, ChevronRight, ArchiveRestore, X } from 'lucide-react';
+import { GripVertical, ExternalLink, ChevronRight, ArchiveRestore, X, Target } from 'lucide-react';
 import { RichTextEditor } from '../editor/RichTextEditor';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 import type { SubGroup } from '@/types';
@@ -163,6 +165,17 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
   const selectedItemIds = useTodoStore((s) => s.selectedItemIds);
   const isSelected = selectedItemIds.includes(item.id);
 
+  const linkedGoal = useGoalStore((s) => (item.goalId ? s.getGoalById(item.goalId) : undefined));
+  const setActiveView = useUIStore((s) => s.setActiveView);
+  const handleGoalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveView('goals');
+  };
+  const handleGoalUnlink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateItem(groupId, item.id, { goalId: undefined });
+  };
+
   const dueInfo = item.dueDate && !item.completed ? formatDueDate(item.dueDate) : null;
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
@@ -278,6 +291,32 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             >
               {dueInfo.label}
             </button>
+          )}
+
+          {/* Linked goal badge */}
+          {linkedGoal && (
+            <span
+              className="group/goal inline-flex items-center gap-1 flex-shrink-0 max-w-[180px] text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100/80 transition-colors"
+              title={`Goal: ${linkedGoal.title || 'Untitled goal'} — click to open Goals`}
+            >
+              <button
+                onClick={handleGoalClick}
+                className="inline-flex items-center gap-1 border-none bg-transparent cursor-pointer p-0 text-amber-700 min-w-0"
+              >
+                <Target className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">
+                  {linkedGoal.title || <span className="italic text-amber-600/70">Untitled goal</span>}
+                </span>
+              </button>
+              <button
+                onClick={handleGoalUnlink}
+                className="opacity-0 group-hover/goal:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 text-amber-500 hover:text-red-500 flex-shrink-0"
+                title="Unlink from goal"
+                aria-label="Unlink from goal"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
           )}
 
           {/* External link icon */}

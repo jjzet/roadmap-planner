@@ -15,6 +15,50 @@ const MODEL = "claude-opus-4-6";
 const MAX_TOOL_ITERATIONS = 8;
 const MAX_TOKENS = 4096;
 
+// ─── Skills (Anthropic Agent Skills pattern) ───────────────────────────
+// Each skill is a folder under ./skills/<slug>/ containing a SKILL.md with
+// YAML frontmatter (`name`, `description`). Progressive disclosure: the
+// system prompt only advertises the trigger description; the assistant must
+// call `load_skill` to fetch the full procedure when it matches.
+const SKILL_SLUGS = ["draft-review", "link-goals-and-todos"] as const;
+
+type SkillRecord = { slug: string; name: string; description: string; body: string };
+
+function parseSkillFile(slug: string, raw: string): SkillRecord {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+  let name = slug;
+  let description = "";
+  let body = raw;
+  if (match) {
+    const frontmatter = match[1];
+    body = match[2].trim();
+    const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+    if (nameMatch) name = nameMatch[1].trim();
+    // description may span lines until the next top-level YAML key.
+    const descMatch = frontmatter.match(/^description:\s*([\s\S]*?)(?=\n[a-zA-Z_][\w-]*:|\n*$)/m);
+    if (descMatch) description = descMatch[1].trim().replace(/\s+/g, " ");
+  }
+  return { slug, name, description, body };
+}
+
+async function loadSkills(): Promise<SkillRecord[]> {
+  const out: SkillRecord[] = [];
+  for (const slug of SKILL_SLUGS) {
+    try {
+      const url = new URL(`./skills/${slug}/SKILL.md`, import.meta.url);
+      const raw = await Deno.readTextFile(url);
+      out.push(parseSkillFile(slug, raw));
+    } catch (err) {
+      console.warn(`skill load failed for ${slug}:`, err);
+    }
+  }
+  return out;
+}
+
+// Loaded once per cold-start. Cheap (small text files) and avoids per-request IO.
+const SKILLS: SkillRecord[] = await loadSkills();
+const SKILLS_BY_SLUG = new Map<string, SkillRecord>(SKILLS.map((s) => [s.slug, s]));
+
 const SYSTEM_PROMPT = `You are an embedded productivity assistant for a senior technical leader. You take action inside the app on the user's behalf.
 
 Your domains:
@@ -27,10 +71,13 @@ Your domains:
 Tools you can call:
 - Pages (read): list_pages, get_page
 - Tasks (write): create_task, update_task, archive_task, delete_task, reorder_tasks
+- Goal ↔ task links: link_task_to_goal, unlink_task_from_goal, list_tasks_for_goal
 - Goals: list_goals, get_goal, create_goal, update_goal, archive_goal
 - Journal: get_journal_entry, upsert_journal_entry, list_recent_journal_entries
 - Briefing: get_today_briefing
 - Palaces: list_palaces, get_palace, create_palace, add_palace_room, add_palace_memory, update_palace_memory, delete_palace_memory, search_palace_memories
+- Review: get_review_context
+- Skills: load_skill (progressive-disclosure: fetch a skill's full procedure when its trigger matches)
 
 How to behave:
 - The user's active context (page or view) is provided below. Prefer answering from that context before calling tools.
@@ -42,7 +89,9 @@ How to behave:
 - For palaces: when the user shares something worth remembering ("remember that…", "add this to my palace", "what was X"), reach for palace tools. If they don't specify a palace, pick the most relevant existing one or ask. Choose icons that match content (book = reference, npc = person, key = credential/access, scroll = note, sign = label, crystal = idea, chest = collection). Auto-place inside an appropriate room when one fits the topic.
 - Prefer archive_task / archive_goal over delete_*. Confirm destructive actions before executing them.
 - Markdown is supported in your replies. Use it sparingly — short paragraphs, lists when listing.
-- Keep responses tight, plain English, no jargon. If you don't know, say so.`;
+- Keep responses tight, plain English, no jargon. If you don't know, say so.
+
+Skills — only the trigger is listed here. If a trigger matches the user's request, call \`load_skill\` with the skill name to fetch the full procedure BEFORE you start drafting.`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,6 +134,7 @@ type TodoItem = {
   tags?: string[];
   link?: string;
   expanded?: boolean;
+  goalId?: string;
 };
 
 type PageBlock =
@@ -199,6 +249,7 @@ function serializePage(page: PageRow): string {
         if (it.dueDate) meta.push(`due: ${it.dueDate}`);
         if (it.pinned) meta.push("pinned");
         if (it.devStatus) meta.push(`status: ${it.devStatus}`);
+        if (it.goalId) meta.push(`goal: ${it.goalId}`);
         lines.push(`- ${box} ${stripHtml(it.text)}  {${meta.join(", ")}}`);
         if (it.notes) {
           const noteTxt = stripHtml(it.notes);
@@ -250,6 +301,7 @@ const TOOLS = [
         pinned: { type: "boolean" },
         notes: { type: "string" },
         sub_group_id: { type: "string", description: "Optional sub-group id within the group" },
+        goal_id: { type: "string", description: "Optional goal id to link the new task to (see list_goals)" },
       },
       required: ["page_id", "group_id", "text"],
     },
@@ -268,6 +320,7 @@ const TOOLS = [
         due_date: { type: "string", description: "YYYY-MM-DD, or empty string to clear" },
         pinned: { type: "boolean" },
         notes: { type: "string" },
+        goal_id: { type: "string", description: "Goal id to link to, or empty string to unlink" },
       },
       required: ["page_id", "task_id"],
     },
@@ -543,6 +596,75 @@ const TOOLS = [
       required: ["query"],
     },
   },
+  // ─── Review ─────────────────────────────────────────────────────────
+  {
+    name: "get_review_context",
+    description:
+      "Aggregate the user's recent activity into a single payload for drafting a daily / weekly / monthly review. Returns tasks (completed snapshot, pinned, overdue, due in window), journal entries in the window, goals updated in the window, recent daily insights, and palaces touched in the window. Prefer this single call over chaining list_pages / list_recent_journal_entries / list_goals when drafting a review.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        days_back: {
+          type: "number",
+          description: "Lookback window in days. Default 7. Use 1 for daily, 7 for weekly, 30 for monthly. Clamped to [1, 30].",
+        },
+      },
+      required: [],
+    },
+  },
+  // ─── Goal ↔ task links ──────────────────────────────────────────────
+  {
+    name: "link_task_to_goal",
+    description:
+      "Link an existing task to a goal so the task counts toward that goal. Idempotent — re-linking to the same goal is a no-op; linking to a different goal replaces the link.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        page_id: { type: "string" },
+        task_id: { type: "string" },
+        goal_id: { type: "string" },
+      },
+      required: ["page_id", "task_id", "goal_id"],
+    },
+  },
+  {
+    name: "unlink_task_from_goal",
+    description: "Remove a task's link to whatever goal it's currently associated with.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        page_id: { type: "string" },
+        task_id: { type: "string" },
+      },
+      required: ["page_id", "task_id"],
+    },
+  },
+  {
+    name: "list_tasks_for_goal",
+    description:
+      "List every task linked to a goal across all pages, plus completion stats. Use this for 'what am I doing toward goal X?' / 'show me progress on goal Y'. By default open tasks come first; pass include_completed=false to skip completed.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        goal_id: { type: "string" },
+        include_completed: { type: "boolean", description: "Default true." },
+      },
+      required: ["goal_id"],
+    },
+  },
+  // ─── Skills (progressive disclosure) ────────────────────────────────
+  {
+    name: "load_skill",
+    description:
+      "Fetch the full procedure for one of the registered Skills (e.g. 'draft-review'). The system prompt only advertises Skill triggers — call this BEFORE you start drafting once a trigger matches, then follow the returned procedure.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string", description: "The Skill slug, e.g. 'draft-review'" },
+      },
+      required: ["name"],
+    },
+  },
 ];
 
 // ─── Mutation helpers ──────────────────────────────────────────────────
@@ -664,6 +786,9 @@ async function runTool(
     if (input.pinned) newItem.pinned = true;
     if (input.notes) newItem.notes = input.notes as string;
     if (input.sub_group_id) newItem.subGroupId = input.sub_group_id as string;
+    if (typeof input.goal_id === "string" && input.goal_id) {
+      newItem.goalId = input.goal_id;
+    }
 
     group.items.push(newItem);
     const saveErr = await savePageData(supabase, pageId, page.data);
@@ -689,6 +814,10 @@ async function runTool(
     if (typeof input.due_date === "string") {
       if (input.due_date === "") delete it.dueDate;
       else it.dueDate = input.due_date;
+    }
+    if (typeof input.goal_id === "string") {
+      if (input.goal_id === "") delete it.goalId;
+      else it.goalId = input.goal_id;
     }
 
     const saveErr = await savePageData(supabase, pageId, page.data);
@@ -888,6 +1017,90 @@ async function runTool(
     const { error } = await supabase.from("journal_entries").upsert(payload, { onConflict: "date" });
     if (error) return JSON.stringify({ error: error.message });
     return JSON.stringify({ ok: true, date, entry: payload });
+  }
+
+  // ─── Goal ↔ task links ──────────────────────────────────────────────
+  if (name === "link_task_to_goal" || name === "unlink_task_from_goal") {
+    const pageId = input.page_id as string;
+    const taskId = input.task_id as string;
+    if (!pageId || !taskId) return JSON.stringify({ error: "page_id and task_id required" });
+
+    const isLink = name === "link_task_to_goal";
+    const goalId = isLink ? (input.goal_id as string) : "";
+    if (isLink && !goalId) return JSON.stringify({ error: "goal_id required" });
+
+    if (isLink) {
+      const { data: goalRow, error: gErr } = await supabase
+        .from("goals")
+        .select("id, title, archived")
+        .eq("id", goalId)
+        .maybeSingle();
+      if (gErr) return JSON.stringify({ error: gErr.message });
+      if (!goalRow) return JSON.stringify({ error: "goal not found" });
+      if ((goalRow as { archived: boolean }).archived) {
+        return JSON.stringify({ error: "goal is archived — un-archive it first" });
+      }
+    }
+
+    const { page, error } = await loadPageForMutation(supabase, pageId);
+    if (error || !page) return JSON.stringify({ error: error ?? "page not found" });
+
+    const found = findTask(page.data, taskId);
+    if (!found) return JSON.stringify({ error: "task not found on page" });
+
+    if (isLink) found.item.goalId = goalId;
+    else delete found.item.goalId;
+
+    const saveErr = await savePageData(supabase, pageId, page.data);
+    if (saveErr) return JSON.stringify({ error: saveErr });
+    return JSON.stringify({ ok: true, task_id: taskId, goal_id: isLink ? goalId : null });
+  }
+
+  if (name === "list_tasks_for_goal") {
+    const goalId = (input.goal_id as string) ?? "";
+    if (!goalId) return JSON.stringify({ error: "goal_id is required" });
+    const includeCompleted = input.include_completed === false ? false : true;
+
+    const { data: goalRow, error: gErr } = await supabase
+      .from("goals")
+      .select("id, title, archived")
+      .eq("id", goalId)
+      .maybeSingle();
+    if (gErr) return JSON.stringify({ error: gErr.message });
+    if (!goalRow) return JSON.stringify({ error: "goal not found" });
+
+    const { data: pages, error: pErr } = await supabase
+      .from("todo_lists")
+      .select("id, name, data");
+    if (pErr) return JSON.stringify({ error: pErr.message });
+
+    const open: Array<{ page_id: string; page: string; group: string; task_id: string; text: string; due?: string; pinned?: boolean }> = [];
+    const completed: Array<{ page_id: string; page: string; group: string; task_id: string; text: string }> = [];
+    for (const row of (pages ?? []) as PageRow[]) {
+      for (const g of allGroups(row.data ?? { groups: [], blocks: [] })) {
+        for (const it of g.items ?? []) {
+          if (it.goalId !== goalId) continue;
+          if (it.archived) continue;
+          const text = stripHtml(it.text);
+          if (it.completed) {
+            if (includeCompleted) {
+              completed.push({ page_id: row.id, page: row.name, group: g.name, task_id: it.id, text });
+            }
+          } else {
+            open.push({
+              page_id: row.id, page: row.name, group: g.name, task_id: it.id, text,
+              due: it.dueDate, pinned: it.pinned,
+            });
+          }
+        }
+      }
+    }
+    return JSON.stringify({
+      goal: { id: goalRow.id, title: (goalRow as { title: string }).title },
+      counts: { open: open.length, completed: completed.length, total: open.length + completed.length },
+      open,
+      completed,
+    });
   }
 
   // ─── Today briefing ─────────────────────────────────────────────────
@@ -1164,6 +1377,142 @@ async function runTool(
     return JSON.stringify({ query: q, count: hits.length, hits });
   }
 
+  // ─── Review ─────────────────────────────────────────────────────────
+  if (name === "get_review_context") {
+    const rawDays = Number(input.days_back ?? 7);
+    const days = Math.min(Math.max(Number.isFinite(rawDays) ? Math.round(rawDays) : 7, 1), 30);
+    const end = todayISO();
+    const start = shiftIsoDate(end, -days + 1);
+    const cap = <T,>(arr: T[]): T[] => (arr.length > 50 ? arr.slice(0, 50) : arr);
+
+    // Tasks across all pages.
+    const completed: Array<{ page: string; group: string; text: string; due?: string }> = [];
+    const pinned: Array<{ page: string; group: string; text: string; due?: string }> = [];
+    const overdue: Array<{ page: string; group: string; text: string; due: string }> = [];
+    const dueInWindow: Array<{ page: string; group: string; text: string; due: string }> = [];
+    const { data: pages, error: pErr } = await supabase
+      .from("todo_lists")
+      .select("id, name, data");
+    if (pErr) return JSON.stringify({ error: pErr.message });
+    for (const row of (pages ?? []) as PageRow[]) {
+      for (const g of allGroups(row.data ?? { groups: [], blocks: [] })) {
+        for (const it of g.items ?? []) {
+          if (it.archived) continue;
+          const text = stripHtml(it.text);
+          if (!text) continue;
+          if (it.completed) {
+            completed.push({ page: row.name, group: g.name, text, due: it.dueDate });
+            continue;
+          }
+          if (it.pinned) pinned.push({ page: row.name, group: g.name, text, due: it.dueDate });
+          if (it.dueDate) {
+            if (it.dueDate < end) overdue.push({ page: row.name, group: g.name, text, due: it.dueDate });
+            else if (it.dueDate >= end && it.dueDate <= shiftIsoDate(end, days)) {
+              dueInWindow.push({ page: row.name, group: g.name, text, due: it.dueDate });
+            }
+          }
+        }
+      }
+    }
+
+    // Journal entries in window.
+    const { data: journalRows, error: jErr } = await supabase
+      .from("journal_entries")
+      .select("date, forward, blockers, tomorrow")
+      .gte("date", start)
+      .lte("date", end)
+      .order("date", { ascending: false });
+    const journal = (jErr ? [] : (journalRows ?? [])) as Array<{
+      date: string; forward: string; blockers: string; tomorrow: string;
+    }>;
+
+    // Goals updated in window.
+    const { data: goalRows } = await supabase
+      .from("goals")
+      .select("id, title, body, updated_at, archived")
+      .eq("archived", false)
+      .gte("updated_at", `${start}T00:00:00Z`)
+      .order("updated_at", { ascending: false });
+    const goalsUpdated = ((goalRows ?? []) as Array<{ id: string; title: string; body: string; updated_at: string }>).map(
+      (g) => {
+        const txt = stripHtml(g.body ?? "");
+        return { id: g.id, title: g.title, snippet: txt.length > 200 ? txt.slice(0, 200) + "…" : txt, updated_at: g.updated_at };
+      }
+    );
+
+    // Recent daily insights.
+    const { data: insightRows } = await supabase
+      .from("daily_insights")
+      .select("date, insight_data")
+      .gte("date", start)
+      .lte("date", end)
+      .order("date", { ascending: false });
+    const insights = ((insightRows ?? []) as Array<{ date: string; insight_data: Record<string, unknown> }>).map(
+      (row) => {
+        const d = row.insight_data ?? {};
+        return {
+          date: row.date,
+          concept: typeof d.concept === "string" ? d.concept : "",
+          lesson: typeof d.lesson === "string" ? d.lesson : "",
+        };
+      }
+    );
+
+    // Palaces touched in window.
+    const { data: palaceRows } = await supabase
+      .from("memory_palaces")
+      .select("id, name, theme, data, updated_at")
+      .eq("archived", false)
+      .gte("updated_at", `${start}T00:00:00Z`)
+      .order("updated_at", { ascending: false });
+    const palacesTouched = ((palaceRows ?? []) as PalaceRow[]).map((p) => ({
+      id: p.id,
+      name: p.name,
+      theme: p.theme,
+      rooms: p.data?.rooms?.length ?? 0,
+      memories: p.data?.objects?.length ?? 0,
+      updated_at: p.updated_at,
+    }));
+
+    return JSON.stringify({
+      range: { start, end, days },
+      counts: {
+        completed_tasks: completed.length,
+        pinned_tasks: pinned.length,
+        overdue_tasks: overdue.length,
+        due_in_window: dueInWindow.length,
+        journal_entries: journal.length,
+        goals_updated: goalsUpdated.length,
+        insights: insights.length,
+        palaces_touched: palacesTouched.length,
+      },
+      tasks: {
+        completed: cap(completed),
+        pinned: cap(pinned),
+        overdue: cap(overdue),
+        due_in_window: cap(dueInWindow),
+      },
+      journal: cap(journal),
+      goals_updated: cap(goalsUpdated),
+      insights: cap(insights),
+      palaces_touched: cap(palacesTouched),
+    });
+  }
+
+  // ─── Skills (progressive disclosure) ────────────────────────────────
+  if (name === "load_skill") {
+    const slug = ((input.name as string) ?? "").trim();
+    if (!slug) return JSON.stringify({ error: "name is required" });
+    const skill = SKILLS_BY_SLUG.get(slug);
+    if (!skill) {
+      return JSON.stringify({
+        error: `unknown skill '${slug}'`,
+        available: SKILLS.map((s) => s.slug),
+      });
+    }
+    return JSON.stringify({ name: skill.slug, body: skill.body });
+  }
+
   return JSON.stringify({ error: `unknown tool: ${name}` });
 }
 
@@ -1320,7 +1669,15 @@ Deno.serve(async (req) => {
       activeBlock += "\n\n(No active page — call list_pages / list_goals / etc. as needed.)";
     }
     activeBlock += "\n─── END ACTIVE CONTEXT ───";
-    const system = SYSTEM_PROMPT + activeBlock;
+
+    // Registered Skills — triggers only (progressive disclosure). The assistant
+    // calls load_skill(name) to fetch the full procedure once a trigger matches.
+    let skillsBlock = "";
+    if (SKILLS.length > 0) {
+      const lines = SKILLS.map((s) => `- ${s.slug} — ${s.description}`);
+      skillsBlock = `\n\n─── REGISTERED SKILLS ───\n${lines.join("\n")}\n─── END SKILLS ───`;
+    }
+    const system = SYSTEM_PROMPT + skillsBlock + activeBlock;
 
     // Build message array: prior history + new user turn.
     const messages: Array<{ role: "user" | "assistant"; content: unknown }> = [
@@ -1392,7 +1749,10 @@ Deno.serve(async (req) => {
 
     await appendMessages(supabase, conversationId, nextSeq, toPersist);
 
-    const TASK_MUTATIONS = ["create_task", "update_task", "archive_task", "delete_task", "reorder_tasks"];
+    const TASK_MUTATIONS = [
+      "create_task", "update_task", "archive_task", "delete_task", "reorder_tasks",
+      "link_task_to_goal", "unlink_task_from_goal",
+    ];
     const GOAL_MUTATIONS = ["create_goal", "update_goal", "archive_goal"];
     const JOURNAL_MUTATIONS = ["upsert_journal_entry"];
     const PALACE_MUTATIONS = [
