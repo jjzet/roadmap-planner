@@ -86,7 +86,7 @@ How to behave:
 - Drafting work (handover summaries, status updates, journal reflections, page summaries) should be done in plain prose first; only persist via tools when the user signals "save it" / "add it" / "log it".
 - For journal: when the user reflects on their day, offer to log it. Map their words sensibly to forward / blockers / tomorrow; ask before guessing if it's ambiguous.
 - For goals: keep updates incremental. Use update_goal to append progress notes rather than rewriting unless asked.
-- For palaces: when the user shares something worth remembering ("remember that…", "add this to my palace", "what was X"), reach for palace tools. If they don't specify a palace, pick the most relevant existing one or ask. Choose icons that match content (book = reference, npc = person, key = credential/access, scroll = note, sign = label, crystal = idea, chest = collection). Auto-place inside an appropriate room when one fits the topic.
+- For palaces: when the user shares something worth remembering ("remember that…", "add this to my palace", "what was X"), reach for palace tools. If they don't specify a palace, pick the most relevant existing one or ask. Choose icons that match content (book = reference, npc = person, key = credential/access, scroll = note, sign = label, crystal = idea, chest = collection). Auto-place inside an appropriate room when one fits the topic. Always include `imagery` — a short, absurd mental image tying the memory to its locus (e.g. "Sarah arm-wrestling the weapon rack, sparks flying"); vivid imagery is what makes the palace work.
 - Prefer archive_task / archive_goal over delete_*. Confirm destructive actions before executing them.
 - Markdown is supported in your replies. Use it sparingly — short paragraphs, lists when listing.
 - Keep responses tight, plain English, no jargon. If you don't know, say so.
@@ -158,7 +158,7 @@ type PalaceRoom = {
 type PalaceObject = {
   id: string; name: string; content: string;
   x: number; y: number; icon: string; color: string;
-  roomId?: string; link?: string;
+  roomId?: string; link?: string; imagery?: string;
 };
 type PalaceData = { width: number; height: number; rooms: PalaceRoom[]; objects: PalaceObject[] };
 type PalaceRow = {
@@ -548,6 +548,7 @@ const TOOLS = [
         x: { type: "number" },
         y: { type: "number" },
         link: { type: "string" },
+        imagery: { type: "string", description: "A short, vivid, absurd mental image linking this locus to the memory — always provide one; bizarre images are what make the technique work" },
       },
       required: ["palace_id", "name", "content"],
     },
@@ -568,6 +569,7 @@ const TOOLS = [
         x: { type: "number" },
         y: { type: "number" },
         link: { type: "string" },
+        imagery: { type: "string", description: "A short, vivid, absurd mental image linking this locus to the memory" },
       },
       required: ["palace_id", "object_id"],
     },
@@ -1288,6 +1290,7 @@ async function runTool(
       x, y, icon, color,
       roomId,
       link: typeof input.link === "string" && input.link ? input.link : undefined,
+      imagery: typeof input.imagery === "string" && input.imagery ? input.imagery : undefined,
     };
     palace.data.objects.push(obj);
     const { error } = await supabase
@@ -1318,6 +1321,7 @@ async function runTool(
     if (typeof input.x === "number") obj.x = input.x;
     if (typeof input.y === "number") obj.y = input.y;
     if (typeof input.link === "string") obj.link = input.link || undefined;
+    if (typeof input.imagery === "string") obj.imagery = input.imagery || undefined;
     // Re-link to a room based on new coords.
     const inRoom = palace.data.rooms.find(
       (r) => obj.x >= r.x && obj.x < r.x + r.width && obj.y >= r.y && obj.y < r.y + r.height

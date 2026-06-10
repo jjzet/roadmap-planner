@@ -250,6 +250,7 @@ export interface PalaceObject {
   roomId?: string;   // optional — assigned to a room
   link?: string;     // optional URL or page ref
   kind?: string;     // ObjectKind.id from presets
+  imagery?: string;  // vivid mental image linking this locus to the memory
 }
 
 export interface MemoryPalaceData {

@@ -38,6 +38,7 @@ interface PalaceStore {
   selectObject: (id: string | null) => void;
 
   createPalace: (name: string, theme?: PalaceTheme) => Promise<string | null>;
+  createPalaceWithData: (name: string, theme: PalaceTheme, data: MemoryPalaceData) => Promise<string | null>;
   renamePalace: (id: string, name: string) => Promise<void>;
   setTheme: (id: string, theme: PalaceTheme) => Promise<void>;
   deletePalace: (id: string) => Promise<void>;
@@ -107,6 +108,25 @@ export const usePalaceStore = create<PalaceStore>()(
         s.selectedObjectId = null;
       });
       return row.id;
+    },
+
+    createPalaceWithData: async (name, theme, data) => {
+      const { data: row, error } = await supabase
+        .from('memory_palaces')
+        .insert({ name, theme, data })
+        .select('*')
+        .single();
+      if (error || !row) {
+        console.error('Failed to create palace:', error);
+        return null;
+      }
+      const rec = row as MemoryPalaceRecord;
+      set((s) => {
+        s.palaces.unshift(rec);
+        s.currentPalaceId = rec.id;
+        s.selectedObjectId = null;
+      });
+      return rec.id;
     },
 
     renamePalace: async (id, name) => {
@@ -230,6 +250,8 @@ export const usePalaceStore = create<PalaceStore>()(
         color: partial?.color ?? '#06B6D4',
         roomId: partial?.roomId,
         link: partial?.link,
+        kind: partial?.kind,
+        imagery: partial?.imagery,
       };
       data.objects.push(obj);
       set((s) => {

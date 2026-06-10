@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown } from 'lucide-react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown, Sparkles } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
 import { PalaceWalk } from '@/components/palace/PalaceWalk';
+import { PalaceBuilder } from '@/components/palace/PalaceBuilder';
 import { PixelSprite } from '@/components/palace/PixelSprite';
 import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
 import {
@@ -33,7 +34,6 @@ export function PalacesView() {
   const isLoading = usePalaceStore((s) => s.isLoading);
   const selectPalace = usePalaceStore((s) => s.selectPalace);
   const selectObject = usePalaceStore((s) => s.selectObject);
-  const createPalace = usePalaceStore((s) => s.createPalace);
   const renamePalace = usePalaceStore((s) => s.renamePalace);
   const setTheme = usePalaceStore((s) => s.setTheme);
   const deletePalace = usePalaceStore((s) => s.deletePalace);
@@ -50,11 +50,31 @@ export function PalacesView() {
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [walkMode, setWalkMode] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
 
-  const handleNew = async () => {
-    const name = window.prompt('Name your palace:', 'Untitled palace');
-    if (!name?.trim()) return;
-    await createPalace(name.trim());
+  // Due count for the current palace — powers the "Review" call to action.
+  const reviews = usePalaceReviewStore((s) => s.reviews);
+  const dueCount = useMemo(() => {
+    if (!palace) return 0;
+    const now = new Date();
+    let n = 0;
+    for (const o of palace.data.objects) {
+      if (isDue(reviews[reviewKey(palace.id, o.id)] ?? null, now)) n++;
+    }
+    return n;
+  }, [palace, reviews]);
+
+  const handleNew = () => setBuilderOpen(true);
+
+  const enterWalk = (review: boolean) => {
+    selectObject(null);
+    setReviewMode(review);
+    setWalkMode(true);
+  };
+  const exitWalk = () => {
+    setWalkMode(false);
+    setReviewMode(false);
   };
 
   const handleAddRoomKind = async (kind: RoomKind) => {
@@ -126,7 +146,8 @@ export function PalacesView() {
           {palaces.length === 0 && !isLoading && (
             <div className="px-3 py-6 text-center">
               <p className="text-[11px] font-mono font-light text-gray-400 leading-relaxed">
-                No palaces yet. Build a 2D map to anchor things you want to remember.
+                No palaces yet. Paste a list of things to remember and get a
+                ready-made palace to walk through.
               </p>
               <button
                 onClick={handleNew}
@@ -213,11 +234,18 @@ export function PalacesView() {
                     />
                   </>
                 )}
+                {!walkMode && dueCount > 0 && (
+                  <button
+                    onClick={() => enterWalk(true)}
+                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white bg-amber-500 hover:bg-amber-600 border border-amber-500 rounded px-2 py-1 cursor-pointer transition-colors"
+                    title={`Start a review session — ${dueCount} loci due`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Review {dueCount}
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    if (!walkMode) selectObject(null);
-                    setWalkMode((v) => !v);
-                  }}
+                  onClick={() => (walkMode ? exitWalk() : enterWalk(false))}
                   className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
                     walkMode
                       ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
@@ -241,7 +269,12 @@ export function PalacesView() {
             </div>
 
             {walkMode ? (
-              <PalaceWalk key={palace.id} palace={palace} onExit={() => setWalkMode(false)} />
+              <PalaceWalk
+                key={`${palace.id}-${reviewMode ? 'review' : 'walk'}`}
+                palace={palace}
+                startInReview={reviewMode}
+                onExit={exitWalk}
+              />
             ) : (
               /* Canvas + side editor */
               <div className="flex-1 overflow-auto bg-gray-100/60">
@@ -297,6 +330,13 @@ export function PalacesView() {
           </>
         )}
       </div>
+
+      {builderOpen && (
+        <PalaceBuilder
+          onClose={() => setBuilderOpen(false)}
+          onCreated={() => setBuilderOpen(false)}
+        />
+      )}
     </div>
   );
 }
