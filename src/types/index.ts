@@ -253,11 +253,23 @@ export interface PalaceObject {
   imagery?: string;  // vivid mental image linking this locus to the memory
 }
 
+// A decoration placed by the user in the 3D palace. Purely cosmetic — no
+// memory content — but personal set-dressing is itself a retrieval cue.
+// Coordinates are in tile units (floats; finer than the loci grid).
+export interface PalaceDecor {
+  id: string;
+  kind: string;   // DecorKind id from the 3D palette
+  x: number;
+  z: number;
+  rot: number;    // yaw in radians
+}
+
 export interface MemoryPalaceData {
   width: number;     // map size in tiles
   height: number;
   rooms: PalaceRoom[];
   objects: PalaceObject[];
+  decor?: PalaceDecor[];
 }
 
 export interface MemoryPalaceRecord {

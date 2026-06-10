@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type {
   MemoryPalaceRecord,
   MemoryPalaceData,
+  PalaceDecor,
   PalaceObject,
   PalaceObjectIcon,
   PalaceRoom,
@@ -46,6 +47,8 @@ interface PalaceStore {
   addRoom: (palaceId: string, partial?: Partial<PalaceRoom>) => Promise<string | null>;
   updateRoom: (palaceId: string, roomId: string, patch: Partial<PalaceRoom>) => Promise<void>;
   removeRoom: (palaceId: string, roomId: string) => Promise<void>;
+
+  setDecor: (palaceId: string, decor: PalaceDecor[]) => Promise<void>;
 
   addObject: (palaceId: string, partial?: Partial<PalaceObject>) => Promise<string | null>;
   updateObject: (palaceId: string, objectId: string, patch: Partial<PalaceObject>) => Promise<void>;
@@ -204,6 +207,18 @@ export const usePalaceStore = create<PalaceStore>()(
       const data: MemoryPalaceData = JSON.parse(JSON.stringify(palace.data));
       data.rooms = data.rooms.filter((r) => r.id !== roomId);
       data.objects = data.objects.map((o) => (o.roomId === roomId ? { ...o, roomId: undefined } : o));
+      set((s) => {
+        const p = s.palaces.find((x) => x.id === palaceId);
+        if (p) p.data = data;
+      });
+      await persist(palaceId, { data });
+    },
+
+    setDecor: async (palaceId, decor) => {
+      const palace = get().palaces.find((p) => p.id === palaceId);
+      if (!palace) return;
+      const data: MemoryPalaceData = JSON.parse(JSON.stringify(palace.data));
+      data.decor = decor;
       set((s) => {
         const p = s.palaces.find((x) => x.id === palaceId);
         if (p) p.data = data;
