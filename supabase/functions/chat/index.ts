@@ -154,6 +154,7 @@ const VALID_ICONS = [
 type PalaceRoom = {
   id: string; name: string; description?: string;
   x: number; y: number; width: number; height: number; color: string;
+  kind?: string;
 };
 type PalaceObject = {
   id: string; name: string; content: string;
@@ -528,6 +529,7 @@ const TOOLS = [
         width: { type: "number" },
         height: { type: "number" },
         color: { type: "string", description: "Hex (e.g. #7DD3FC)" },
+        kind: { type: "string", description: "Room kind id so the 3D palace can furnish the room (e.g. 'kitchen', 'library', 'armoury', 'war-room', 'throne-room', 'observatory'). Use the kebab-case form of a standard room name when one fits." },
       },
       required: ["palace_id", "name"],
     },
@@ -1235,6 +1237,7 @@ async function runTool(
       width: typeof input.width === "number" ? input.width : 6,
       height: typeof input.height === "number" ? input.height : 4,
       color: (input.color as string) ?? palette[idx % palette.length],
+      kind: typeof input.kind === "string" && input.kind ? input.kind : undefined,
     };
     palace.data.rooms.push(room);
     const { error } = await supabase

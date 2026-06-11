@@ -177,6 +177,7 @@ export const usePalaceStore = create<PalaceStore>()(
         width: partial?.width ?? 6,
         height: partial?.height ?? 4,
         color: partial?.color ?? ROOM_PALETTE[idx % ROOM_PALETTE.length],
+        kind: partial?.kind,
       };
       data.rooms.push(room);
       set((s) => {

@@ -5,6 +5,7 @@
 // already occupied by loci so pedestals always stay readable.
 
 import type { PalaceObject, PalaceRoom } from '@/types';
+import { THEME_ROOMS } from '../presets';
 import { SCALE, tileCenter } from './world';
 
 export interface FurnishItem {
@@ -154,12 +155,26 @@ const SPEC: Record<string, Array<[Place, string]>> = {
   'greenhouse':    [['n2', 'shrub'], ['w2', 'shrub'], ['e2', 'shrub'], ['center', 'fountain']],
 };
 
+// Rooms created before kinds were persisted (or via paths that dropped the
+// field) can still furnish themselves: match the room's display name back to
+// a known kind. "Kitchen" → kitchen, "War Room 2" → war-room.
+const NAME_TO_KIND: Record<string, string> = Object.fromEntries(
+  Object.values(THEME_ROOMS).flat().map((k) => [k.name.toLowerCase(), k.id]),
+);
+
+function inferKind(room: PalaceRoom): string | undefined {
+  if (room.kind) return room.kind;
+  const base = room.name.trim().toLowerCase().replace(/\s+\d+$/, '');
+  return NAME_TO_KIND[base];
+}
+
 // Open-floor placements can land on a locus pedestal — drop those so the
 // memory anchors always stay readable.
 const LOCUS_CLEARANCE = 1.35;
 
 export function furnishRoom(room: PalaceRoom, objects: PalaceObject[]): FurnishItem[] {
-  const spec = room.kind ? SPEC[room.kind] : undefined;
+  const kind = inferKind(room);
+  const spec = kind ? SPEC[kind] : undefined;
   if (!spec) return [];
   const loci = objects
     .filter((o) => o.roomId === room.id)
