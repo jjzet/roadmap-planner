@@ -31,6 +31,7 @@ import {
 import { LocusProp } from './Props3D';
 import { DecorProp } from './decor';
 import { DECOR_KINDS, decorEmitsLight } from './decorKinds';
+import { furnishRoom } from './furnish';
 
 type Status = 'intro' | 'playing' | 'paused';
 type Mode = 'walk' | 'decorate';
@@ -407,6 +408,10 @@ function Scene({ palace, theme, walls, decor, dueIds, onNear, onRoom, statusRef 
     () => generateDressing(data, theme.dressing, palace.id),
     [data, theme.dressing, palace.id],
   );
+  const furnishings = useMemo(
+    () => data.rooms.flatMap((r) => furnishRoom(r, data.objects)),
+    [data.rooms, data.objects],
+  );
 
   // Crisp two-tone checker ties the ground back to the 2D map's identity.
   const floorTex = useMemo(() => {
@@ -518,6 +523,18 @@ function Scene({ palace, theme, walls, decor, dueIds, onNear, onRoom, statusRef 
         <DoorFrame key={i} door={d} theme={theme} />
       ))}
 
+      {/* Room-name plaques on both faces of every doorway header */}
+      {doorways.map((d, i) => (
+        <Plaque key={`pl-${i}`} door={d} theme={theme} />
+      ))}
+
+      {/* Kind-specific furnishings — a Library looks like a library */}
+      {furnishings.map((f, i) => (
+        <group key={`furn-${i}`} position={[f.x, 0, f.z]} rotation={[0, f.rot, 0]}>
+          <DecorProp kind={f.kind} theme={theme} scale={f.scale} />
+        </group>
+      ))}
+
       {/* Corner pillars give rooms silhouettes from a distance */}
       {data.rooms.flatMap((r) => {
         const corners: Array<[number, number]> = [
@@ -583,6 +600,59 @@ function Scene({ palace, theme, walls, decor, dueIds, onNear, onRoom, statusRef 
 
       <Player palace={palace} walls={walls} onNear={onNear} onRoom={onRoom} statusRef={statusRef} />
     </>
+  );
+}
+
+// Room-name plaque rendered onto a canvas texture — crisp text with no
+// font-loading dependency (uses the app's already-loaded mono font).
+function makePlaqueTexture(name: string, accent: string, trim: string): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = trim;
+  g.fillRect(0, 0, 512, 128);
+  g.strokeStyle = accent;
+  g.lineWidth = 7;
+  g.strokeRect(12, 12, 488, 104);
+  g.fillStyle = '#f3ead6';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  const label = name.toUpperCase();
+  let size = 52;
+  g.font = `600 ${size}px "JetBrains Mono Variable", ui-monospace, monospace`;
+  while (size > 22 && g.measureText(label).width > 440) {
+    size -= 4;
+    g.font = `600 ${size}px "JetBrains Mono Variable", ui-monospace, monospace`;
+  }
+  g.fillText(label, 256, 68);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+function Plaque({ door, theme }: { door: Doorway; theme: Theme3D }) {
+  const tex = useMemo(
+    () => makePlaqueTexture(door.roomName, door.roomColor, theme.trim),
+    [door.roomName, door.roomColor, theme.trim],
+  );
+  useEffect(() => () => tex.dispose(), [tex]);
+  const y = WALL_HEIGHT - 0.31;
+  const off = 0.28;
+  const faces: Array<{ pos: [number, number, number]; rotY: number }> =
+    door.axis === 'x'
+      ? [{ pos: [0, y, off], rotY: 0 }, { pos: [0, y, -off], rotY: Math.PI }]
+      : [{ pos: [off, y, 0], rotY: Math.PI / 2 }, { pos: [-off, y, 0], rotY: -Math.PI / 2 }];
+  return (
+    <group position={[door.x, 0, door.z]}>
+      {faces.map((f, i) => (
+        <mesh key={i} position={f.pos} rotation={[0, f.rotY, 0]}>
+          <planeGeometry args={[1.9, 0.475]} />
+          <meshStandardMaterial map={tex} roughness={0.8} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

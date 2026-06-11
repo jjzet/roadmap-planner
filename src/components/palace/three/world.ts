@@ -106,12 +106,14 @@ function wallAlongZ(z0: number, z1: number, x: number, out: WallBox[]) {
   });
 }
 
-// A doorway in a room wall — used to render frames and to keep procedural
-// dressing from blocking the entrance.
+// A doorway in a room wall — used to render frames and plaques, and to keep
+// procedural dressing from blocking the entrance.
 export interface Doorway {
   x: number;          // centre of the gap, world coords
   z: number;
   axis: 'x' | 'z';    // direction the wall runs (frame is perpendicular)
+  roomName: string;   // for the plaque over the header
+  roomColor: string;  // plaque accent
 }
 
 // A wall run with a doorway gap in the middle — or a solid run when the side
@@ -140,10 +142,12 @@ export function roomStructure(room: PalaceRoom): { walls: WallBox[]; doorways: D
   const z0 = room.y * SCALE;
   const x1 = (room.x + room.width) * SCALE;
   const z1 = (room.y + room.height) * SCALE;
-  wallWithDoor(x0, x1, (s0, s1) => wallAlongX(s0, s1, z0, walls), (c) => doorways.push({ x: c, z: z0, axis: 'x' }));
-  wallWithDoor(x0, x1, (s0, s1) => wallAlongX(s0, s1, z1, walls), (c) => doorways.push({ x: c, z: z1, axis: 'x' }));
-  wallWithDoor(z0, z1, (s0, s1) => wallAlongZ(s0, s1, x0, walls), (c) => doorways.push({ x: x0, z: c, axis: 'z' }));
-  wallWithDoor(z0, z1, (s0, s1) => wallAlongZ(s0, s1, x1, walls), (c) => doorways.push({ x: x1, z: c, axis: 'z' }));
+  const door = (x: number, z: number, axis: 'x' | 'z') =>
+    doorways.push({ x, z, axis, roomName: room.name, roomColor: room.color });
+  wallWithDoor(x0, x1, (s0, s1) => wallAlongX(s0, s1, z0, walls), (c) => door(c, z0, 'x'));
+  wallWithDoor(x0, x1, (s0, s1) => wallAlongX(s0, s1, z1, walls), (c) => door(c, z1, 'x'));
+  wallWithDoor(z0, z1, (s0, s1) => wallAlongZ(s0, s1, x0, walls), (c) => door(x0, c, 'z'));
+  wallWithDoor(z0, z1, (s0, s1) => wallAlongZ(s0, s1, x1, walls), (c) => door(x1, c, 'z'));
   return { walls, doorways };
 }
 

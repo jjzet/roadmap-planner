@@ -235,6 +235,135 @@ function DecorMesh({ kind, theme }: { kind: string; theme: Theme3D }) {
           ))}
         </group>
       );
+    // ── Fixtures (room furnishings; not in the placeable palette) ──
+    case 'weaponrack':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.55, 0]}>
+            <boxGeometry args={[1.1, 1.1, 0.08]} />
+            <meshStandardMaterial color="#5d4326" roughness={0.9} />
+          </mesh>
+          {[-0.3, 0, 0.3].map((x, i) => (
+            <mesh key={i} castShadow position={[x, 0.62, 0.07]} rotation={[0, 0, i === 1 ? 0 : (i ? -0.16 : 0.16)]}>
+              <boxGeometry args={[0.06, 0.85, 0.03]} />
+              <meshStandardMaterial color="#cfd6dd" metalness={0.8} roughness={0.25} />
+            </mesh>
+          ))}
+        </group>
+      );
+    case 'table':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.52, 0]}>
+            <boxGeometry args={[1.3, 0.08, 0.8]} />
+            <meshStandardMaterial color="#7a5a36" roughness={0.85} />
+          </mesh>
+          {[[-0.55, -0.3], [0.55, -0.3], [-0.55, 0.3], [0.55, 0.3]].map(([x, z], i) => (
+            <mesh key={i} castShadow position={[x, 0.25, z]}>
+              <boxGeometry args={[0.08, 0.5, 0.08]} />
+              <meshStandardMaterial color="#5d4326" roughness={0.9} />
+            </mesh>
+          ))}
+        </group>
+      );
+    case 'hearth':
+      return (
+        <group>
+          <mesh castShadow position={[-0.55, 0.5, 0]}>
+            <boxGeometry args={[0.3, 1.0, 0.5]} />
+            <meshStandardMaterial color="#6e6a63" roughness={0.95} />
+          </mesh>
+          <mesh castShadow position={[0.55, 0.5, 0]}>
+            <boxGeometry args={[0.3, 1.0, 0.5]} />
+            <meshStandardMaterial color="#6e6a63" roughness={0.95} />
+          </mesh>
+          <mesh castShadow position={[0, 1.06, 0]}>
+            <boxGeometry args={[1.4, 0.22, 0.55]} />
+            <meshStandardMaterial color="#57534b" roughness={0.95} />
+          </mesh>
+          <Flame y={0.34} color="#ff8c3b" />
+          <mesh position={[0, 0.1, 0]}>
+            <boxGeometry args={[0.7, 0.2, 0.4]} />
+            <meshStandardMaterial color="#2b2118" roughness={1} />
+          </mesh>
+        </group>
+      );
+    case 'dais':
+      return (
+        <group>
+          <mesh castShadow receiveShadow position={[0, 0.11, 0]}>
+            <cylinderGeometry args={[1.15, 1.25, 0.22, 18]} />
+            <meshStandardMaterial color={theme.pedestal} roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 0.23, 0]}>
+            <cylinderGeometry args={[0.85, 0.9, 0.06, 18]} />
+            <meshStandardMaterial color={theme.trim} roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'fountain':
+      return (
+        <group>
+          <mesh castShadow receiveShadow position={[0, 0.18, 0]}>
+            <cylinderGeometry args={[0.85, 0.95, 0.36, 16]} />
+            <meshStandardMaterial color={theme.pedestal} roughness={0.85} />
+          </mesh>
+          <mesh position={[0, 0.37, 0]}>
+            <cylinderGeometry args={[0.72, 0.72, 0.04, 16]} />
+            <meshStandardMaterial color="#3aa3c0" transparent opacity={0.85} roughness={0.15} emissive="#1d7d99" emissiveIntensity={0.25} />
+          </mesh>
+          <mesh castShadow position={[0, 0.55, 0]}>
+            <cylinderGeometry args={[0.1, 0.14, 0.5, 10]} />
+            <meshStandardMaterial color={theme.trim} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.85, 0]}>
+            <sphereGeometry args={[0.12, 10, 10]} />
+            <meshStandardMaterial color="#7fd4e8" transparent opacity={0.8} roughness={0.1} emissive="#3aa3c0" emissiveIntensity={0.4} />
+          </mesh>
+        </group>
+      );
+    case 'bigcrystal':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.7, 0]} scale={[0.5, 1.4, 0.5]}>
+            <octahedronGeometry args={[0.55]} />
+            <meshStandardMaterial color="#8be8dc" emissive="#41e0d0" emissiveIntensity={0.7} roughness={0.15} transparent opacity={0.92} />
+          </mesh>
+          <mesh castShadow position={[0.4, 0.3, 0.15]} scale={[0.35, 0.8, 0.35]} rotation={[0.2, 0.5, -0.15]}>
+            <octahedronGeometry args={[0.4]} />
+            <meshStandardMaterial color="#8be8dc" emissive="#41e0d0" emissiveIntensity={0.55} roughness={0.15} transparent opacity={0.92} />
+          </mesh>
+        </group>
+      );
+    case 'mushroom':
+      return (
+        <group>
+          <mesh castShadow position={[0, 0.3, 0]}>
+            <cylinderGeometry args={[0.16, 0.22, 0.6, 10]} />
+            <meshStandardMaterial color="#e8ddc8" roughness={0.9} />
+          </mesh>
+          <mesh castShadow position={[0, 0.66, 0]}>
+            <sphereGeometry args={[0.45, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#c0392b" roughness={0.8} emissive="#5e1410" emissiveIntensity={0.15} />
+          </mesh>
+        </group>
+      );
+    case 'campfire':
+      return (
+        <group>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} castShadow position={[0, 0.08, 0]} rotation={[0, (i * Math.PI) / 3, Math.PI / 2]}>
+              <cylinderGeometry args={[0.07, 0.07, 0.9, 7]} />
+              <meshStandardMaterial color="#5d4326" roughness={0.95} />
+            </mesh>
+          ))}
+          <Flame y={0.32} color="#ff8c3b" />
+          <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.5, 14]} />
+            <meshStandardMaterial color="#3a342c" roughness={1} />
+          </mesh>
+        </group>
+      );
     default:
       return (
         <mesh castShadow position={[0, 0.25, 0]}>
