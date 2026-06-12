@@ -15,13 +15,15 @@ interface ObjectEditorProps {
 export function ObjectEditor({ object, data, onPatch, onDelete, onClose }: ObjectEditorProps) {
   const [name, setName] = useState(object.name);
   const [content, setContent] = useState(object.content);
+  const [imagery, setImagery] = useState(object.imagery ?? '');
   const [link, setLink] = useState(object.link ?? '');
 
   useEffect(() => {
     setName(object.name);
     setContent(object.content);
+    setImagery(object.imagery ?? '');
     setLink(object.link ?? '');
-  }, [object.id, object.name, object.content, object.link]);
+  }, [object.id, object.name, object.content, object.imagery, object.link]);
 
   // Debounced flush of text fields → parent → store → supabase.
   useEffect(() => {
@@ -29,13 +31,15 @@ export function ObjectEditor({ object, data, onPatch, onDelete, onClose }: Objec
       const patch: Partial<PalaceObject> = {};
       if (name !== object.name) patch.name = name;
       if (content !== object.content) patch.content = content;
+      const imageryClean = imagery.trim() ? imagery.trim() : undefined;
+      if (imageryClean !== object.imagery) patch.imagery = imageryClean;
       const linkClean = link.trim() ? link.trim() : undefined;
       if (linkClean !== object.link) patch.link = linkClean;
       if (Object.keys(patch).length) onPatch(patch);
     }, 500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, content, link]);
+  }, [name, content, imagery, link]);
 
   const room = object.roomId ? data.rooms.find((r) => r.id === object.roomId) : null;
 
@@ -74,6 +78,16 @@ export function ObjectEditor({ object, data, onPatch, onDelete, onClose }: Objec
             rows={6}
             className="w-full bg-transparent border border-gray-200 rounded px-2 py-1.5 text-[12px] font-mono font-light text-gray-700 leading-relaxed focus:border-cyan-300 focus:ring-1 focus:ring-cyan-200 outline-none resize-none"
             placeholder="The thing to remember…"
+          />
+        </Field>
+
+        <Field label="Vivid image">
+          <textarea
+            value={imagery}
+            onChange={(e) => setImagery(e.target.value)}
+            rows={3}
+            className="w-full bg-amber-50/40 border border-amber-100 rounded px-2 py-1.5 text-[11px] font-mono font-light text-amber-900 leading-relaxed focus:border-amber-300 focus:ring-1 focus:ring-amber-200 outline-none resize-none"
+            placeholder="Picture something absurd linking this spot to the memory — the weirder, the stickier."
           />
         </Field>
 

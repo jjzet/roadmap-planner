@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState } from 'react';
+import { Castle, Plus, Trash2, Box, DoorOpen, Footprints, ChevronDown, Sparkles, Mountain } from 'lucide-react';
 import { usePalaceStore } from '@/store/palaceStore';
 import { PalaceMap } from '@/components/palace/PalaceMap';
 import { PALACE_THEMES, themeLabel } from '@/components/palace/constants';
 import { ObjectEditor } from '@/components/palace/ObjectEditor';
 import { PalaceWalk } from '@/components/palace/PalaceWalk';
+import { PalaceBuilder } from '@/components/palace/PalaceBuilder';
+
+// three.js is a heavy chunk — load it only when someone steps inside.
+const Palace3D = lazy(() => import('@/components/palace/three/Palace3D'));
 import { PixelSprite } from '@/components/palace/PixelSprite';
 import { usePalaceReviewStore, reviewKey, isDue } from '@/store/palaceReviewStore';
 import {
@@ -33,7 +37,6 @@ export function PalacesView() {
   const isLoading = usePalaceStore((s) => s.isLoading);
   const selectPalace = usePalaceStore((s) => s.selectPalace);
   const selectObject = usePalaceStore((s) => s.selectObject);
-  const createPalace = usePalaceStore((s) => s.createPalace);
   const renamePalace = usePalaceStore((s) => s.renamePalace);
   const setTheme = usePalaceStore((s) => s.setTheme);
   const deletePalace = usePalaceStore((s) => s.deletePalace);
@@ -50,11 +53,32 @@ export function PalacesView() {
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [walkMode, setWalkMode] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [threeD, setThreeD] = useState(false);
 
-  const handleNew = async () => {
-    const name = window.prompt('Name your palace:', 'Untitled palace');
-    if (!name?.trim()) return;
-    await createPalace(name.trim());
+  // Due count for the current palace — powers the "Review" call to action.
+  const reviews = usePalaceReviewStore((s) => s.reviews);
+  const dueCount = useMemo(() => {
+    if (!palace) return 0;
+    const now = new Date();
+    let n = 0;
+    for (const o of palace.data.objects) {
+      if (isDue(reviews[reviewKey(palace.id, o.id)] ?? null, now)) n++;
+    }
+    return n;
+  }, [palace, reviews]);
+
+  const handleNew = () => setBuilderOpen(true);
+
+  const enterWalk = (review: boolean) => {
+    selectObject(null);
+    setReviewMode(review);
+    setWalkMode(true);
+  };
+  const exitWalk = () => {
+    setWalkMode(false);
+    setReviewMode(false);
   };
 
   const handleAddRoomKind = async (kind: RoomKind) => {
@@ -126,7 +150,8 @@ export function PalacesView() {
           {palaces.length === 0 && !isLoading && (
             <div className="px-3 py-6 text-center">
               <p className="text-[11px] font-mono font-light text-gray-400 leading-relaxed">
-                No palaces yet. Build a 2D map to anchor things you want to remember.
+                No palaces yet. Paste a list of things to remember and get a
+                ready-made palace to walk through.
               </p>
               <button
                 onClick={handleNew}
@@ -198,7 +223,7 @@ export function PalacesView() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                {!walkMode && (
+                {!walkMode && !threeD && (
                   <>
                     <AddRoomMenu
                       theme={palace.theme}
@@ -213,22 +238,45 @@ export function PalacesView() {
                     />
                   </>
                 )}
-                <button
-                  onClick={() => {
-                    if (!walkMode) selectObject(null);
-                    setWalkMode((v) => !v);
-                  }}
-                  className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
-                    walkMode
-                      ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
-                      : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
-                  }`}
-                  title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace'}
-                >
-                  <Footprints className="w-3 h-3" />
-                  {walkMode ? 'Exit walk' : 'Walk'}
-                </button>
+                {!walkMode && !threeD && dueCount > 0 && (
+                  <button
+                    onClick={() => enterWalk(true)}
+                    className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-white bg-amber-500 hover:bg-amber-600 border border-amber-500 rounded px-2 py-1 cursor-pointer transition-colors"
+                    title={`Start a review session — ${dueCount} loci due`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Review {dueCount}
+                  </button>
+                )}
+                {!threeD && (
+                  <button
+                    onClick={() => (walkMode ? exitWalk() : enterWalk(false))}
+                    className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                      walkMode
+                        ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                        : 'text-gray-600 hover:text-cyan-700 bg-white border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40'
+                    }`}
+                    title={walkMode ? 'Exit walk mode (Esc)' : 'Walk through this palace (2D)'}
+                  >
+                    <Footprints className="w-3 h-3" />
+                    {walkMode ? 'Exit walk' : 'Walk'}
+                  </button>
+                )}
                 {!walkMode && (
+                  <button
+                    onClick={() => setThreeD((v) => !v)}
+                    className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider rounded px-2 py-1 cursor-pointer transition-colors border ${
+                      threeD
+                        ? 'text-cyan-800 bg-cyan-50 border-cyan-300'
+                        : 'text-white bg-cyan-600 hover:bg-cyan-700 border-cyan-600'
+                    }`}
+                    title={threeD ? 'Back to the 2D map' : 'Step inside this palace in 3D'}
+                  >
+                    <Mountain className="w-3 h-3" />
+                    {threeD ? 'Exit 3D' : 'Enter'}
+                  </button>
+                )}
+                {!walkMode && !threeD && (
                   <button
                     onClick={handleDelete}
                     className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-gray-400 hover:text-red-500 bg-transparent border border-transparent hover:border-red-100 rounded px-2 py-1 cursor-pointer transition-colors"
@@ -240,8 +288,25 @@ export function PalacesView() {
               </div>
             </div>
 
-            {walkMode ? (
-              <PalaceWalk key={palace.id} palace={palace} onExit={() => setWalkMode(false)} />
+            {threeD ? (
+              <Suspense
+                fallback={
+                  <div className="flex-1 flex items-center justify-center bg-gray-900">
+                    <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-400 animate-pulse">
+                      Raising the walls…
+                    </p>
+                  </div>
+                }
+              >
+                <Palace3D key={palace.id} palace={palace} onExit={() => setThreeD(false)} />
+              </Suspense>
+            ) : walkMode ? (
+              <PalaceWalk
+                key={`${palace.id}-${reviewMode ? 'review' : 'walk'}`}
+                palace={palace}
+                startInReview={reviewMode}
+                onExit={exitWalk}
+              />
             ) : (
               /* Canvas + side editor */
               <div className="flex-1 overflow-auto bg-gray-100/60">
@@ -252,9 +317,11 @@ export function PalacesView() {
                       theme={palace.theme}
                       selectedObjectId={selectedObjectId}
                       onSelectObject={selectObject}
+                      onTileClick={() => setThreeD(true)}
                     />
                     <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-gray-400">
                       {palace.data.width}×{palace.data.height} · {palace.data.rooms.length} rooms · {palace.data.objects.length} memories
+                      <span className="text-cyan-600"> · click the map to step inside</span>
                     </p>
                     {palace.data.rooms.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1.5 max-w-[600px]">
@@ -297,6 +364,13 @@ export function PalacesView() {
           </>
         )}
       </div>
+
+      {builderOpen && (
+        <PalaceBuilder
+          onClose={() => setBuilderOpen(false)}
+          onCreated={() => setBuilderOpen(false)}
+        />
+      )}
     </div>
   );
 }

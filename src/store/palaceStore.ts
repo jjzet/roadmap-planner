@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type {
   MemoryPalaceRecord,
   MemoryPalaceData,
+  PalaceDecor,
   PalaceObject,
   PalaceObjectIcon,
   PalaceRoom,
@@ -38,6 +39,7 @@ interface PalaceStore {
   selectObject: (id: string | null) => void;
 
   createPalace: (name: string, theme?: PalaceTheme) => Promise<string | null>;
+  createPalaceWithData: (name: string, theme: PalaceTheme, data: MemoryPalaceData) => Promise<string | null>;
   renamePalace: (id: string, name: string) => Promise<void>;
   setTheme: (id: string, theme: PalaceTheme) => Promise<void>;
   deletePalace: (id: string) => Promise<void>;
@@ -45,6 +47,8 @@ interface PalaceStore {
   addRoom: (palaceId: string, partial?: Partial<PalaceRoom>) => Promise<string | null>;
   updateRoom: (palaceId: string, roomId: string, patch: Partial<PalaceRoom>) => Promise<void>;
   removeRoom: (palaceId: string, roomId: string) => Promise<void>;
+
+  setDecor: (palaceId: string, decor: PalaceDecor[]) => Promise<void>;
 
   addObject: (palaceId: string, partial?: Partial<PalaceObject>) => Promise<string | null>;
   updateObject: (palaceId: string, objectId: string, patch: Partial<PalaceObject>) => Promise<void>;
@@ -109,6 +113,25 @@ export const usePalaceStore = create<PalaceStore>()(
       return row.id;
     },
 
+    createPalaceWithData: async (name, theme, data) => {
+      const { data: row, error } = await supabase
+        .from('memory_palaces')
+        .insert({ name, theme, data })
+        .select('*')
+        .single();
+      if (error || !row) {
+        console.error('Failed to create palace:', error);
+        return null;
+      }
+      const rec = row as MemoryPalaceRecord;
+      set((s) => {
+        s.palaces.unshift(rec);
+        s.currentPalaceId = rec.id;
+        s.selectedObjectId = null;
+      });
+      return rec.id;
+    },
+
     renamePalace: async (id, name) => {
       set((s) => {
         const p = s.palaces.find((x) => x.id === id);
@@ -154,6 +177,7 @@ export const usePalaceStore = create<PalaceStore>()(
         width: partial?.width ?? 6,
         height: partial?.height ?? 4,
         color: partial?.color ?? ROOM_PALETTE[idx % ROOM_PALETTE.length],
+        kind: partial?.kind,
       };
       data.rooms.push(room);
       set((s) => {
@@ -184,6 +208,18 @@ export const usePalaceStore = create<PalaceStore>()(
       const data: MemoryPalaceData = JSON.parse(JSON.stringify(palace.data));
       data.rooms = data.rooms.filter((r) => r.id !== roomId);
       data.objects = data.objects.map((o) => (o.roomId === roomId ? { ...o, roomId: undefined } : o));
+      set((s) => {
+        const p = s.palaces.find((x) => x.id === palaceId);
+        if (p) p.data = data;
+      });
+      await persist(palaceId, { data });
+    },
+
+    setDecor: async (palaceId, decor) => {
+      const palace = get().palaces.find((p) => p.id === palaceId);
+      if (!palace) return;
+      const data: MemoryPalaceData = JSON.parse(JSON.stringify(palace.data));
+      data.decor = decor;
       set((s) => {
         const p = s.palaces.find((x) => x.id === palaceId);
         if (p) p.data = data;
@@ -230,6 +266,8 @@ export const usePalaceStore = create<PalaceStore>()(
         color: partial?.color ?? '#06B6D4',
         roomId: partial?.roomId,
         link: partial?.link,
+        kind: partial?.kind,
+        imagery: partial?.imagery,
       };
       data.objects.push(obj);
       set((s) => {

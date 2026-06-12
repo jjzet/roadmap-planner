@@ -31,6 +31,8 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'tide-pool',       name: 'Tide Pool',       color: '#7DD3FC' },
     { id: 'sand-castle',     name: 'Sand Castle',     color: '#FDBA74' },
     { id: 'cove',            name: 'Cove',            color: '#86EFAC' },
+    { id: 'shipwreck',       name: 'Shipwreck',       color: '#A8A29E' },
+    { id: 'boardwalk',       name: 'Boardwalk',       color: '#FBBF24' },
   ],
   castle: [
     { id: 'throne-room',  name: 'Throne Room',  color: '#FCD34D' },
@@ -41,6 +43,9 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'library',      name: 'Library',      color: '#C4B5FD' },
     { id: 'tower',        name: 'Tower',        color: '#A8A29E' },
     { id: 'courtyard',    name: 'Courtyard',    color: '#86EFAC' },
+    { id: 'chapel',       name: 'Chapel',       color: '#E9D5FF' },
+    { id: 'stables',      name: 'Stables',      color: '#D6A35C' },
+    { id: 'war-room',     name: 'War Room',     color: '#FCA5A5' },
   ],
   dungeon: [
     { id: 'crypt',          name: 'Crypt',          color: '#71717A' },
@@ -48,6 +53,8 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'trap-room',      name: 'Trap Room',      color: '#FCA5A5' },
     { id: 'boss-chamber',   name: 'Boss Chamber',   color: '#A78BFA' },
     { id: 'cell-block',     name: 'Cell Block',     color: '#52525B' },
+    { id: 'mushroom-cavern',  name: 'Mushroom Cavern',  color: '#F0ABFC' },
+    { id: 'underground-lake', name: 'Underground Lake', color: '#67E8F9' },
   ],
   forest: [
     { id: 'glade',         name: 'Glade',         color: '#86EFAC' },
@@ -55,6 +62,8 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'mushroom-ring', name: 'Mushroom Ring', color: '#FCA5A5' },
     { id: 'brook',         name: 'Brook',         color: '#7DD3FC' },
     { id: 'cabin',         name: 'Cabin',         color: '#FDBA74' },
+    { id: 'ranger-camp',   name: 'Ranger Camp',   color: '#FCD34D' },
+    { id: 'ancient-ruins', name: 'Ancient Ruins', color: '#D6D3D1' },
   ],
   overworld: [
     { id: 'village-square', name: 'Village Square', color: '#FCD34D' },
@@ -63,6 +72,8 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'crossroads',     name: 'Crossroads',     color: '#FDBA74' },
     { id: 'market',         name: 'Market',         color: '#FCA5A5' },
     { id: 'inn',            name: 'Inn',            color: '#C4B5FD' },
+    { id: 'farm',           name: 'Farm',           color: '#FDE68A' },
+    { id: 'harbor',         name: 'Harbor',         color: '#7DD3FC' },
   ],
   lab: [
     { id: 'lab-bench',      name: 'Lab Bench',      color: '#7DD3FC' },
@@ -70,6 +81,8 @@ export const THEME_ROOMS: Record<PalaceTheme, RoomKind[]> = {
     { id: 'cold-storage',   name: 'Cold Storage',   color: '#BAE6FD' },
     { id: 'server-room',    name: 'Server Room',    color: '#A78BFA' },
     { id: 'containment',    name: 'Containment',    color: '#FCA5A5' },
+    { id: 'observatory',    name: 'Observatory',    color: '#C4B5FD' },
+    { id: 'greenhouse',     name: 'Greenhouse',     color: '#86EFAC' },
   ],
 };
 
@@ -286,6 +299,92 @@ export const ROOM_OBJECTS: Record<string, ObjectKind[]> = {
     { id: 'sealed-vault', name: 'Sealed Vault', icon: 'chest',  color: '#EF4444' },
     { id: 'hazmat-suit',  name: 'Hazmat Suit',  icon: 'shield', color: '#FCD34D' },
     { id: 'security-key', name: 'Security Key', icon: 'key',    color: '#52525B' },
+  ],
+  // ── Beach (new rooms) ─────────────────────────────────────────────
+  'shipwreck': [
+    { id: 'ships-wheel',   name: "Ship's Wheel",   icon: 'crystal', color: '#92400E' },
+    { id: 'broken-mast',   name: 'Broken Mast',    icon: 'tree',    color: '#A8A29E' },
+    { id: 'cargo-net',     name: 'Cargo Net',      icon: 'scroll',  color: '#7C5A32' },
+    { id: 'captains-log',  name: "Captain's Log",  icon: 'book',    color: '#3B82F6' },
+  ],
+  'boardwalk': [
+    { id: 'ice-cream-cart', name: 'Ice Cream Cart', icon: 'chest',   color: '#EC4899' },
+    { id: 'beach-ball',     name: 'Beach Ball',     icon: 'gem',     color: '#EF4444' },
+    { id: 'surfboard',      name: 'Surfboard',      icon: 'shield',  color: '#06B6D4' },
+    { id: 'boardwalk-lamp', name: 'Boardwalk Lamp', icon: 'lantern', color: '#F59E0B' },
+  ],
+
+  // ── Castle (new rooms) ────────────────────────────────────────────
+  'chapel': [
+    { id: 'chapel-candles', name: 'Chapel Candles', icon: 'lantern', color: '#FCD34D' },
+    { id: 'stained-glass',  name: 'Stained Glass',  icon: 'gem',     color: '#8B5CF6' },
+    { id: 'prayer-book',    name: 'Prayer Book',    icon: 'book',    color: '#7C2D12' },
+    { id: 'reliquary',      name: 'Reliquary',      icon: 'chest',   color: '#FCD34D' },
+  ],
+  'stables': [
+    { id: 'saddle',         name: 'Saddle',         icon: 'shield',  color: '#92400E' },
+    { id: 'hay-bale',       name: 'Hay Bale',       icon: 'chest',   color: '#FBBF24' },
+    { id: 'horseshoe',      name: 'Horseshoe',      icon: 'key',     color: '#A8A29E' },
+    { id: 'stable-lantern', name: 'Stable Lantern', icon: 'lantern', color: '#F97316' },
+  ],
+  'war-room': [
+    { id: 'campaign-map',     name: 'Campaign Map',     icon: 'scroll', color: '#92400E' },
+    { id: 'war-banner',       name: 'War Banner',       icon: 'sign',   color: '#EF4444' },
+    { id: 'commanders-blade', name: "Commander's Blade", icon: 'sword', color: '#94A3B8' },
+    { id: 'signal-horn',      name: 'Signal Horn',      icon: 'star',   color: '#F59E0B' },
+  ],
+
+  // ── Dungeon (new rooms) ───────────────────────────────────────────
+  'mushroom-cavern': [
+    { id: 'giant-mushroom', name: 'Giant Mushroom', icon: 'tree', color: '#EC4899' },
+    { id: 'spore-cloud',    name: 'Spore Cloud',    icon: 'star', color: '#C4B5FD' },
+    { id: 'cave-moth',      name: 'Cave Moth',      icon: 'npc',  color: '#A8A29E' },
+  ],
+  'underground-lake': [
+    { id: 'ferrymans-boat', name: "Ferryman's Boat", icon: 'chest',   color: '#52525B' },
+    { id: 'pale-fish',      name: 'Pale Fish',       icon: 'gem',     color: '#BAE6FD' },
+    { id: 'echo-stone',     name: 'Echo Stone',      icon: 'crystal', color: '#67E8F9' },
+  ],
+
+  // ── Forest (new rooms) ────────────────────────────────────────────
+  'ranger-camp': [
+    { id: 'camp-fire-ring', name: 'Campfire',    icon: 'lantern', color: '#F97316' },
+    { id: 'rangers-bow',    name: "Ranger's Bow", icon: 'sword',  color: '#92400E' },
+    { id: 'trail-map',      name: 'Trail Map',   icon: 'scroll',  color: '#10B981' },
+    { id: 'bedroll',        name: 'Bedroll',     icon: 'shield',  color: '#7C5A32' },
+  ],
+  'ancient-ruins': [
+    { id: 'fallen-column',   name: 'Fallen Column',   icon: 'sign',  color: '#A8A29E' },
+    { id: 'moss-idol',       name: 'Moss Idol',       icon: 'npc',   color: '#10B981' },
+    { id: 'engraved-tablet', name: 'Engraved Tablet', icon: 'book',  color: '#78716C' },
+  ],
+
+  // ── Overworld (new rooms) ─────────────────────────────────────────
+  'farm': [
+    { id: 'scarecrow',     name: 'Scarecrow',  icon: 'npc',   color: '#FBBF24' },
+    { id: 'hay-cart',      name: 'Hay Cart',   icon: 'chest', color: '#92400E' },
+    { id: 'prize-pig',     name: 'Prize Pig',  icon: 'heart', color: '#EC4899' },
+    { id: 'farm-windmill', name: 'Windmill',   icon: 'star',  color: '#A8A29E' },
+  ],
+  'harbor': [
+    { id: 'harbor-lighthouse', name: 'Lighthouse',  icon: 'lantern', color: '#EF4444' },
+    { id: 'fishing-net',       name: 'Fishing Net', icon: 'scroll',  color: '#7C5A32' },
+    { id: 'harbor-bell',       name: 'Harbor Bell', icon: 'star',    color: '#FCD34D' },
+    { id: 'moored-skiff',      name: 'Moored Skiff', icon: 'chest',  color: '#3B82F6' },
+  ],
+
+  // ── Lab (new rooms) ───────────────────────────────────────────────
+  'observatory': [
+    { id: 'telescope',    name: 'Telescope',    icon: 'crystal', color: '#3B82F6' },
+    { id: 'star-chart',   name: 'Star Chart',   icon: 'scroll',  color: '#C4B5FD' },
+    { id: 'orrery',       name: 'Orrery',       icon: 'gem',     color: '#FCD34D' },
+    { id: 'eclipse-lens', name: 'Eclipse Lens', icon: 'shield',  color: '#52525B' },
+  ],
+  'greenhouse': [
+    { id: 'rare-orchid',  name: 'Rare Orchid',  icon: 'tree',    color: '#EC4899' },
+    { id: 'watering-can', name: 'Watering Can', icon: 'potion',  color: '#06B6D4' },
+    { id: 'seed-vault',   name: 'Seed Vault',   icon: 'chest',   color: '#92400E' },
+    { id: 'grow-lamp',    name: 'Grow Lamp',    icon: 'lantern', color: '#A3E635' },
   ],
 };
 
