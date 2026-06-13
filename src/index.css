@@ -4,31 +4,60 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Self-hosted fonts — files live in public/fonts/ so they're served as static
-   assets at /fonts/* with no path-resolution, fs.allow, or bundler edge cases.
-   Latin + latin-ext subsets are enough for English UIs. */
+/* ── Orbit fonts ─────────────────────────────────────────────
+   Self-hosted in public/fonts (served at /fonts/*).
+   - Archivo (wdth+wght variable): display masthead + group headers
+   - Instrument Sans (wght variable): UI + body
+   - Doto (wght variable): dot-matrix accents — counts, chips, kickers
+   - JetBrains Mono: code spans inside rich text */
 @font-face {
-  font-family: 'Inter Variable';
+  font-family: 'Archivo Variable';
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: url('/fonts/inter-latin-ext-wght-normal.woff2') format('woff2-variations');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-@font-face {
-  font-family: 'Inter Variable';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 100 900;
-  src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+  font-stretch: 62% 125%;
+  src: url('/fonts/archivo-latin-wdth-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'JetBrains Mono Variable';
+  font-family: 'Archivo Variable';
   font-style: normal;
   font-display: swap;
-  font-weight: 100 800;
-  src: url('/fonts/jetbrains-mono-latin-ext-wght-normal.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('/fonts/archivo-latin-ext-wdth-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url('/fonts/instrument-sans-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url('/fonts/instrument-sans-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Doto Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/doto-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Doto Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/doto-latin-ext-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 @font-face {
@@ -39,6 +68,14 @@
   src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
 * {
   box-sizing: border-box;
@@ -46,14 +83,12 @@
 
 body {
   margin: 0;
-  font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
-  background: #f8f9fa;
-  color: #1a1a2e;
+  background: var(--paper);
+  color: var(--ink);
 }
 
-/* Form elements default to system fonts — inherit from parent so Tailwind
-   utilities (font-mono, font-sans) can still override via @layer utilities. */
 @layer base {
   input,
   textarea,
@@ -63,42 +98,139 @@ body {
   }
 }
 
-/* Custom scrollbar */
-.timeline-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.timeline-scroll::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-.timeline-scroll::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-.timeline-scroll::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+/* ── Orbit theme tokens ──────────────────────────────────────
+   One palette, two modes. Everything routes through these.
+   shadcn vars below are mapped onto the same scale so stock
+   components (dialogs, tooltips) inherit the look. */
+:root {
+  --paper: #F2EFE8;
+  --paper-raise: #FAF8F3;
+  --ink: #1C1A16;
+  --ink-80: rgba(28, 26, 22, 0.8);
+  --ink-65: rgba(28, 26, 22, 0.65);
+  --ink-45: rgba(28, 26, 22, 0.45);
+  --ink-28: rgba(28, 26, 22, 0.28);
+  --ink-14: rgba(28, 26, 22, 0.14);
+  --ink-07: rgba(28, 26, 22, 0.07);
+  --ink-04: rgba(28, 26, 22, 0.04);
+  --blue: #2438F5;
+  --blue-ink: #1d2880;
+  --blue-soft: rgba(36, 56, 245, 0.09);
+  --blue-mid: #8E9AF7;
+  --lavender: #C9CFF8;
+  --lavender-soft: #E2E5FB;
+  --sand: #EDE0B8;
+  --sand-soft: #F3EBD2;
+  --green: #3A7D44;
+  --green-soft: #D9E8D6;
+  --on-blue: #FFFFFF;
+  --on-sand: #1C1A16;
+  --dock-bg: #211E1A;
+  --dock-logo: #121110;
+  --dock-tile: rgba(255, 255, 255, 0.055);
+  --dock-border: rgba(255, 255, 255, 0.09);
+  --dock-text: rgba(242, 239, 232, 0.62);
+  --dock-on: rgba(255, 255, 255, 0.13);
+  --dock-on-text: #F2EFE8;
+  --wash: linear-gradient(to bottom, rgba(242, 239, 232, 0) 0%, rgba(244, 228, 205, 0.55) 55%, rgba(212, 214, 248, 0.65) 100%);
+
+  /* shadcn mapping */
+  --radius: 0.5rem;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-raise);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-raise);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--ink-07);
+  --secondary-foreground: var(--ink);
+  --muted: var(--ink-07);
+  --muted-foreground: var(--ink-45);
+  --accent: var(--ink-07);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: var(--ink-14);
+  --input: var(--ink-14);
+  --ring: var(--blue);
+  --chart-1: var(--blue);
+  --chart-2: var(--blue-mid);
+  --chart-3: var(--lavender);
+  --chart-4: var(--sand);
+  --chart-5: var(--green);
+  --sidebar: var(--paper);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);
+  --sidebar-primary-foreground: var(--paper);
+  --sidebar-accent: var(--ink-07);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--ink-14);
+  --sidebar-ring: var(--blue);
 }
 
-/* Panning cursor */
-.cursor-grab-all,
-.cursor-grab-all * {
-  cursor: grab !important;
-}
-.cursor-grabbing-all,
-.cursor-grabbing-all * {
-  cursor: grabbing !important;
+.dark {
+  --paper: #1E1B18;
+  --paper-raise: #272420;
+  --ink: #F2EFE8;
+  --ink-80: rgba(242, 239, 232, 0.82);
+  --ink-65: rgba(242, 239, 232, 0.68);
+  --ink-45: rgba(242, 239, 232, 0.46);
+  --ink-28: rgba(242, 239, 232, 0.3);
+  --ink-14: rgba(242, 239, 232, 0.15);
+  --ink-07: rgba(242, 239, 232, 0.06);
+  --ink-04: rgba(242, 239, 232, 0.04);
+  --blue: #5A6BFF;
+  --blue-ink: #C9CFF8;
+  --blue-soft: rgba(90, 107, 255, 0.16);
+  --blue-mid: #7E8DF8;
+  --lavender: #B9C1F5;
+  --lavender-soft: #3A3F66;
+  --sand: #EDE0B8;
+  --sand-soft: #2C2820;
+  --green: #8FBF98;
+  --green-soft: #2C3A2E;
+  --on-blue: #FFFFFF;
+  --on-sand: #1C1A16;
+  --dock-bg: #14120F;
+  --dock-logo: #2A2620;
+  --dock-tile: rgba(255, 255, 255, 0.05);
+  --dock-border: rgba(255, 255, 255, 0.08);
+  --dock-text: rgba(242, 239, 232, 0.6);
+  --dock-on: rgba(255, 255, 255, 0.12);
+  --dock-on-text: #F2EFE8;
+  --wash: linear-gradient(to bottom, rgba(30, 27, 24, 0) 0%, rgba(42, 38, 58, 0.55) 55%, rgba(48, 52, 110, 0.5) 100%);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-raise);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-raise);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--ink-07);
+  --secondary-foreground: var(--ink);
+  --muted: var(--ink-07);
+  --muted-foreground: var(--ink-45);
+  --accent: var(--ink-07);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: var(--ink-14);
+  --input: var(--ink-14);
+  --ring: var(--blue);
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Instrument Sans Variable', 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Archivo Variable', 'Archivo', -apple-system, sans-serif;
+  --font-dot: 'Doto Variable', 'Doto', monospace;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -130,79 +262,30 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-}
 
-:root {
-  --radius: 0.25rem;
-  --accent-cyan: #1e3a8a;
-  --accent-blue-light: rgba(30, 58, 138, 0.08);
-  --accent-blue-glow: 0 0 0 1px rgba(30, 58, 138, 0.15), 0 0 8px rgba(30, 58, 138, 0.08);
-  --accent-blue-ring: 0 0 0 2px rgba(30, 58, 138, 0.25);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.65 0.15 195);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Orbit palette exposed as Tailwind colors (bg-o-blue, text-o-ink-45, …) */
+  --color-o-paper: var(--paper);
+  --color-o-raise: var(--paper-raise);
+  --color-o-ink: var(--ink);
+  --color-o-ink-80: var(--ink-80);
+  --color-o-ink-65: var(--ink-65);
+  --color-o-ink-45: var(--ink-45);
+  --color-o-ink-28: var(--ink-28);
+  --color-o-ink-14: var(--ink-14);
+  --color-o-ink-07: var(--ink-07);
+  --color-o-ink-04: var(--ink-04);
+  --color-o-blue: var(--blue);
+  --color-o-blue-ink: var(--blue-ink);
+  --color-o-blue-soft: var(--blue-soft);
+  --color-o-blue-mid: var(--blue-mid);
+  --color-o-lavender: var(--lavender);
+  --color-o-lavender-soft: var(--lavender-soft);
+  --color-o-sand: var(--sand);
+  --color-o-sand-soft: var(--sand-soft);
+  --color-o-green: var(--green);
+  --color-o-green-soft: var(--green-soft);
+  --color-o-on-blue: var(--on-blue);
+  --color-o-on-sand: var(--on-sand);
 }
 
 @layer base {
@@ -214,50 +297,184 @@ body {
   }
 }
 
-/* ── Tech aesthetic utilities ──────────────────────────────── */
-.tech-glow {
-  box-shadow: var(--accent-blue-glow);
-}
-.tech-glow-active {
-  box-shadow: var(--accent-blue-ring);
-}
-.font-tech {
-  font-family: var(--font-mono);
-  font-feature-settings: 'tnum';
-}
+/* ── Orbit primitives ────────────────────────────────────────
+   The few compound styles used everywhere; everything else is
+   Tailwind utilities in components. */
 
-/* ── Sidebar active-item cyan accent ──────────────────────────
-   The shadcn sidebar applies bg-sidebar-accent on data-active=true;
-   we override active items here to get the WorldView-style cyan
-   highlight + left bar without touching every menu button. */
-[data-sidebar="menu-button"][data-active="true"],
-[data-sidebar="menu-sub-button"][data-active="true"] {
-  background: rgba(30, 58, 138, 0.08) !important;
-  color: #1e40af !important;
-  box-shadow: inset 2px 0 0 0 #1e3a8a;
-  border-radius: 0.25rem;
-}
-[data-sidebar="menu-button"][data-active="true"] svg,
-[data-sidebar="menu-sub-button"][data-active="true"] svg {
-  color: #1e3a8a;
-}
-
-/* Sidebar group labels — mono uppercase tech style */
-[data-sidebar="group-label"] {
-  font-family: var(--font-mono) !important;
+/* dot-matrix accent text */
+.o-dot {
+  font-family: var(--font-dot);
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 10px !important;
 }
 
-/* Sidebar nav items — mono uppercase tracked so they match the HUD label aesthetic. */
-[data-sidebar="menu-button"],
-[data-sidebar="menu-sub-button"] {
-  font-family: var(--font-mono) !important;
+/* kicker label (blue dot-matrix) */
+.o-kicker {
+  font-family: var(--font-dot);
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 11px !important;
-  font-weight: 500;
+  color: var(--blue);
+}
+
+/* display headline */
+.o-display {
+  font-family: var(--font-display);
+  font-weight: 880;
+  font-stretch: 118%;
+  line-height: 0.86;
+  letter-spacing: -0.028em;
+  text-transform: uppercase;
+}
+
+/* section header (group names) */
+.o-head {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 105%;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* graph-paper hairlines behind content */
+.o-graph {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--ink-07) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--ink-07) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 72%, transparent 100%);
+}
+
+/* warm gradient wash pinned to the bottom of the viewport */
+.o-wash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38vh;
+  pointer-events: none;
+  background: var(--wash);
+}
+
+/* soft-square checkbox */
+.o-tick {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: transparent;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+.o-tick:hover {
+  border-color: var(--blue);
+  transform: scale(1.06);
+}
+.o-tick.done {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.o-tick.done:hover {
+  transform: scale(1.02);
+}
+.o-tick svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: block;
+}
+.o-tick.done svg path {
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  animation: o-check-draw 0.25s ease-out 0.06s forwards;
+}
+@keyframes o-check-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* row press on completion */
+@keyframes o-row-press {
+  0% { transform: scale(1); }
+  38% { transform: scale(0.985); }
+  100% { transform: scale(1); }
+}
+.o-row-press {
+  animation: o-row-press 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* completion burst — soft squares scatter from the tick */
+@keyframes o-burst {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 0.95; }
+  100% { transform: translate(var(--bx), var(--by)) scale(0.4) rotate(var(--br)); opacity: 0; }
+}
+.o-burst {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: o-burst 0.55s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+
+/* group-cleared sweep */
+@keyframes o-clear-sweep {
+  0% { transform: scaleX(0); opacity: 0.9; }
+  70% { transform: scaleX(1); opacity: 0.6; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+.o-clear-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, var(--blue-soft) 30%, var(--blue-soft) 70%, transparent);
+  transform-origin: left center;
+  animation: o-clear-sweep 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+/* stage chips */
+.o-stage {
+  font-family: var(--font-dot);
+  font-weight: 800;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 7px;
+  padding: 4px 10px 3px;
+  border: none;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.o-stage.dev { background: var(--sand); color: var(--on-sand); }
+.o-stage.test { background: var(--lavender-soft); color: var(--ink); }
+.o-stage.pr { background: var(--lavender); color: #1d2880; }
+.o-stage.merged { background: var(--green-soft); color: var(--green); }
+.o-stage.build { background: var(--blue); color: var(--on-blue); }
+
+/* custom scrollbar */
+.o-scroll::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.o-scroll::-webkit-scrollbar-track,
+.timeline-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.o-scroll::-webkit-scrollbar-thumb,
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: var(--ink-14);
+  border-radius: 4px;
+}
+.o-scroll::-webkit-scrollbar-thumb:hover,
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-28);
 }
 
 /* ── Rich text editor (TipTap) ─────────────────────────────── */
@@ -265,12 +482,12 @@ body {
   min-height: 1.5em;
   outline: none;
 }
-/* Force JetBrains Mono on all editor content — overrides prose plugin defaults */
 .rte-content,
-.rte-content *,
-.rte-root .ProseMirror,
-.rte-root .ProseMirror * {
-  font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
+.rte-root .ProseMirror {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-80);
 }
 .rte-root .ProseMirror > * + * {
   margin-top: 0.5em;
@@ -279,17 +496,20 @@ body {
   margin: 0;
 }
 .rte-root .ProseMirror h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 105%;
   font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
+  color: var(--ink);
   margin-top: 0.75em;
   margin-bottom: 0.25em;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.01em;
 }
 .rte-root .ProseMirror h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
+  color: var(--ink-80);
   margin-top: 0.5em;
   margin-bottom: 0.25em;
 }
@@ -311,25 +531,24 @@ body {
   margin: 0;
 }
 .rte-root .ProseMirror blockquote {
-  border-left: 2px solid #e5e7eb;
+  border-left: 2.5px solid var(--blue);
   padding-left: 0.75em;
-  color: #6b7280;
-  font-style: italic;
+  color: var(--ink-65);
   margin: 0.25em 0;
 }
 .rte-root .ProseMirror code {
-  background: #f3f4f6;
-  color: #db2777;
+  background: var(--ink-07);
+  color: var(--blue);
   padding: 0.1em 0.35em;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 0.85em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-family: var(--font-mono);
 }
 .rte-root .ProseMirror pre {
-  background: #1f2937;
-  color: #f3f4f6;
+  background: var(--dock-bg);
+  color: #F2EFE8;
   padding: 0.6em 0.8em;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.8rem;
   overflow-x: auto;
 }
@@ -340,19 +559,21 @@ body {
   font-size: inherit;
 }
 .rte-root .ProseMirror a {
-  color: #0891b2;
+  color: var(--blue);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-
-/* Bold: bump weight so JetBrains Mono bold reads clearly against font-light base */
 .rte-root .ProseMirror strong,
 .todo-text-inline strong {
-  font-weight: 800;
+  font-weight: 700;
+  color: var(--ink);
 }
 .rte-root .ProseMirror em,
 .todo-text-inline em {
-  font-style: italic;
+  font-style: normal;
+  background: var(--blue-soft);
+  border-radius: 3px;
+  padding: 0 0.15em;
 }
 
 /* Inline display for todo item text — strip <p> margins so rendered HTML sits on one line */
@@ -371,7 +592,7 @@ body {
 .rte-root .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #d1d5db;
+  color: var(--ink-28);
   pointer-events: none;
   height: 0;
 }
