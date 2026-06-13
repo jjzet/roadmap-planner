@@ -1,16 +1,14 @@
-import { TasksToolbar } from '../layout/TasksToolbar';
 import { TodoListContent } from '../todo/TodoListContent';
 import { CleanupPanel } from '../todo/CleanupPanel';
-import { useTodoAutoSave } from '../../hooks/useTodoAutoSave';
+import { PageMasthead } from '../daily/PageMasthead';
+import { InsightBand } from '../daily/InsightBand';
+import { MarginColumn } from '../daily/MarginColumn';
 import { useTodoStore } from '../../store/todoStore';
 import { useUIStore } from '../../store/uiStore';
-import { DailyInsightWidget } from '../dashboard/DailyInsightWidget';
 import { useListCleanup } from '../../hooks/useListCleanup';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Sparkles } from 'lucide-react';
 
 export function TasksView() {
-  useTodoAutoSave();
-
   const isLoading = useTodoStore((s) => s.isLoading);
   const currentTodoId = useTodoStore((s) => s.currentTodoId);
   const todoList = useTodoStore((s) => s.todoList);
@@ -30,35 +28,50 @@ export function TasksView() {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-gray-500 text-sm">Loading page...</div>
+        <span className="o-dot text-[12px]" style={{ color: 'var(--ink-45)' }}>LOADING PAGE…</span>
       </div>
     );
   }
 
   if (!currentTodoId) {
     return (
-      <>
-        <TasksToolbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-500 text-sm">
-            Select or create a page from the sidebar.
-          </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[15px] mb-3" style={{ color: 'var(--ink-45)' }}>No page selected.</p>
+          <button
+            onClick={() => setActiveView('pages')}
+            className="text-[14px] font-bold border-none cursor-pointer rounded-xl px-5 py-2.5"
+            style={{ background: 'var(--blue)', color: 'var(--on-blue)' }}
+          >
+            Open Pages
+          </button>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <TasksToolbar
-        onCleanup={analyse}
-        isAnalysing={isAnalysing}
-        cleanupVisible={panelVisible}
-      />
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-6 pt-5 pb-0">
-          <DailyInsightWidget />
-          {panelVisible && (
+    <div className="o-scroll flex-1 overflow-y-auto">
+      <div className="max-w-[1180px] mx-auto px-10 pt-9 pb-44 w-full">
+        <PageMasthead
+          actions={
+            <button
+              onClick={analyse}
+              disabled={isAnalysing || panelVisible}
+              className="flex items-center gap-1.5 text-[12px] font-semibold cursor-pointer rounded-lg px-3 h-8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'var(--ink-07)', border: '1px solid var(--ink-14)', color: 'var(--ink-65)' }}
+              title="AI review of this page"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {isAnalysing ? 'Reviewing…' : 'Review'}
+            </button>
+          }
+        />
+
+        <InsightBand />
+
+        {panelVisible && (
+          <div className="pt-5">
             <CleanupPanel
               suggestions={suggestions}
               isAnalysing={isAnalysing}
@@ -67,48 +80,57 @@ export function TasksView() {
               onApply={applySelected}
               onDismiss={dismiss}
             />
-          )}
-        </div>
-        <TodoListContent />
-
-        {/* Sub-pages section */}
-        <div className="px-8 pb-8">
-          <div className="mt-2 border-t border-gray-100 pt-6">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-gray-400 font-semibold">Sub-pages</span>
-              <button
-                onClick={async () => {
-                  const name = prompt('Enter sub-page name:');
-                  if (name?.trim() && currentTodoId) {
-                    await createSubPage(currentTodoId, name.trim());
-                    setActiveView('tasks');
-                  }
-                }}
-                className="ml-1 flex items-center gap-1 text-[10px] text-gray-400 hover:text-blue-600 border-none bg-transparent cursor-pointer px-0"
-              >
-                <Plus className="w-3 h-3" />
-                Add
-              </button>
-            </div>
-            {subPages.length === 0 ? (
-              <p className="text-xs text-gray-300 font-mono">No sub-pages yet.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {subPages.map((page) => (
-                  <button
-                    key={page.id}
-                    onClick={() => { loadTodo(page.id); setActiveView('tasks'); }}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 text-left transition-colors cursor-pointer group"
-                  >
-                    <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500 flex-shrink-0" />
-                    <span className="text-xs font-mono text-gray-700 group-hover:text-blue-700 truncate">{page.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Spread: list + margin */}
+        <div className="flex gap-14 pt-2">
+          <div className="flex-1 min-w-0 pt-6">
+            <TodoListContent />
+
+            {/* Sub-pages */}
+            <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--ink-14)' }}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="o-dot text-[11px]" style={{ color: 'var(--ink-45)' }}>Sub-pages</span>
+                <button
+                  onClick={async () => {
+                    const name = prompt('Enter sub-page name:');
+                    if (name?.trim() && currentTodoId) {
+                      await createSubPage(currentTodoId, name.trim());
+                      setActiveView('tasks');
+                    }
+                  }}
+                  className="flex items-center gap-1 text-[11.5px] font-semibold text-o-ink-28 hover:text-o-blue border-none bg-transparent cursor-pointer px-0 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add
+                </button>
+              </div>
+              {subPages.length === 0 ? (
+                <p className="o-dot text-[10px]" style={{ color: 'var(--ink-28)' }}>None yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {subPages.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => { loadTodo(page.id); setActiveView('tasks'); }}
+                      className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-left transition-all cursor-pointer group hover:scale-[1.015]"
+                      style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)' }}
+                    >
+                      <FileText className="w-3.5 h-3.5 flex-shrink-0 text-o-ink-45 group-hover:text-o-blue transition-colors" />
+                      <span className="text-[13px] font-semibold truncate" style={{ color: 'var(--ink)' }}>
+                        {page.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <MarginColumn />
         </div>
       </div>
-    </>
+    </div>
   );
 }

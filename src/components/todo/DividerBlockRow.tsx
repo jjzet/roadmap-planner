@@ -24,18 +24,18 @@ export function DividerBlockRow({ block }: Props) {
     <div ref={setNodeRef} style={style} className="mb-4 group">
       <div className="flex items-center gap-2 py-2">
         <span
-          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+          className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
           {...attributes}
           {...listeners}
         >
           <GripVertical className="w-4 h-4" />
         </span>
 
-        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex-1 h-px" style={{ background: 'var(--ink-14)' }} />
 
         <button
           onClick={() => removeBlock(block.id)}
-          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+          className="text-o-ink-28 hover:text-o-blue opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

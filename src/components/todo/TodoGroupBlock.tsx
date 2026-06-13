@@ -19,7 +19,6 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { useTodoStore } from '@/store/todoStore';
 import { TodoItemRow } from './TodoItemRow';
 import { SubGroupCluster } from './SubGroupCluster';
-import { ProgressRing } from './ProgressRing';
 import type { TodoGroup, TodoItem, SubGroup } from '@/types';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { ChevronRight, GripVertical, Trash2, Plus, Archive } from 'lucide-react';
@@ -35,7 +34,6 @@ function buildRenderSlots(items: TodoItem[], subGroups: SubGroup[]): RenderSlot[
   const sgMap = new Map<string, SubGroup>();
   (subGroups || []).forEach((sg) => sgMap.set(sg.id, sg));
 
-  // Partition into loose and grouped
   const looseItems: TodoItem[] = [];
   const grouped = new Map<string, TodoItem[]>();
 
@@ -49,14 +47,12 @@ function buildRenderSlots(items: TodoItem[], subGroups: SubGroup[]): RenderSlot[
     }
   });
 
-  // Sort loose items: pinned first, then order
   looseItems.sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
     return a.order - b.order;
   });
 
-  // Sort items within each sub-group
   grouped.forEach((sgItems) => {
     sgItems.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
@@ -65,7 +61,6 @@ function buildRenderSlots(items: TodoItem[], subGroups: SubGroup[]): RenderSlot[
     });
   });
 
-  // Build slots with sortOrder for interleaving
   const slots: RenderSlot[] = [];
 
   looseItems.forEach((item) => {
@@ -79,7 +74,6 @@ function buildRenderSlots(items: TodoItem[], subGroups: SubGroup[]): RenderSlot[
     }
   });
 
-  // Sort by order, sub-groups before items at same order
   slots.sort((a, b) => {
     if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
     return a.type === 'subgroup' ? -1 : 1;
@@ -90,9 +84,11 @@ function buildRenderSlots(items: TodoItem[], subGroups: SubGroup[]): RenderSlot[
 
 interface Props {
   group: TodoGroup;
+  /** 1-based ordinal among the page's group blocks — drives the numbered tile. */
+  ordinal?: number;
 }
 
-export function TodoGroupBlock({ group }: Props) {
+export function TodoGroupBlock({ group, ordinal }: Props) {
   const toggleGroupCollapse = useTodoStore((s) => s.toggleGroupCollapse);
   const updateGroup = useTodoStore((s) => s.updateGroup);
   const removeGroup = useTodoStore((s) => s.removeGroup);
@@ -119,7 +115,6 @@ export function TodoGroupBlock({ group }: Props) {
   const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
   const mergeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sortable for the group itself (block-level)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id });
 
@@ -129,14 +124,12 @@ export function TodoGroupBlock({ group }: Props) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // Sensors for item-level DnD
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
   const subGroups = group.subGroups || [];
 
-  // Build interleaved render slots
   const renderSlots = useMemo(
     () => buildRenderSlots(group.items, subGroups),
     [group.items, subGroups]
@@ -145,7 +138,6 @@ export function TodoGroupBlock({ group }: Props) {
   const activeItems = useMemo(() => group.items.filter((i) => !i.archived), [group.items]);
   const archivedItems = useMemo(() => group.items.filter((i) => i.archived), [group.items]);
 
-  // All sortable IDs: item IDs + sub-group header IDs
   const sortableIds = useMemo(() => {
     const ids: string[] = [];
     renderSlots.forEach((slot) => {
@@ -159,7 +151,6 @@ export function TodoGroupBlock({ group }: Props) {
     return ids;
   }, [renderSlots]);
 
-  // Helper: find which sub-group an item belongs to
   const findItemSubGroup = useCallback(
     (itemId: string): string | undefined => {
       const item = group.items.find((it) => it.id === itemId);
@@ -168,7 +159,6 @@ export function TodoGroupBlock({ group }: Props) {
     [group.items]
   );
 
-  // Helper: check if an ID is a sub-group header
   const isSgHeader = (id: string) => typeof id === 'string' && id.startsWith('sg-header:');
   const sgHeaderId = (id: string) => id.replace('sg-header:', '');
 
@@ -188,13 +178,11 @@ export function TodoGroupBlock({ group }: Props) {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Only trigger merge indicator when both are loose items
     const activeSg = findItemSubGroup(activeId);
     const overSg = findItemSubGroup(overId);
     const bothLoose = !activeSg && !overSg && !isSgHeader(activeId) && !isSgHeader(overId);
 
     if (bothLoose && mergeTargetId !== overId) {
-      // Reset timer when target changes — requires 1.5s of sustained hover
       if (mergeTimerRef.current) clearTimeout(mergeTimerRef.current);
       mergeTimerRef.current = setTimeout(() => {
         setMergeTargetId(overId);
@@ -212,7 +200,6 @@ export function TodoGroupBlock({ group }: Props) {
     const activeId = active.id as string;
     const overId = over ? (over.id as string) : null;
 
-    // Check if merge indicator was active — create sub-group
     if (mergeTargetId && overId === mergeTargetId && !isSgHeader(activeId)) {
       createSubGroup(group.id, [activeId, overId]);
       setDragActiveId(null);
@@ -225,41 +212,33 @@ export function TodoGroupBlock({ group }: Props) {
 
     if (!overId || activeId === overId) return;
 
-    // Case 6: sub-group header dragged (reorder cluster position)
     if (isSgHeader(activeId)) {
-      // For now, sub-group headers reorder at the block level — not yet implemented
-      // as a full feature. Just no-op so it doesn't break.
       return;
     }
 
     const activeSg = findItemSubGroup(activeId);
     const overSg = isSgHeader(overId) ? sgHeaderId(overId) : findItemSubGroup(overId);
 
-    // Case 1: both loose → reorder
     if (!activeSg && !overSg) {
       reorderItems(group.id, activeId, overId);
       return;
     }
 
-    // Case 2: both in same sub-group → reorder within
     if (activeSg && overSg && activeSg === overSg && !isSgHeader(overId)) {
       reorderWithinSubGroup(group.id, activeSg, activeId, overId);
       return;
     }
 
-    // Case 3: loose item → sub-group (dropped on item inside SG or SG header)
     if (!activeSg && overSg) {
       moveItemToSubGroup(group.id, activeId, overSg);
       return;
     }
 
-    // Case 4: sub-group item → loose (dropped on a loose item)
     if (activeSg && !overSg) {
       removeItemFromSubGroup(group.id, activeId);
       return;
     }
 
-    // Case 5: between different sub-groups
     if (activeSg && overSg && activeSg !== overSg) {
       removeItemFromSubGroup(group.id, activeId);
       moveItemToSubGroup(group.id, activeId, isSgHeader(overId) ? sgHeaderId(overId) : overSg);
@@ -299,8 +278,23 @@ export function TodoGroupBlock({ group }: Props) {
   const completedCount = activeItems.filter((i) => i.completed).length;
   const totalCount = activeItems.length;
   const hasCompletedItems = activeItems.some((i) => i.completed);
+  const allClear = totalCount > 0 && completedCount === totalCount;
 
-  // Multi-select action bar for this group
+  // Group-cleared sweep — fires once when the last active item completes.
+  const [sweep, setSweep] = useState(false);
+  const prevAllClear = useRef(allClear);
+  useEffect(() => {
+    if (allClear && !prevAllClear.current) {
+      setSweep(true);
+      const t = setTimeout(() => setSweep(false), 950);
+      return () => clearTimeout(t);
+    }
+    prevAllClear.current = allClear;
+  }, [allClear]);
+  useEffect(() => {
+    prevAllClear.current = allClear;
+  }, [allClear]);
+
   const showSelectionBar = selectedGroupId === group.id && selectedItemIds.length >= 2;
 
   const handleGroupSelected = () => {
@@ -308,7 +302,6 @@ export function TodoGroupBlock({ group }: Props) {
     clearSelection();
   };
 
-  // Get dragged item for overlay
   const draggedItem = dragActiveId
     ? group.items.find((it) => it.id === dragActiveId)
     : null;
@@ -317,217 +310,244 @@ export function TodoGroupBlock({ group }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="mb-4 flex items-start gap-1 group"
+      className="mb-12 flex items-start gap-1.5 group relative"
     >
-      {/* Drag handle — outside the pill container */}
+      {/* Drag handle */}
       <span
-        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-2.5 flex-shrink-0"
+        className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-2 flex-shrink-0"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-4 h-4" />
       </span>
 
-      {/* Pill container */}
-      <div className="flex-1 min-w-0 border border-gray-200 rounded-xl bg-white overflow-hidden">
-      {/* Group Header */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-transparent">
-        <button
-          className="cursor-pointer text-gray-400 hover:text-gray-600 border-none bg-transparent p-0"
-          onClick={() => toggleGroupCollapse(group.id)}
+      <div className="flex-1 min-w-0 relative">
+        {sweep && <span className="o-clear-sweep rounded-lg" aria-hidden />}
+
+        {/* Group Header — numbered tile + 2px ink rule */}
+        <div
+          className="flex items-center gap-3.5 pb-2.5 mb-1"
+          style={{ borderBottom: '2px solid var(--ink)' }}
         >
-          <ChevronRight
-            className={`w-4 h-4 transition-transform ${!group.collapsed ? 'rotate-90' : ''}`}
-          />
-        </button>
+          {ordinal !== undefined && (
+            <span
+              className="o-dot text-[14px] rounded-[7px] px-2 pt-[5px] pb-1 leading-none select-none"
+              style={{ background: 'var(--sand)', color: 'var(--on-sand)', fontWeight: 900 }}
+            >
+              {String(ordinal).padStart(2, '0')}
+            </span>
+          )}
 
-        {isEditingName ? (
-          <input
-            ref={nameInputRef}
-            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] flex-1 border-none outline-none bg-transparent px-0 py-0"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            onBlur={handleNameBlur}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              if (e.key === 'Escape') { setNameInput(group.name); setIsEditingName(false); }
-            }}
-          />
-        ) : (
-          <h3
-            className="text-[12px] font-mono font-semibold text-gray-700 uppercase tracking-[0.15em] cursor-pointer"
-            onClick={() => toggleGroupCollapse(group.id)}
-            onDoubleClick={() => { setNameInput(group.name); setIsEditingName(true); }}
-          >
-            {group.name}
-          </h3>
-        )}
+          {isEditingName ? (
+            <input
+              ref={nameInputRef}
+              className="o-head text-[16px] flex-1 border-none outline-none bg-transparent px-0 py-0"
+              style={{ color: 'var(--ink)' }}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={handleNameBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') { setNameInput(group.name); setIsEditingName(false); }
+              }}
+            />
+          ) : (
+            <h3
+              className="o-head text-[16px] cursor-pointer flex-1 truncate m-0"
+              style={{ color: 'var(--ink)' }}
+              onClick={() => toggleGroupCollapse(group.id)}
+              onDoubleClick={() => { setNameInput(group.name); setIsEditingName(true); }}
+            >
+              {group.name}
+            </h3>
+          )}
 
-        {/* Trash — next to title */}
-        <button
-          onClick={() => {
-            if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
-              removeGroup(group.id);
-            }
-          }}
-          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Spacer pushes ring to far right */}
-        <div className="flex-1" />
-
-        {hasCompletedItems && (
+          {/* Trash */}
           <button
-            onClick={() => archiveCompletedItems(group.id)}
-            className="text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
-            title="Archive completed items"
+            onClick={() => {
+              if (window.confirm(`Delete group "${group.name}" and all its items?`)) {
+                removeGroup(group.id);
+              }
+            }}
+            className="text-o-ink-28 hover:text-o-blue opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
           >
-            <Archive className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
-        )}
 
-        <ProgressRing completed={completedCount} total={totalCount} />
-      </div>
+          {/* Archive completed */}
+          {hasCompletedItems && (
+            <button
+              onClick={() => archiveCompletedItems(group.id)}
+              className="text-o-ink-28 hover:text-o-blue opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0"
+              title="Archive completed items"
+            >
+              <Archive className="w-3.5 h-3.5" />
+            </button>
+          )}
 
-      {/* Items — interleaved with sub-groups */}
-      {!group.collapsed && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          <SortableContext
-            items={sortableIds}
-            strategy={verticalListSortingStrategy}
+          {/* Count */}
+          <span className="o-dot text-[13px]" style={{ color: allClear ? 'var(--blue)' : 'var(--ink-65)' }}>
+            <b style={{ color: allClear ? 'var(--blue)' : 'var(--ink)' }}>{completedCount}</b>/{totalCount}
+          </span>
+
+          {/* Collapse chevron */}
+          <button
+            className="cursor-pointer text-o-ink-45 hover:text-o-ink border-none bg-transparent p-0"
+            onClick={() => toggleGroupCollapse(group.id)}
           >
-            <div className="px-4 pb-3">
-              {renderSlots.map((slot) => {
-                if (slot.type === 'subgroup') {
+            <ChevronRight
+              className={`w-4 h-4 transition-transform ${!group.collapsed ? 'rotate-90' : ''}`}
+            />
+          </button>
+        </div>
+
+        {/* Items — interleaved with sub-groups */}
+        {!group.collapsed && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <SortableContext
+              items={sortableIds}
+              strategy={verticalListSortingStrategy}
+            >
+              <div>
+                {renderSlots.map((slot) => {
+                  if (slot.type === 'subgroup') {
+                    return (
+                      <SubGroupCluster
+                        key={slot.subGroup.id}
+                        subGroup={slot.subGroup}
+                        items={slot.items}
+                        groupId={group.id}
+                      />
+                    );
+                  }
                   return (
-                    <SubGroupCluster
-                      key={slot.subGroup.id}
-                      subGroup={slot.subGroup}
-                      items={slot.items}
-                      groupId={group.id}
-                    />
+                    <div
+                      key={slot.item.id}
+                      className={mergeTargetId === slot.item.id ? 'rounded-lg transition-all' : ''}
+                      style={
+                        mergeTargetId === slot.item.id
+                          ? { boxShadow: 'inset 0 0 0 2px var(--blue-mid)', background: 'var(--blue-soft)' }
+                          : undefined
+                      }
+                    >
+                      <TodoItemRow
+                        item={slot.item}
+                        groupId={group.id}
+                        subGroups={subGroups}
+                      />
+                    </div>
                   );
-                }
-                return (
-                  <div
-                    key={slot.item.id}
-                    className={
-                      mergeTargetId === slot.item.id
-                        ? 'rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/30 transition-all'
-                        : ''
-                    }
-                  >
-                    <TodoItemRow
-                      item={slot.item}
-                      groupId={group.id}
-                      subGroups={subGroups}
+                })}
+
+                {/* Inline add item */}
+                {isAddingItem ? (
+                  <div className="flex items-center gap-2.5 py-2 pl-9">
+                    <span className="o-tick" style={{ width: 20, height: 20, borderColor: 'var(--ink-28)' }} />
+                    <input
+                      className="flex-1 text-[15px] font-medium border-none outline-none bg-transparent"
+                      style={{ color: 'var(--ink)' }}
+                      placeholder="Type a task…"
+                      value={newItemText}
+                      onChange={(e) => setNewItemText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAddItem();
+                        if (e.key === 'Escape') { setIsAddingItem(false); setNewItemText(''); }
+                      }}
+                      onBlur={() => {
+                        if (newItemText.trim()) handleAddItem();
+                        setIsAddingItem(false);
+                      }}
+                      autoFocus
                     />
                   </div>
-                );
-              })}
-
-              {/* Inline add item */}
-              {isAddingItem ? (
-                <div className="flex items-center gap-2 py-1.5 pl-6">
-                  <div className="w-4 h-4 rounded border border-gray-300 flex-shrink-0" />
-                  <input
-                    className="flex-1 text-[12px] font-mono font-light border-none outline-none bg-transparent placeholder:text-gray-400"
-                    placeholder="Type a task..."
-                    value={newItemText}
-                    onChange={(e) => setNewItemText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddItem();
-                      if (e.key === 'Escape') { setIsAddingItem(false); setNewItemText(''); }
-                    }}
-                    onBlur={() => {
-                      if (newItemText.trim()) handleAddItem();
-                      setIsAddingItem(false);
-                    }}
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsAddingItem(true)}
-                  className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-600 cursor-pointer border-none bg-transparent py-1.5 pl-6"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add item
-                </button>
-              )}
-
-              {/* Multi-select action bar */}
-              {showSelectionBar && (
-                <div className="flex items-center gap-3 mt-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                  <span className="text-xs font-medium text-blue-700">
-                    {selectedItemIds.length} items selected
-                  </span>
+                ) : (
                   <button
-                    onClick={handleGroupSelected}
-                    className="text-xs font-medium text-white bg-blue-500 hover:bg-blue-700 px-3 py-1 rounded-md border-none cursor-pointer transition-colors"
+                    onClick={() => setIsAddingItem(true)}
+                    className="flex items-center gap-1.5 text-[13px] font-semibold text-o-ink-28 hover:text-o-blue cursor-pointer border-none bg-transparent py-2 pl-9 transition-colors"
                   >
-                    Group
+                    <Plus className="w-3.5 h-3.5" />
+                    Add item
                   </button>
-                  <button
-                    onClick={clearSelection}
-                    className="text-xs text-gray-500 hover:text-gray-700 border-none bg-transparent cursor-pointer"
+                )}
+
+                {/* Multi-select action bar */}
+                {showSelectionBar && (
+                  <div
+                    className="flex items-center gap-3 mt-2 px-4 py-2.5 rounded-xl"
+                    style={{ background: 'var(--blue-soft)', border: '1px solid var(--blue-mid)' }}
                   >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-            </div>
-
-            {/* Archived section — full-width footer with clear separator */}
-            {archivedItems.length > 0 && (
-              <div className="border-t border-gray-200 bg-gray-50/50">
-                <button
-                  onClick={() => setShowArchived(!showArchived)}
-                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-none bg-transparent w-full px-4 py-2 text-left"
-                >
-                  <ChevronRight
-                    className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
-                  />
-                  Archived ({archivedItems.length})
-                </button>
-                {showArchived && (
-                  <div className="px-4 pb-3 opacity-60">
-                    {archivedItems.map((item) => (
-                      <TodoItemRow
-                        key={item.id}
-                        item={item}
-                        groupId={group.id}
-                        isArchived
-                      />
-                    ))}
+                    <span className="text-xs font-semibold text-o-blue">
+                      {selectedItemIds.length} items selected
+                    </span>
+                    <button
+                      onClick={handleGroupSelected}
+                      className="o-dot text-[11px] px-3 py-1.5 rounded-lg border-none cursor-pointer"
+                      style={{ background: 'var(--blue)', color: 'var(--on-blue)' }}
+                    >
+                      Group
+                    </button>
+                    <button
+                      onClick={clearSelection}
+                      className="text-xs text-o-ink-45 hover:text-o-ink border-none bg-transparent cursor-pointer"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 )}
               </div>
-            )}
-          </SortableContext>
 
-          {/* Drag overlay */}
-          <DragOverlay>
-            {draggedItem ? (
-              <div className="bg-white rounded-md shadow-lg border border-gray-200 px-3 py-2 opacity-90">
-                <span className="text-sm text-gray-700">{draggedItem.text || 'Untitled'}</span>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
-      </div>{/* end pill container */}
+              {/* Archived section */}
+              {archivedItems.length > 0 && (
+                <div className="mt-1">
+                  <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className="o-dot flex items-center gap-1.5 text-[10.5px] text-o-ink-28 hover:text-o-ink-65 cursor-pointer border-none bg-transparent w-full py-2 text-left"
+                  >
+                    <ChevronRight
+                      className={`w-3 h-3 transition-transform ${showArchived ? 'rotate-90' : ''}`}
+                    />
+                    Archived ({archivedItems.length})
+                  </button>
+                  {showArchived && (
+                    <div className="pb-3 opacity-60">
+                      {archivedItems.map((item) => (
+                        <TodoItemRow
+                          key={item.id}
+                          item={item}
+                          groupId={group.id}
+                          isArchived
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </SortableContext>
+
+            {/* Drag overlay */}
+            <DragOverlay>
+              {draggedItem ? (
+                <div
+                  className="rounded-lg px-3 py-2 opacity-95"
+                  style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)', boxShadow: '0 16px 40px -12px rgba(0,0,0,.3)' }}
+                >
+                  <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                    {(draggedItem.text || 'Untitled').replace(/<[^>]*>/g, '')}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
+      </div>
     </div>
   );
 }

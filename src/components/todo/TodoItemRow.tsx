@@ -6,18 +6,21 @@ import { useTodoStore } from '@/store/todoStore';
 import { useGoalStore } from '@/store/goalStore';
 import { useUIStore } from '@/store/uiStore';
 import type { TodoItem, DevStatus } from '@/types';
-import { GripVertical, ExternalLink, ChevronRight, ArchiveRestore, X, Target } from 'lucide-react';
+import {
+  GripVertical, ExternalLink, ChevronRight, ArchiveRestore, X, Target,
+  Pin, Link2, CodeXml, CalendarDays, Archive, Layers, Trash2,
+} from 'lucide-react';
 import { RichTextEditor } from '../editor/RichTextEditor';
+import { OTick } from '../shared/OTick';
 import { parseDateExpression, formatDatePreview, formatRelativeTime } from '@/lib/dates';
 import type { SubGroup } from '@/types';
 
-
-const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; className: string; next: DevStatus | undefined }> = {
-  dev:    { label: 'dev',    className: 'bg-amber-100 text-amber-700 hover:bg-amber-200',    next: 'test' },
-  test:   { label: 'test',   className: 'bg-purple-100 text-purple-700 hover:bg-purple-200', next: 'pr' },
-  pr:     { label: 'PR',     className: 'bg-blue-100 text-blue-700 hover:bg-blue-200',       next: 'merged' },
-  merged: { label: 'merged', className: 'bg-green-100 text-green-700 hover:bg-green-200',    next: 'build' },
-  build:  { label: 'build',  className: 'bg-teal-100 text-teal-700 hover:bg-teal-200',       next: undefined },
+const DEV_STATUS_CONFIG: Record<DevStatus, { label: string; next: DevStatus | undefined }> = {
+  dev:    { label: 'dev',    next: 'test' },
+  test:   { label: 'test',   next: 'pr' },
+  pr:     { label: 'pr',     next: 'merged' },
+  merged: { label: 'merged', next: 'build' },
+  build:  { label: 'build',  next: undefined },
 };
 
 interface Props {
@@ -36,19 +39,20 @@ function formatDueDate(dateStr: string): DueInfo {
   const due = new Date(dateStr + 'T00:00:00');
   const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0)  return { label: `${Math.abs(diffDays)}d overdue`, urgency: 'overdue' };
-  if (diffDays === 0) return { label: 'Today',                          urgency: 'today' };
-  if (diffDays === 1) return { label: 'Tomorrow',                       urgency: 'soon' };
-  if (diffDays <= 7)  return { label: `${diffDays}d`,                   urgency: 'soon' };
+  if (diffDays < 0)  return { label: `${Math.abs(diffDays)}d over`, urgency: 'overdue' };
+  if (diffDays === 0) return { label: 'today',                      urgency: 'today' };
+  if (diffDays === 1) return { label: 'tmrw',                       urgency: 'soon' };
+  if (diffDays <= 7)  return { label: `${diffDays}d`,               urgency: 'soon' };
   const m = due.toLocaleString('default', { month: 'short' });
   return { label: `${m} ${due.getDate()}`, urgency: 'future' };
 }
 
-const DUE_BADGE: Record<Urgency, string> = {
-  overdue: 'bg-red-50 text-red-600 border border-red-200',
-  today:   'bg-orange-50 text-orange-600 border border-orange-200',
-  soon:    'bg-amber-50 text-amber-600 border border-amber-100',
-  future:  'bg-gray-50 text-gray-500 border border-gray-200',
+// Urgency reads through the blue, never a new hue: overdue shouts, today hums.
+const DUE_BADGE: Record<Urgency, React.CSSProperties> = {
+  overdue: { background: 'var(--blue)', color: 'var(--on-blue)' },
+  today:   { background: 'var(--blue-soft)', color: 'var(--blue)' },
+  soon:    { background: 'var(--ink-07)', color: 'var(--ink-65)' },
+  future:  { background: 'transparent', color: 'var(--ink-45)' },
 };
 
 export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] }: Props) {
@@ -68,6 +72,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkValue, setLinkValue] = useState(item.link);
   const [notesValue, setNotesValue] = useState(item.notes || '');
+  const [pressed, setPressed] = useState(false);
 
   const [showDateInput, setShowDateInput] = useState(false);
   const [dateInputValue, setDateInputValue] = useState('');
@@ -103,6 +108,14 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
     useSortable({ id: item.id });
 
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  const handleToggle = () => {
+    if (!item.completed) {
+      setPressed(true);
+      setTimeout(() => setPressed(false), 320);
+    }
+    toggleItem(groupId, item.id);
+  };
 
   const handleRichTextSave = (html: string) => {
     setIsEditing(false);
@@ -180,16 +193,6 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
   const isExpanded = item.expanded ?? false;
   const hasNotes = !!(item.notes && item.notes.trim());
 
-  // Left accent bar + row tint for urgency — straight vertical bar, no rounded corners
-  const urgencyAccent =
-    dueInfo?.urgency === 'overdue' ? 'bg-red-400' :
-    dueInfo?.urgency === 'today'   ? 'bg-orange-400' :
-    null;
-  const urgencyTint =
-    dueInfo?.urgency === 'overdue' ? 'bg-red-50/25' :
-    dueInfo?.urgency === 'today'   ? 'bg-orange-50/25' :
-    '';
-
   const handleRowClick = (e: React.MouseEvent) => {
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
       e.preventDefault();
@@ -197,25 +200,32 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
     }
   };
 
+  const hoverIconClass =
+    'flex-shrink-0 border-none bg-transparent cursor-pointer p-0.5 rounded transition-colors text-o-ink-28 hover:text-o-blue';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group/item relative pl-1 ${urgencyTint} ${item.pinned ? 'bg-amber-50/50' : ''} ${isSelected ? 'ring-1 ring-blue-300 bg-blue-50/30 rounded-md' : ''}`}
+      className={`group/item relative ${pressed ? 'o-row-press' : ''} ${isSelected ? 'rounded-lg' : ''}`}
       onClick={handleRowClick}
     >
-      {urgencyAccent && (
+      {isSelected && (
         <span
-          className={`absolute left-0 top-0 bottom-0 w-[2px] ${urgencyAccent} pointer-events-none`}
+          className="absolute inset-0 rounded-lg pointer-events-none"
+          style={{ background: 'var(--blue-soft)', boxShadow: 'inset 0 0 0 1.5px var(--blue-mid)' }}
           aria-hidden
         />
       )}
-      {/* Main row */}
-      <div className="flex items-center gap-1.5 py-0.5 px-1 hover:bg-gray-50/70 rounded-md">
 
+      {/* Main row */}
+      <div
+        className="relative flex items-center gap-2.5 py-[9px] px-1 rounded-lg transition-colors hover:bg-o-ink-04"
+        style={{ borderBottom: '1px solid var(--ink-07)' }}
+      >
         {/* Drag handle */}
         <span
-          className="text-gray-200 hover:text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0"
+          className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 -ml-0.5"
           {...attributes}
           {...listeners}
         >
@@ -225,26 +235,30 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
         {/* Expand chevron */}
         <button
           onClick={() => toggleItemExpand(groupId, item.id)}
-          className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-all ${
+          className={`flex-shrink-0 border-none bg-transparent cursor-pointer p-0 transition-all -ml-1 ${
             isExpanded || hasNotes
-              ? 'text-gray-400 opacity-100'
-              : 'text-gray-300 opacity-0 group-hover/item:opacity-100'
+              ? 'text-o-ink-45 opacity-100'
+              : 'text-o-ink-28 opacity-0 group-hover/item:opacity-100'
           }`}
           title={isExpanded ? 'Collapse notes' : 'Expand notes'}
         >
           <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
         </button>
 
-        {/* Checkbox */}
-        <input
-          type="checkbox"
-          checked={item.completed}
-          onChange={() => toggleItem(groupId, item.id)}
-          className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-blue-500 flex-shrink-0"
-        />
+        {/* Soft-square tick */}
+        <OTick checked={item.completed} onToggle={handleToggle} />
+
+        {/* Pin marker — small soft square before the text */}
+        {item.pinned && (
+          <span
+            className="w-2 h-2 rounded-[2.5px] flex-shrink-0"
+            style={{ background: 'var(--blue)' }}
+            title="Pinned"
+          />
+        )}
 
         {/* ── Content area ── */}
-        <div className="flex items-center gap-1 flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
 
           {/* Text / edit input */}
           {isEditing ? (
@@ -258,59 +272,69 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             </div>
           ) : (
             <span
-              className={`todo-text-inline text-[12px] font-mono font-light cursor-text whitespace-nowrap ${item.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}
+              className="todo-text-inline text-[15px] font-medium cursor-text whitespace-nowrap overflow-hidden text-ellipsis"
+              style={
+                item.completed
+                  ? {
+                      color: 'var(--ink-45)',
+                      textDecoration: 'line-through',
+                      textDecorationColor: 'var(--blue)',
+                      textDecorationThickness: '1.5px',
+                    }
+                  : { color: 'var(--ink)', letterSpacing: '-0.008em' }
+              }
               onClick={() => setIsEditing(true)}
             >
               {item.text ? (
                 <span dangerouslySetInnerHTML={{ __html: item.text }} />
               ) : (
-                <span className="text-gray-300 italic">Untitled</span>
+                <span style={{ color: 'var(--ink-28)' }}>Untitled</span>
               )}
             </span>
           )}
 
-          {/* ── Always-visible indicators (zero gap from text) ── */}
-
-          {/* Dev status badge */}
+          {/* Dev status chip */}
           {item.devStatus && (
             <button
               onClick={cycleDevStatus}
-              className={`text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DEV_STATUS_CONFIG[item.devStatus].className}`}
-              title={`Status: ${item.devStatus} — click to advance`}
+              className={`o-stage ${item.devStatus} flex-shrink-0`}
+              title={`Stage: ${item.devStatus} — click to advance`}
             >
               {DEV_STATUS_CONFIG[item.devStatus].label}
             </button>
           )}
 
-          {/* Due date badge — prominent pill with urgency colour */}
+          {/* Due date chip */}
           {dueInfo && !showDateInput && (
             <button
               onClick={openDateInput}
-              className={`text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded flex-shrink-0 border-none cursor-pointer transition-colors ${DUE_BADGE[dueInfo.urgency]}`}
+              className="o-dot flex-shrink-0 border-none cursor-pointer rounded-[6px] px-2 py-[3px] text-[10.5px]"
+              style={DUE_BADGE[dueInfo.urgency]}
               title={`Due: ${item.dueDate} — click to edit`}
             >
               {dueInfo.label}
             </button>
           )}
 
-          {/* Linked goal badge */}
+          {/* Linked goal chip */}
           {linkedGoal && (
             <span
-              className="group/goal inline-flex items-center gap-1 flex-shrink-0 max-w-[180px] text-[10px] font-mono font-medium tabular-nums px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100/80 transition-colors"
+              className="group/goal inline-flex items-center gap-1 flex-shrink-0 max-w-[180px] rounded-[6px] px-2 py-[3px] transition-colors"
+              style={{ background: 'var(--sand)', color: 'var(--on-sand)' }}
               title={`Goal: ${linkedGoal.title || 'Untitled goal'} — click to open Goals`}
             >
               <button
                 onClick={handleGoalClick}
-                className="inline-flex items-center gap-1 border-none bg-transparent cursor-pointer p-0 text-amber-700 min-w-0"
+                className="inline-flex items-center gap-1 border-none bg-transparent cursor-pointer p-0 min-w-0"
+                style={{ color: 'var(--on-sand)' }}
               >
                 <Target className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">
-                  {linkedGoal.title || <span className="italic text-amber-600/70">Untitled goal</span>}
-                </span>
+                <span className="o-dot truncate text-[10px]">{linkedGoal.title || 'Untitled goal'}</span>
               </button>
               <button
                 onClick={handleGoalUnlink}
-                className="opacity-0 group-hover/goal:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 text-amber-500 hover:text-red-500 flex-shrink-0"
+                className="opacity-0 group-hover/goal:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+                style={{ color: 'var(--on-sand)' }}
                 title="Unlink from goal"
                 aria-label="Unlink from goal"
               >
@@ -325,7 +349,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
               href={item.link.startsWith('http') ? item.link : `https://${item.link}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-700 flex-shrink-0"
+              className="flex-shrink-0 text-o-blue hover:opacity-70"
               title={item.link}
               onClick={(e) => e.stopPropagation()}
             >
@@ -338,7 +362,8 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-1 flex-shrink-0">
               <input
                 ref={dateTextRef}
-                className="text-xs border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-blue-500 w-28 bg-white"
+                className="text-xs rounded-md px-2 py-1 outline-none w-28"
+                style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)', color: 'var(--ink)' }}
                 placeholder="tomorrow, +3d, fri…"
                 value={dateInputValue}
                 onChange={handleDateInputChange}
@@ -347,7 +372,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                 autoFocus
               />
               {datePreview && (
-                <span className="text-[10px] text-blue-600 whitespace-nowrap">{datePreview}</span>
+                <span className="o-dot text-[10px] whitespace-nowrap text-o-blue">{datePreview}</span>
               )}
               <button
                 onMouseDown={(e) => {
@@ -356,7 +381,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
                   setDateInputValue('');
                   setDatePreview('');
                 }}
-                className="text-gray-300 hover:text-gray-500 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
+                className="text-o-ink-28 hover:text-o-ink-65 border-none bg-transparent cursor-pointer p-0 flex-shrink-0"
                 title="Cancel"
               >
                 <X className="w-3 h-3" />
@@ -364,120 +389,101 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             </div>
           )}
 
-          {/* ── Hover-only action buttons (appear after active indicators) ── */}
+          {/* ── Hover-only action buttons ── */}
           {!isArchived && !showDateInput && (
             <div className="flex items-center gap-0.5 flex-shrink-0 ml-0.5">
               <button
                 onClick={() => togglePinItem(groupId, item.id)}
-                className={`group/btn border-none bg-transparent cursor-pointer p-0.5 rounded transition-opacity ${
-                  item.pinned ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'
-                }`}
+                className={`${hoverIconClass} ${item.pinned ? 'opacity-100 !text-o-blue' : 'opacity-0 group-hover/item:opacity-100'}`}
                 title={item.pinned ? 'Unpin' : 'Pin to top'}
               >
-                <img src={item.pinned ? '/icons/toolbar/pin_blue.png' : '/icons/toolbar/pin.png'} className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/pin_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
+                <Pin className="w-3.5 h-3.5" fill={item.pinned ? 'currentColor' : 'none'} />
               </button>
               <div className={`flex items-center gap-0.5 transition-opacity ${showSubGroupPicker ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100'}`}>
-              <button
-                onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title={item.link ? 'Edit link' : 'Add link'}
-              >
-                <img src="/icons/toolbar/link.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/link_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
-              </button>
-              <button
-                onClick={cycleDevStatus}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title="Set dev status"
-              >
-                <img src="/icons/toolbar/code.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/code_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
-              </button>
-              <button
-                onClick={openDateInput}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title={item.dueDate ? 'Edit due date' : 'Set due date'}
-              >
-                <img src="/icons/toolbar/calendar.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/calendar_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
-              </button>
-              <button
-                onClick={() => archiveItem(groupId, item.id)}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title="Archive item"
-              >
-                <img src="/icons/toolbar/archive.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/archive_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
-              </button>
-              <div className="relative" ref={subGroupPickerRef}>
                 <button
-                  ref={subGroupBtnRef}
-                  onClick={() => setShowSubGroupPicker((v) => !v)}
-                  className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                  title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
+                  onClick={() => { setLinkValue(item.link); setShowLinkInput(!showLinkInput); }}
+                  className={hoverIconClass}
+                  title={item.link ? 'Edit link' : 'Add link'}
                 >
-                  <img src={item.subGroupId ? '/icons/toolbar/layers_blue.png' : '/icons/toolbar/layers.png'} className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                  <img src="/icons/toolbar/layers_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
+                  <Link2 className="w-3.5 h-3.5" />
                 </button>
-                {showSubGroupPicker && subGroupMenuPos && createPortal(
-                  <div
-                    className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[160px] py-1"
-                    style={{ top: subGroupMenuPos.top, right: subGroupMenuPos.right }}
-                    onMouseDown={(e) => e.stopPropagation()}
+                <button onClick={cycleDevStatus} className={hoverIconClass} title="Set dev status">
+                  <CodeXml className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={openDateInput} className={hoverIconClass} title={item.dueDate ? 'Edit due date' : 'Set due date'}>
+                  <CalendarDays className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => archiveItem(groupId, item.id)} className={hoverIconClass} title="Archive item">
+                  <Archive className="w-3.5 h-3.5" />
+                </button>
+                <div className="relative" ref={subGroupPickerRef}>
+                  <button
+                    ref={subGroupBtnRef}
+                    onClick={() => setShowSubGroupPicker((v) => !v)}
+                    className={`${hoverIconClass} ${item.subGroupId ? '!text-o-blue' : ''}`}
+                    title={item.subGroupId ? 'Move / remove from sub-group' : 'Add to sub-group'}
                   >
-                    {subGroups.length > 0 && (
-                      <>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-400 px-3 pt-1 pb-0.5">Sub-groups</p>
-                        {subGroups.map((sg) => (
-                          <button
-                            key={sg.id}
-                            onClick={() => {
-                              moveItemToSubGroup(groupId, item.id, sg.id);
-                              setShowSubGroupPicker(false);
-                            }}
-                            className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[12px] font-mono hover:bg-gray-50 border-none bg-transparent cursor-pointer ${item.subGroupId === sg.id ? 'text-blue-600' : 'text-gray-700'}`}
-                          >
-                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: sg.color }} />
-                            {sg.name || 'Unnamed'}
-                            {item.subGroupId === sg.id && <span className="ml-auto text-[10px] text-blue-500">current</span>}
-                          </button>
-                        ))}
-                        <div className="border-t border-gray-100 my-1" />
-                      </>
-                    )}
-                    <button
-                      onClick={() => {
-                        createSubGroup(groupId, [item.id]);
-                        setShowSubGroupPicker(false);
+                    <Layers className="w-3.5 h-3.5" />
+                  </button>
+                  {showSubGroupPicker && subGroupMenuPos && createPortal(
+                    <div
+                      className="fixed rounded-xl z-50 min-w-[180px] py-1.5"
+                      style={{
+                        top: subGroupMenuPos.top,
+                        right: subGroupMenuPos.right,
+                        background: 'var(--paper-raise)',
+                        border: '1px solid var(--ink-14)',
+                        boxShadow: '0 16px 40px -12px rgba(0,0,0,.25)',
                       }}
-                      className="w-full text-left px-3 py-1.5 text-[12px] font-mono text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer"
+                      onMouseDown={(e) => e.stopPropagation()}
                     >
-                      + New sub-group
-                    </button>
-                    {item.subGroupId && (
+                      {subGroups.length > 0 && (
+                        <>
+                          <p className="o-dot text-[9.5px] text-o-ink-45 px-3 pt-1 pb-0.5">Sub-groups</p>
+                          {subGroups.map((sg) => (
+                            <button
+                              key={sg.id}
+                              onClick={() => {
+                                moveItemToSubGroup(groupId, item.id, sg.id);
+                                setShowSubGroupPicker(false);
+                              }}
+                              className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[13px] font-medium hover:bg-o-ink-04 border-none bg-transparent cursor-pointer ${item.subGroupId === sg.id ? 'text-o-blue' : 'text-o-ink'}`}
+                            >
+                              <span className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{ backgroundColor: sg.color }} />
+                              {sg.name || 'Unnamed'}
+                              {item.subGroupId === sg.id && <span className="o-dot ml-auto text-[9px] text-o-blue">now</span>}
+                            </button>
+                          ))}
+                          <div className="my-1" style={{ borderTop: '1px solid var(--ink-07)' }} />
+                        </>
+                      )}
                       <button
                         onClick={() => {
-                          removeItemFromSubGroup(groupId, item.id);
+                          createSubGroup(groupId, [item.id]);
                           setShowSubGroupPicker(false);
                         }}
-                        className="w-full text-left px-3 py-1.5 text-[12px] font-mono text-red-500 hover:bg-red-50 border-none bg-transparent cursor-pointer"
+                        className="w-full text-left px-3 py-1.5 text-[13px] font-medium text-o-ink hover:bg-o-ink-04 border-none bg-transparent cursor-pointer"
                       >
-                        Remove from sub-group
+                        + New sub-group
                       </button>
-                    )}
-                  </div>,
-                  document.body
-                )}
-              </div>
-              <button
-                onClick={() => removeItem(groupId, item.id)}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title="Delete item"
-              >
-                <img src="/icons/toolbar/trash.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/trash_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
-              </button>
+                      {item.subGroupId && (
+                        <button
+                          onClick={() => {
+                            removeItemFromSubGroup(groupId, item.id);
+                            setShowSubGroupPicker(false);
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-[13px] font-medium text-o-blue hover:bg-o-ink-04 border-none bg-transparent cursor-pointer"
+                        >
+                          Remove from sub-group
+                        </button>
+                      )}
+                    </div>,
+                    document.body
+                  )}
+                </div>
+                <button onClick={() => removeItem(groupId, item.id)} className={hoverIconClass} title="Delete item">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           )}
@@ -487,18 +493,13 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
             <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0 ml-0.5">
               <button
                 onClick={() => unarchiveItem(groupId, item.id)}
-                className="text-gray-300 hover:text-blue-800 border-none bg-transparent cursor-pointer p-0.5 rounded"
+                className={hoverIconClass}
                 title="Restore item"
               >
                 <ArchiveRestore className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => removeItem(groupId, item.id)}
-                className="group/btn border-none bg-transparent cursor-pointer p-0.5 rounded"
-                title="Delete item"
-              >
-                <img src="/icons/toolbar/trash.png" className="w-3.5 h-3.5 group-hover/btn:hidden" alt="" />
-                <img src="/icons/toolbar/trash_blue.png" className="w-3.5 h-3.5 hidden group-hover/btn:block" alt="" />
+              <button onClick={() => removeItem(groupId, item.id)} className={hoverIconClass} title="Delete item">
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -510,7 +511,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
           {item.tags && item.tags.length > 0 && (
             <div className="flex items-center gap-1 flex-shrink-0">
               {item.tags.map((tag) => (
-                <span key={tag} className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-gray-100 text-gray-500">
+                <span key={tag} className="o-dot text-[9.5px] px-1.5 py-0.5 rounded-[5px] bg-o-ink-07 text-o-ink-45">
                   {tag}
                 </span>
               ))}
@@ -520,7 +521,7 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
           {/* Completed-at timestamp */}
           {item.completed && item.completedAt && (
             <span
-              className="text-[10px] font-mono uppercase tracking-wider text-gray-300 flex-shrink-0"
+              className="o-dot text-[10px] text-o-ink-28 flex-shrink-0"
               title={new Date(item.completedAt).toLocaleString()}
             >
               {formatRelativeTime(item.completedAt)}
@@ -530,9 +531,13 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
 
         {/* Link input popover */}
         {showLinkInput && (
-          <div className="absolute left-8 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+          <div
+            className="absolute left-8 top-full mt-1 rounded-xl p-2 z-10"
+            style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)', boxShadow: '0 16px 40px -12px rgba(0,0,0,.25)' }}
+          >
             <input
-              className="text-sm border border-gray-300 rounded px-2 py-1.5 w-72 outline-none focus:border-blue-500"
+              className="text-sm rounded-md px-2 py-1.5 w-72 outline-none"
+              style={{ background: 'transparent', border: '1px solid var(--ink-14)', color: 'var(--ink)' }}
               placeholder="Paste JIRA link or URL..."
               value={linkValue}
               onChange={(e) => setLinkValue(e.target.value)}
@@ -549,8 +554,11 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
 
       {/* Expandable notes area */}
       {isExpanded && (
-        <div className="ml-[4.5rem] mr-2 pb-2">
-          <div className="cursor-text rounded-md px-3 py-1.5 hover:bg-gray-50/40 transition-colors">
+        <div className="ml-[3.4rem] mr-2 pb-2 pt-1">
+          <div
+            className="cursor-text rounded-lg px-3 py-2 transition-colors"
+            style={{ borderLeft: '2.5px solid var(--ink-14)' }}
+          >
             <RichTextEditor
               content={notesValue}
               onBlur={handleNotesSave}

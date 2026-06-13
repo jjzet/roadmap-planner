@@ -74,7 +74,7 @@ export interface RoadmapRecord {
 
 export type ZoomLevel = 'week' | 'month';
 
-export type ActiveView = 'roadmap' | 'tasks' | 'today' | 'insights' | 'goals' | 'journal' | 'palaces';
+export type ActiveView = 'tasks' | 'pages' | 'journal' | 'library' | 'board' | 'goals' | 'insights';
 
 // ── Todo Types ──
 
