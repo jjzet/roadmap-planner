@@ -554,11 +554,8 @@ export function TodoItemRow({ item, groupId, isArchived = false, subGroups = [] 
 
       {/* Expandable notes area */}
       {isExpanded && (
-        <div className="ml-[3.4rem] mr-2 pb-2 pt-1">
-          <div
-            className="cursor-text rounded-lg px-3 py-2 transition-colors"
-            style={{ borderLeft: '2.5px solid var(--ink-14)' }}
-          >
+        <div className="ml-[3.4rem] mr-2 pb-2.5 pt-1">
+          <div className="cursor-text px-1 py-1">
             <RichTextEditor
               content={notesValue}
               onBlur={handleNotesSave}

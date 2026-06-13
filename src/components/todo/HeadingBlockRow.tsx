@@ -44,16 +44,16 @@ export function HeadingBlockRow({ block }: Props) {
   }, []);
 
   return (
-    <div ref={setNodeRef} style={style} className="mt-10 mb-5 group">
-      <div className="flex items-center gap-2">
-        <span
-          className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+    <div ref={setNodeRef} style={style} className="mt-10 mb-5 group relative">
+      <span
+        className="absolute -left-6 top-1.5 text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
 
+      <div className="flex items-center gap-2">
         <input
           ref={inputRef}
           className="flex-1 bg-transparent border-none outline-none"

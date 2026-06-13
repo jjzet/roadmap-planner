@@ -15,13 +15,8 @@ function formatToplineDate(): string {
   });
 }
 
-interface Props {
-  /** Optional slot rendered at the right edge of the topline (e.g. Review). */
-  actions?: React.ReactNode;
-}
-
 /** Topline (date · counters · streak · theme) + masthead (page title + pulse). */
-export function PageMasthead({ actions }: Props) {
+export function PageMasthead() {
   const todoName = useTodoStore((s) => s.todoName);
   const renameTodo = useTodoStore((s) => s.renameTodo);
   const saveStatus = useTodoStore((s) => s.saveStatus);
@@ -69,7 +64,6 @@ export function PageMasthead({ actions }: Props) {
               {'▪'.repeat(Math.min(streak, 5))} {streak}-DAY STREAK
             </span>
           )}
-          {actions}
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-colors"

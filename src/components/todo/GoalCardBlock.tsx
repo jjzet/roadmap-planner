@@ -50,7 +50,7 @@ export function GoalCardBlock({ block }: Props) {
     <div ref={setNodeRef} style={style} className="mb-4 group relative">
       {/* Drag handle */}
       <span
-        className="absolute -left-5 top-3.5 text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        className="absolute -left-6 top-3.5 text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
         {...attributes}
         {...listeners}
       >
