@@ -284,15 +284,14 @@ export function TodoGroupBlock({ group, ordinal }: Props) {
   const [sweep, setSweep] = useState(false);
   const prevAllClear = useRef(allClear);
   useEffect(() => {
-    if (allClear && !prevAllClear.current) {
+    const wasClear = prevAllClear.current;
+    prevAllClear.current = allClear;
+    if (allClear && !wasClear) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot celebration on the all-clear transition
       setSweep(true);
       const t = setTimeout(() => setSweep(false), 950);
       return () => clearTimeout(t);
     }
-    prevAllClear.current = allClear;
-  }, [allClear]);
-  useEffect(() => {
-    prevAllClear.current = allClear;
   }, [allClear]);
 
   const showSelectionBar = selectedGroupId === group.id && selectedItemIds.length >= 2;
@@ -310,18 +309,18 @@ export function TodoGroupBlock({ group, ordinal }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="mb-12 flex items-start gap-1.5 group relative"
+      className="mb-12 group relative"
     >
-      {/* Drag handle */}
+      {/* Drag handle — floats in the left gutter so block content stays flush-left */}
       <span
-        className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-2 flex-shrink-0"
+        className="absolute -left-6 top-1.5 text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-4 h-4" />
       </span>
 
-      <div className="flex-1 min-w-0 relative">
+      <div className="min-w-0 relative">
         {sweep && <span className="o-clear-sweep rounded-lg" aria-hidden />}
 
         {/* Group Header — numbered tile + 2px ink rule */}

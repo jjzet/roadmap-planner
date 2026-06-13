@@ -1,12 +1,10 @@
 import { TodoListContent } from '../todo/TodoListContent';
-import { CleanupPanel } from '../todo/CleanupPanel';
 import { PageMasthead } from '../daily/PageMasthead';
 import { InsightBand } from '../daily/InsightBand';
 import { MarginColumn } from '../daily/MarginColumn';
 import { useTodoStore } from '../../store/todoStore';
 import { useUIStore } from '../../store/uiStore';
-import { useListCleanup } from '../../hooks/useListCleanup';
-import { FileText, Plus, Sparkles } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 
 export function TasksView() {
   const isLoading = useTodoStore((s) => s.isLoading);
@@ -19,11 +17,6 @@ export function TasksView() {
   const subPages = currentTodoId
     ? todoList.filter((t) => t.parentId === currentTodoId)
     : [];
-
-  const { suggestions, isAnalysing, error, isDone, analyse, applySelected, dismiss } =
-    useListCleanup();
-
-  const panelVisible = isAnalysing || isDone;
 
   if (isLoading) {
     return (
@@ -53,35 +46,9 @@ export function TasksView() {
   return (
     <div className="o-scroll flex-1 overflow-y-auto">
       <div className="max-w-[1180px] mx-auto px-10 pt-9 pb-44 w-full">
-        <PageMasthead
-          actions={
-            <button
-              onClick={analyse}
-              disabled={isAnalysing || panelVisible}
-              className="flex items-center gap-1.5 text-[12px] font-semibold cursor-pointer rounded-lg px-3 h-8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: 'var(--ink-07)', border: '1px solid var(--ink-14)', color: 'var(--ink-65)' }}
-              title="AI review of this page"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              {isAnalysing ? 'Reviewing…' : 'Review'}
-            </button>
-          }
-        />
+        <PageMasthead />
 
         <InsightBand />
-
-        {panelVisible && (
-          <div className="pt-5">
-            <CleanupPanel
-              suggestions={suggestions}
-              isAnalysing={isAnalysing}
-              error={error}
-              isDone={isDone}
-              onApply={applySelected}
-              onDismiss={dismiss}
-            />
-          </div>
-        )}
 
         {/* Spread: list + margin */}
         <div className="flex gap-14 pt-2">

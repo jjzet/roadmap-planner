@@ -128,15 +128,15 @@ export function TextBlockRow({ block }: Props) {
 
   return (
     <div ref={setNodeRef} style={style} className="mb-1 group relative">
-      <div className="flex items-start gap-2">
-        <span
-          className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+      <span
+        className="absolute -left-6 top-1 text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
 
+      <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <RichTextEditor
             content={block.content}
@@ -148,7 +148,7 @@ export function TextBlockRow({ block }: Props) {
 
         <button
           onClick={() => removeBlock(block.id)}
-          className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0 mt-1"
+          className="text-o-ink-28 hover:text-o-blue opacity-0 group-hover:opacity-100 transition-opacity border-none bg-transparent cursor-pointer p-0 flex-shrink-0 mt-1"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -156,7 +156,7 @@ export function TextBlockRow({ block }: Props) {
 
       {showSlashMenu && (
         // onMouseDown prevents editor blur when clicking menu items
-        <div className="ml-6" onMouseDown={(e) => e.preventDefault()}>
+        <div onMouseDown={(e) => e.preventDefault()}>
           <SlashCommandMenu
             query={slashQuery}
             onSelect={handleSlashSelect}
@@ -166,7 +166,7 @@ export function TextBlockRow({ block }: Props) {
       )}
 
       {showGoalPicker && (
-        <div className="ml-6">
+        <div>
           <GoalPickerModal
             onSelect={handleGoalSelect}
             onClose={handleGoalPickerClose}
