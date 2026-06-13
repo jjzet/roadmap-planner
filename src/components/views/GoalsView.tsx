@@ -14,10 +14,10 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHrs < 24) return `${diffHrs}h ago`;
   const diffDays = Math.floor(diffHrs / 24);
   if (diffDays < 7) return `${diffDays}d ago`;
-  return new Date(dateStr).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
 }
 
-function GoalCard({ goal }: { goal: { id: string; title: string; body: string; updated_at: string } }) {
+function GoalCard({ goal, ordinal }: { goal: { id: string; title: string; body: string; updated_at: string }; ordinal: number }) {
   const updateGoal = useGoalStore((s) => s.updateGoal);
   const archiveGoal = useGoalStore((s) => s.archiveGoal);
   const deleteGoal = useGoalStore((s) => s.deleteGoal);
@@ -44,52 +44,62 @@ function GoalCard({ goal }: { goal: { id: string; title: string; body: string; u
   };
 
   return (
-    <div className="bg-white rounded-md border border-gray-200 hover:shadow-md transition-all duration-200 group/goal overflow-hidden">
-      <div className="p-5">
-        {/* Title */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <input
-            ref={titleRef}
-            className="flex-1 text-base font-semibold text-gray-800 bg-transparent border-none outline-none placeholder:text-gray-300 hover:bg-gray-50/50 focus:bg-gray-50 rounded px-1 -ml-1 transition-colors"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
-            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-            placeholder="Untitled goal"
-          />
-          {/* Hover actions */}
-          <div className="flex items-center gap-0.5 opacity-0 group-hover/goal:opacity-100 transition-opacity flex-shrink-0">
-            <button
-              onClick={() => archiveGoal(goal.id)}
-              className="text-gray-300 hover:text-gray-500 border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
-              title="Archive"
-            >
-              <Archive className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleDelete}
-              className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+    <div className="group/goal pt-8 mt-8" style={{ borderTop: '2px solid var(--ink)' }}>
+      {/* Header row */}
+      <div className="flex items-start gap-4 mb-3">
+        <span
+          className="o-dot text-[13px] rounded-[7px] px-2 pt-[5px] pb-1 leading-none select-none flex-shrink-0 mt-1.5"
+          style={{ background: 'var(--sand)', color: 'var(--on-sand)', fontWeight: 900 }}
+        >
+          {String(ordinal).padStart(2, '0')}
+        </span>
+        <input
+          ref={titleRef}
+          className="flex-1 bg-transparent border-none outline-none uppercase"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 830,
+            fontStretch: '110%',
+            fontSize: 27,
+            letterSpacing: '-0.015em',
+            color: 'var(--ink)',
+          }}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={handleTitleBlur}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+          placeholder="UNTITLED GOAL"
+        />
+        <div className="flex items-center gap-0.5 opacity-0 group-hover/goal:opacity-100 transition-opacity flex-shrink-0 mt-2">
+          <button
+            onClick={() => archiveGoal(goal.id)}
+            className="text-o-ink-28 hover:text-o-blue border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
+            title="Archive"
+          >
+            <Archive className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="text-o-ink-28 hover:text-o-blue border-none bg-transparent cursor-pointer p-1 rounded transition-colors"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
-
-        {/* Body — rich text */}
-        <div className="cursor-text rounded-lg px-1 -ml-1 py-1 min-h-[40px]">
-          <RichTextEditor
-            content={goal.body || ''}
-            onBlur={handleBodySave}
-            placeholder="Write about this goal… select text to format"
-          />
-        </div>
-
-        {/* Footer */}
-        <p className="text-[10px] font-mono uppercase tracking-wider text-gray-300 mt-3">
-          Updated {formatRelativeTime(goal.updated_at)}
-        </p>
       </div>
+
+      {/* Body — the manifesto text */}
+      <div className="cursor-text min-h-[40px] max-w-[760px] ml-12">
+        <RichTextEditor
+          content={goal.body || ''}
+          onBlur={handleBodySave}
+          placeholder="Write about this goal… select text to format"
+        />
+      </div>
+
+      <p className="o-dot text-[10px] mt-4 ml-12" style={{ color: 'var(--ink-28)' }}>
+        Updated {formatRelativeTime(goal.updated_at)}
+      </p>
     </div>
   );
 }
@@ -99,60 +109,63 @@ export function GoalsView() {
   const isLoading = useGoalStore((s) => s.isLoading);
   const createGoal = useGoalStore((s) => s.createGoal);
 
+  const active = goals.filter((g) => !g.archived);
+
   const handleNewGoal = async () => {
     await createGoal('');
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="w-full px-8 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 tech-glow" />
-              <h1 className="text-[11px] font-mono font-semibold uppercase tracking-[0.2em] text-gray-700">Goals</h1>
-            </div>
-            <p className="text-2xl font-bold text-gray-800 tracking-tight mt-2">Goals & intentions</p>
-            <p className="text-sm text-gray-400 mt-1">Pin them to any page to keep them front of mind.</p>
-          </div>
+    <div className="o-scroll flex-1 overflow-y-auto">
+      <div className="max-w-[1060px] mx-auto px-10 pt-9 pb-44 w-full">
+        {/* Topline */}
+        <div className="flex items-center justify-between pb-3" style={{ borderBottom: '2px solid var(--ink)' }}>
+          <span className="text-[12.5px] font-semibold" style={{ color: 'var(--ink)' }}>
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </span>
+          <span className="o-dot text-[12.5px]" style={{ color: 'var(--ink-65)' }}>
+            {active.length} STANDING
+          </span>
+        </div>
+
+        <div className="flex items-end justify-between pt-7">
+          <h1 className="o-display m-0" style={{ fontSize: 'clamp(44px, 7vw, 84px)', color: 'var(--ink)' }}>
+            Goals
+          </h1>
           <button
             onClick={handleNewGoal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-mono font-medium uppercase tracking-wider text-gray-600 bg-white border border-gray-200 rounded-sm hover:bg-blue-50/40 hover:text-blue-700 hover:border-blue-300 transition-all cursor-pointer"
+            className="flex items-center gap-2 mb-2 text-[14px] font-bold border-none cursor-pointer rounded-xl px-5 py-3"
+            style={{ background: 'var(--blue)', color: 'var(--on-blue)' }}
           >
-            <Plus className="w-3.5 h-3.5" />
-            New Goal
+            <Plus className="w-4 h-4" />
+            New goal
           </button>
         </div>
+        <p className="m-0 mt-1 text-[14px] font-medium" style={{ color: 'var(--ink-45)' }}>
+          Where you’re heading. The Board reads these before every note.
+        </p>
 
         {/* Content */}
         {isLoading ? (
-          <div className="flex flex-col gap-3">
-            {[1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-md border border-gray-200 p-5">
-                <div className="h-5 bg-gray-100 rounded-full animate-pulse w-32 mb-3" />
-                <div className="h-3 bg-gray-100 rounded-full animate-pulse w-3/4 mb-1.5" />
-                <div className="h-3 bg-gray-100 rounded-full animate-pulse w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : goals.length === 0 ? (
+          <p className="o-dot text-[12px] pt-10" style={{ color: 'var(--ink-45)' }}>LOADING…</p>
+        ) : active.length === 0 ? (
           <div className="text-center py-20">
-            <Target className="w-10 h-10 text-gray-200 mx-auto mb-4" />
-            <p className="text-base text-gray-400 font-medium">No goals yet</p>
-            <p className="text-sm text-gray-300 mt-1 mb-6">Create your first goal to get started.</p>
+            <Target className="w-10 h-10 mx-auto mb-4" style={{ color: 'var(--ink-14)' }} />
+            <p className="text-base font-semibold m-0" style={{ color: 'var(--ink-65)' }}>No goals yet</p>
+            <p className="text-sm m-0 mt-1 mb-6" style={{ color: 'var(--ink-45)' }}>Write the first one — the Board is waiting.</p>
             <button
               onClick={handleNewGoal}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-mono font-medium uppercase tracking-wider text-white bg-blue-600 rounded-sm hover:bg-blue-700 transition-colors cursor-pointer border-none"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 text-[13px] font-bold rounded-xl cursor-pointer border-none"
+              style={{ background: 'var(--blue)', color: 'var(--on-blue)' }}
             >
               <Plus className="w-4 h-4" />
-              New Goal
+              New goal
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {goals.map((goal) => (
-              <GoalCard key={goal.id} goal={goal} />
+          <div className="flex flex-col">
+            {active.map((goal, i) => (
+              <GoalCard key={goal.id} goal={goal} ordinal={i + 1} />
             ))}
           </div>
         )}
