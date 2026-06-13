@@ -14,7 +14,11 @@ export function useTodoLoader() {
 
   useEffect(() => {
     if (!currentTodoId && todoList.length > 0 && !isLoading) {
-      loadTodo(todoList[0].id);
+      // Open on the Today bucket: first root page by order, not most-recent.
+      const roots = todoList
+        .filter((t) => !t.parentId)
+        .sort((a, b) => a.orderIndex - b.orderIndex);
+      loadTodo((roots[0] ?? todoList[0]).id);
     }
   }, [todoList, currentTodoId, loadTodo, isLoading]);
 }

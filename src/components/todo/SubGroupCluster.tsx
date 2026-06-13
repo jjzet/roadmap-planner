@@ -7,19 +7,13 @@ import { useTodoStore, SUBGROUP_COLORS } from '@/store/todoStore';
 import { TodoItemRow } from './TodoItemRow';
 import type { SubGroup, TodoItem } from '@/types';
 
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 interface Props {
   subGroup: SubGroup;
   items: TodoItem[];
   groupId: string;
 }
 
+/** Sub-groups render as a left colour rail — a column within the section. */
 export function SubGroupCluster({ subGroup, items, groupId }: Props) {
   const updateSubGroup = useTodoStore((s) => s.updateSubGroup);
   const removeSubGroup = useTodoStore((s) => s.removeSubGroup);
@@ -36,6 +30,7 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    borderLeft: `2.5px solid ${subGroup.color}`,
   };
 
   useEffect(() => {
@@ -45,7 +40,6 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
     }
   }, [isEditingName]);
 
-  // Close color picker on outside click
   useEffect(() => {
     if (!showColorPicker) return;
     const handler = (e: MouseEvent) => {
@@ -74,107 +68,99 @@ export function SubGroupCluster({ subGroup, items, groupId }: Props) {
     <div
       ref={setNodeRef}
       style={style}
-      className="group/sg mb-2 rounded-sm relative"
+      className="group/sg my-2.5 ml-2 pl-6 relative"
     >
-      <div
-        className="relative rounded-sm overflow-hidden"
-        style={{
-          backgroundColor: hexToRgba(subGroup.color, 0.04),
-        }}
-      >
-        {/* Top accent bar */}
+      {/* Header */}
+      <div className="flex items-center gap-2 pt-2 pb-0.5 group/sgheader">
         <span
-          className="block w-full h-[2px] pointer-events-none"
-          style={{ backgroundColor: subGroup.color }}
-          aria-hidden
-        />
-        {/* Header */}
-        <div className="flex items-center gap-1.5 px-2 py-1.5 group/sgheader">
-          <span
-            className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing opacity-0 group-hover/sg:opacity-100 transition-opacity flex-shrink-0"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="w-3.5 h-3.5" />
-          </span>
+          className="text-o-ink-14 hover:text-o-ink-45 cursor-grab active:cursor-grabbing opacity-0 group-hover/sg:opacity-100 transition-opacity flex-shrink-0 -ml-1"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </span>
 
-          {/* Color dot + picker */}
-          <div className="relative" ref={colorRef}>
-            <button
-              onClick={() => setShowColorPicker(!showColorPicker)}
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0 border-none cursor-pointer p-0 opacity-60 hover:opacity-100 transition-opacity"
-              style={{ backgroundColor: subGroup.color }}
-              title="Change colour"
-            />
-            {showColorPicker && (
-              <div className="absolute top-5 left-0 z-20 bg-white rounded-lg border border-gray-200 shadow-lg p-2 flex items-center gap-1.5">
-                {SUBGROUP_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => {
-                      updateSubGroup(groupId, subGroup.id, { color: c });
-                      setShowColorPicker(false);
-                    }}
-                    className="w-5 h-5 rounded-full border-2 cursor-pointer p-0 transition-transform hover:scale-110"
-                    style={{
-                      backgroundColor: c,
-                      borderColor: c === subGroup.color ? '#374151' : 'transparent',
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Name */}
-          {isEditingName ? (
-            <input
-              ref={nameRef}
-              className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-gray-600 flex-1 border-none outline-none bg-transparent px-0"
-              placeholder="Name this group…"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              onBlur={handleNameBlur}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') { setNameInput(subGroup.name); setIsEditingName(false); }
-              }}
-            />
-          ) : (
-            <span
-              className="text-[11px] font-mono font-semibold uppercase tracking-[0.14em] text-gray-600 flex-1 cursor-pointer truncate"
-              onClick={() => { setNameInput(subGroup.name); setIsEditingName(true); }}
-            >
-              {subGroup.name || <span className="text-gray-300 italic font-normal normal-case">Name this group…</span>}
-            </span>
-          )}
-
-          {/* Dissolve button */}
+        {/* Colour swatch + picker */}
+        <div className="relative" ref={colorRef}>
           <button
-            onClick={() => removeSubGroup(groupId, subGroup.id)}
-            className="text-gray-300 hover:text-red-500 border-none bg-transparent cursor-pointer p-0.5 rounded opacity-0 group-hover/sg:opacity-100 transition-opacity flex-shrink-0"
-            title="Ungroup items"
-          >
-            <X className="w-3 h-3" />
-          </button>
+            onClick={() => setShowColorPicker(!showColorPicker)}
+            className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0 border-none cursor-pointer p-0 opacity-80 hover:opacity-100 transition-opacity"
+            style={{ backgroundColor: subGroup.color }}
+            title="Change colour"
+          />
+          {showColorPicker && (
+            <div
+              className="absolute top-5 left-0 z-20 rounded-xl p-2 flex items-center gap-1.5"
+              style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)', boxShadow: '0 16px 40px -12px rgba(0,0,0,.25)' }}
+            >
+              {SUBGROUP_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => {
+                    updateSubGroup(groupId, subGroup.id, { color: c });
+                    setShowColorPicker(false);
+                  }}
+                  className="w-5 h-5 rounded-[6px] border-2 cursor-pointer p-0 transition-transform hover:scale-110"
+                  style={{
+                    backgroundColor: c,
+                    borderColor: c === subGroup.color ? 'var(--ink)' : 'transparent',
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Items */}
-        <SortableContext
-          items={sortedItems.map((it) => it.id)}
-          strategy={verticalListSortingStrategy}
+        {/* Name — bold condensed caps */}
+        {isEditingName ? (
+          <input
+            ref={nameRef}
+            className="flex-1 border-none outline-none bg-transparent px-0 text-[12px] uppercase"
+            style={{ fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--ink-65)' }}
+            placeholder="Name this group…"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onBlur={handleNameBlur}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') { setNameInput(subGroup.name); setIsEditingName(false); }
+            }}
+          />
+        ) : (
+          <span
+            className="flex-1 cursor-pointer truncate text-[12px] uppercase"
+            style={{ fontFamily: 'var(--font-display)', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--ink-65)' }}
+            onClick={() => { setNameInput(subGroup.name); setIsEditingName(true); }}
+          >
+            {subGroup.name || <span style={{ color: 'var(--ink-28)' }}>Name this group…</span>}
+          </span>
+        )}
+
+        {/* Dissolve button */}
+        <button
+          onClick={() => removeSubGroup(groupId, subGroup.id)}
+          className="text-o-ink-28 hover:text-o-blue border-none bg-transparent cursor-pointer p-0.5 rounded opacity-0 group-hover/sg:opacity-100 transition-opacity flex-shrink-0"
+          title="Ungroup items"
         >
-          <div className="px-1 pb-1">
-            {sortedItems.map((item) => (
-              <TodoItemRow
-                key={item.id}
-                item={item}
-                groupId={groupId}
-              />
-            ))}
-          </div>
-        </SortableContext>
+          <X className="w-3 h-3" />
+        </button>
       </div>
+
+      {/* Items */}
+      <SortableContext
+        items={sortedItems.map((it) => it.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div>
+          {sortedItems.map((item) => (
+            <TodoItemRow
+              key={item.id}
+              item={item}
+              groupId={groupId}
+            />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }

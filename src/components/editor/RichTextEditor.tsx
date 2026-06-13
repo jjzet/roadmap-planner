@@ -56,7 +56,7 @@ export function RichTextEditor({
         openOnClick: false,
         autolink: true,
         HTMLAttributes: {
-          class: 'text-blue-600 underline underline-offset-2 hover:text-blue-700',
+          class: 'text-o-blue underline underline-offset-2 hover:text-o-blue',
         },
       }),
     ],
@@ -65,7 +65,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm max-w-none focus:outline-none text-[12px] font-mono font-light leading-relaxed text-gray-700 rte-content',
+          'prose prose-sm max-w-none focus:outline-none text-[12px] font-mono font-light leading-relaxed text-o-ink rte-content',
       },
     },
     onUpdate: ({ editor }) => {
@@ -89,7 +89,7 @@ export function RichTextEditor({
 
   const btn = (active: boolean) =>
     `p-1.5 rounded transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center ${
-      active ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+      active ? 'text-o-blue bg-o-blue-soft' : 'text-o-ink-65 hover:text-o-ink hover:bg-o-ink-07'
     }`;
 
   const handleLink = () => {
@@ -112,7 +112,7 @@ export function RichTextEditor({
         style={{ zIndex: 50 }}
       >
         <div
-          className="flex items-center gap-0.5 rounded-lg bg-white border border-gray-200 shadow-lg px-1 py-1"
+          className="flex items-center gap-0.5 rounded-lg bg-o-raise border border-o-ink-14 shadow-lg px-1 py-1"
           onMouseDown={(e) => e.preventDefault()}
         >
           <button

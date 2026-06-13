@@ -70,8 +70,17 @@ export function TodoListContent() {
     setShowAddMenu(false);
   };
 
+  // Ordinals: groups number sequentially down the page (01, 02, …)
+  const groupOrdinals = new Map<string, number>();
+  blocks.forEach((b) => {
+    if (b.type === 'group') groupOrdinals.set(b.data.id, groupOrdinals.size + 1);
+  });
+
+  const menuItemClass =
+    'flex items-center gap-2 w-full px-3 py-2 text-[13px] font-medium text-o-ink hover:bg-o-ink-04 border-none bg-transparent cursor-pointer text-left';
+
   return (
-    <div className="w-full px-8 py-6">
+    <div className="w-full">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -85,7 +94,7 @@ export function TodoListContent() {
           {blocks.map((block) => {
             switch (block.type) {
               case 'group':
-                return <TodoGroupBlock key={block.data.id} group={block.data} />;
+                return <TodoGroupBlock key={block.data.id} group={block.data} ordinal={groupOrdinals.get(block.data.id)} />;
               case 'text':
                 return <TextBlockRow key={block.data.id} block={block.data} />;
               case 'divider':
@@ -104,23 +113,25 @@ export function TodoListContent() {
       {/* Empty state */}
       {blocks.length === 0 && !showAddGroup && (
         <div className="py-16">
-          <p className="text-gray-400 text-sm mb-4">
-            This page is empty. Add a text block or group to get started.
+          <p className="text-[15px] mb-5" style={{ color: 'var(--ink-45)' }}>
+            This page is empty. Add a group or a text block to get started.
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleAddText}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 border-none cursor-pointer text-sm"
-            >
-              <Type className="w-4 h-4" />
-              Text
-            </button>
-            <button
               onClick={() => setShowAddGroup(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 border-none cursor-pointer text-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-none cursor-pointer text-sm font-bold"
+              style={{ background: 'var(--blue)', color: 'var(--on-blue)' }}
             >
               <ListChecks className="w-4 h-4" />
               Group
+            </button>
+            <button
+              onClick={handleAddText}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-none cursor-pointer text-sm font-semibold"
+              style={{ background: 'var(--ink-07)', color: 'var(--ink)' }}
+            >
+              <Type className="w-4 h-4" />
+              Text
             </button>
           </div>
         </div>
@@ -130,8 +141,9 @@ export function TodoListContent() {
       {showAddGroup && (
         <div className="mt-4">
           <input
-            className="w-full text-sm font-semibold border-b-2 border-gray-300 px-1 py-2 outline-none focus:border-blue-500 bg-transparent"
-            placeholder="Group name..."
+            className="o-head w-full text-[16px] px-1 py-2 outline-none bg-transparent"
+            style={{ borderBottom: '2px solid var(--ink)', color: 'var(--ink)' }}
+            placeholder="GROUP NAME…"
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             onKeyDown={(e) => {
@@ -148,43 +160,34 @@ export function TodoListContent() {
 
       {/* Add block buttons */}
       {blocks.length > 0 && !showAddGroup && (
-        <div className="mt-6 relative">
+        <div className="mt-4 relative pb-2">
           <button
             onClick={() => setShowAddMenu(!showAddMenu)}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-blue-600 cursor-pointer border-none bg-transparent px-0"
+            className="flex items-center gap-1.5 text-[13px] font-semibold text-o-ink-28 hover:text-o-blue cursor-pointer border-none bg-transparent px-0 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add block
           </button>
 
           {showAddMenu && (
-            <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-              <button
-                onClick={handleAddText}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
-              >
-                <Type className="w-4 h-4 text-gray-400" />
-                Text
-              </button>
-              <button
-                onClick={handleAddHeading}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
-              >
-                <Heading2 className="w-4 h-4 text-gray-400" />
-                Heading
-              </button>
-              <button
-                onClick={handleShowAddGroup}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
-              >
-                <ListChecks className="w-4 h-4 text-gray-400" />
+            <div
+              className="absolute left-0 bottom-full mb-1 rounded-xl py-1.5 z-10 min-w-[170px]"
+              style={{ background: 'var(--paper-raise)', border: '1px solid var(--ink-14)', boxShadow: '0 16px 40px -12px rgba(0,0,0,.25)' }}
+            >
+              <button onClick={handleShowAddGroup} className={menuItemClass}>
+                <ListChecks className="w-4 h-4 text-o-ink-45" />
                 Task Group
               </button>
-              <button
-                onClick={handleAddDivider}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-none bg-transparent cursor-pointer text-left"
-              >
-                <Minus className="w-4 h-4 text-gray-400" />
+              <button onClick={handleAddHeading} className={menuItemClass}>
+                <Heading2 className="w-4 h-4 text-o-ink-45" />
+                Heading
+              </button>
+              <button onClick={handleAddText} className={menuItemClass}>
+                <Type className="w-4 h-4 text-o-ink-45" />
+                Text
+              </button>
+              <button onClick={handleAddDivider} className={menuItemClass}>
+                <Minus className="w-4 h-4 text-o-ink-45" />
                 Divider
               </button>
             </div>

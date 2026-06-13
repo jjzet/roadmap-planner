@@ -1,113 +1,50 @@
 import { create } from 'zustand';
-import type { ActiveView, ZoomLevel } from '../types';
+import type { ActiveView } from '../types';
+
+export type Theme = 'light' | 'dark';
+
+const THEME_KEY = 'orbit-theme';
+
+function loadTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+}
 
 interface UIState {
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
 
-  zoom: ZoomLevel;
-  selectedItemId: string | null;
-  selectedStreamId: string | null;
-  selectedPhaseBarId: string | null;
-  editPanelOpen: boolean;
-  isPanning: boolean;
-  dependencyMode: boolean;
-  dependencySourceItemId: string | null;
+  theme: Theme;
+  toggleTheme: () => void;
 
-  // Sidebar detail columns visibility
-  showLeadColumn: boolean;
-  showSupportColumn: boolean;
-  showPhaseColumn: boolean;
-
-  // Timeline display
-  showMonthColors: boolean;
-
-  // Slide-up dashboard panel (from BottomStatsStrip)
-  dashboardPanelOpen: boolean;
-
-  // Chat panel (mutually exclusive with dashboard)
-  chatPanelOpen: boolean;
-
-  setZoom: (z: ZoomLevel) => void;
-  toggleZoom: () => void;
-  selectItem: (itemId: string | null, streamId?: string | null) => void;
-  selectPhaseBar: (phaseBarId: string | null) => void;
-  openEditPanel: () => void;
-  closeEditPanel: () => void;
-  setPanning: (v: boolean) => void;
-  enterDependencyMode: (sourceItemId: string) => void;
-  exitDependencyMode: () => void;
-  toggleLeadColumn: () => void;
-  toggleSupportColumn: () => void;
-  togglePhaseColumn: () => void;
-  toggleMonthColors: () => void;
-
-  toggleDashboardPanel: () => void;
-  openDashboardPanel: () => void;
-  closeDashboardPanel: () => void;
-
-  toggleChatPanel: () => void;
-  openChatPanel: () => void;
-  closeChatPanel: () => void;
+  // Capture overlay (dock "+ Capture")
+  captureOpen: boolean;
+  openCapture: () => void;
+  closeCapture: () => void;
 }
 
+const initialTheme = loadTheme();
+applyTheme(initialTheme);
+
 export const useUIStore = create<UIState>((set) => ({
-  activeView: 'roadmap',
+  activeView: 'tasks',
   setActiveView: (view) => set({ activeView: view }),
 
-  zoom: 'week',
-  selectedItemId: null,
-  selectedStreamId: null,
-  selectedPhaseBarId: null,
-  editPanelOpen: false,
-  isPanning: false,
-  dependencyMode: false,
-  dependencySourceItemId: null,
-
-  showLeadColumn: false,
-  showSupportColumn: false,
-  showPhaseColumn: false,
-  showMonthColors: true,
-
-  dashboardPanelOpen: false,
-  chatPanelOpen: false,
-
-  setZoom: (z) => set({ zoom: z }),
-  toggleZoom: () =>
-    set((s) => ({ zoom: s.zoom === 'week' ? 'month' : 'week' })),
-
-  selectItem: (itemId, streamId = null) =>
-    set({
-      selectedItemId: itemId,
-      selectedStreamId: streamId,
-      selectedPhaseBarId: null,
-      // Don't auto-open edit panel on select — only double-click opens it
+  theme: initialTheme,
+  toggleTheme: () =>
+    set((s) => {
+      const next: Theme = s.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+      return { theme: next };
     }),
 
-  selectPhaseBar: (phaseBarId) => set({ selectedPhaseBarId: phaseBarId }),
-
-  openEditPanel: () => set({ editPanelOpen: true }),
-  closeEditPanel: () =>
-    set({ editPanelOpen: false, selectedItemId: null, selectedStreamId: null, selectedPhaseBarId: null }),
-
-  setPanning: (v) => set({ isPanning: v }),
-
-  enterDependencyMode: (sourceItemId) =>
-    set({ dependencyMode: true, dependencySourceItemId: sourceItemId }),
-
-  exitDependencyMode: () =>
-    set({ dependencyMode: false, dependencySourceItemId: null }),
-
-  toggleLeadColumn: () => set((s) => ({ showLeadColumn: !s.showLeadColumn })),
-  toggleSupportColumn: () => set((s) => ({ showSupportColumn: !s.showSupportColumn })),
-  togglePhaseColumn: () => set((s) => ({ showPhaseColumn: !s.showPhaseColumn })),
-  toggleMonthColors: () => set((s) => ({ showMonthColors: !s.showMonthColors })),
-
-  toggleDashboardPanel: () => set((s) => ({ dashboardPanelOpen: !s.dashboardPanelOpen, chatPanelOpen: false })),
-  openDashboardPanel: () => set({ dashboardPanelOpen: true, chatPanelOpen: false }),
-  closeDashboardPanel: () => set({ dashboardPanelOpen: false }),
-
-  toggleChatPanel: () => set((s) => ({ chatPanelOpen: !s.chatPanelOpen, dashboardPanelOpen: false })),
-  openChatPanel: () => set({ chatPanelOpen: true, dashboardPanelOpen: false }),
-  closeChatPanel: () => set({ chatPanelOpen: false }),
+  captureOpen: false,
+  openCapture: () => set({ captureOpen: true }),
+  closeCapture: () => set({ captureOpen: false }),
 }));

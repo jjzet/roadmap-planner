@@ -1,59 +1,51 @@
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { AppSidebar } from '@/components/navigation/AppSidebar';
-import { RoadmapView } from '@/components/views/RoadmapView';
 import { TasksView } from '@/components/views/TasksView';
-import { TodayView } from '@/components/views/TodayView';
-import { InsightsView } from '@/components/views/InsightsView';
-import { GoalsView } from '@/components/views/GoalsView';
+import { PagesView } from '@/components/views/PagesView';
 import { JournalView } from '@/components/views/JournalView';
-import { PalacesView } from '@/components/views/PalacesView';
-import { useRoadmapLoader } from './hooks/useRoadmapLoader';
+import { LibraryView } from '@/components/views/LibraryView';
+import { BoardView } from '@/components/views/BoardView';
+import { GoalsView } from '@/components/views/GoalsView';
+import { InsightsView } from '@/components/views/InsightsView';
+import { Dock } from '@/components/navigation/Dock';
+import { CaptureOverlay } from '@/components/navigation/CaptureOverlay';
 import { useTodoLoader } from './hooks/useTodoLoader';
 import { useInsightLoader } from './hooks/useInsightLoader';
 import { useGoalLoader } from './hooks/useGoalLoader';
 import { useJournalLoader } from './hooks/useJournalLoader';
-import { usePalaceLoader } from './hooks/usePalaceLoader';
-import { usePalaceReviewLoader } from './hooks/usePalaceReviewLoader';
+import { useTodoAutoSave } from './hooks/useTodoAutoSave';
 import { useUIStore } from './store/uiStore';
 import { DashboardDataProvider } from './hooks/DashboardDataContext';
-import { BottomStatsStrip } from './components/layout/BottomStatsStrip';
-import { SlideUpDashboard } from './components/layout/SlideUpDashboard';
-import { ChatDockBar } from './components/layout/ChatDockBar';
-import { ChatThreadPanel } from './components/layout/ChatThreadPanel';
 
 function App() {
-  useRoadmapLoader();
   useTodoLoader();
   useInsightLoader();
   useGoalLoader();
   useJournalLoader();
-  usePalaceLoader();
-  usePalaceReviewLoader();
+  useTodoAutoSave();
 
   const activeView = useUIStore((s) => s.activeView);
 
   return (
     <TooltipProvider>
       <DashboardDataProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <main className="relative flex-1 min-w-0 flex flex-col overflow-clip h-screen bg-gray-50">
-            <div className="flex-1 flex flex-col overflow-hidden pb-24">
-              {activeView === 'roadmap' && <RoadmapView />}
-              {activeView === 'tasks' && <TasksView />}
-              {activeView === 'today' && <TodayView />}
-              {activeView === 'insights' && <InsightsView />}
-              {activeView === 'goals' && <GoalsView />}
-              {activeView === 'journal' && <JournalView />}
-              {activeView === 'palaces' && <PalacesView />}
-            </div>
-            <ChatThreadPanel />
-            <SlideUpDashboard />
-            <ChatDockBar />
-            <BottomStatsStrip />
+        <div className="relative h-screen w-screen overflow-hidden" style={{ background: 'var(--paper)' }}>
+          {/* ambient layers */}
+          <div className="o-graph" />
+          <div className="o-wash" />
+
+          <main className="relative z-10 h-full flex flex-col">
+            {activeView === 'tasks' && <TasksView />}
+            {activeView === 'pages' && <PagesView />}
+            {activeView === 'journal' && <JournalView />}
+            {activeView === 'library' && <LibraryView />}
+            {activeView === 'board' && <BoardView />}
+            {activeView === 'goals' && <GoalsView />}
+            {activeView === 'insights' && <InsightsView />}
           </main>
-        </SidebarProvider>
+
+          <Dock />
+          <CaptureOverlay />
+        </div>
       </DashboardDataProvider>
     </TooltipProvider>
   );

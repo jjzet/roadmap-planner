@@ -104,7 +104,7 @@ export function JournalHeatmap({
   return (
     <div className="select-none">
       {/* Stats row */}
-      <div className="flex items-center gap-6 mb-3">
+      <div className="flex items-center gap-7 mb-4">
         <Stat value={currentStreak} label="day streak" highlight />
         <Stat value={longestStreak} label="longest" />
         <Stat value={totalEntries} label="entries" />
@@ -113,9 +113,9 @@ export function JournalHeatmap({
       {/* Heatmap grid */}
       <div className="flex gap-1 overflow-x-auto pb-1">
         {/* Weekday labels column */}
-        <div className="flex flex-col gap-[3px] mr-1 pt-4">
+        <div className="flex flex-col gap-[4px] mr-1.5 pt-[18px]">
           {WEEKDAY_LABELS.map((wd, i) => (
-            <div key={i} className="h-[10px] text-[9px] font-mono text-gray-300 leading-[10px]">
+            <div key={i} className="o-dot h-[11px] text-[8.5px] leading-[11px]" style={{ color: 'var(--ink-28)' }}>
               {wd}
             </div>
           ))}
@@ -123,32 +123,29 @@ export function JournalHeatmap({
 
         <div>
           {/* Month labels row */}
-          <div className="flex gap-[3px] mb-1 h-3">
+          <div className="flex gap-[4px] mb-1.5 h-3">
             {weeks.map((_, wIdx) => {
               const marker = monthMarkers.find((m) => m.weekIdx === wIdx);
               return (
-                <div key={wIdx} className="w-[10px] text-[9px] font-mono text-gray-400">
+                <div key={wIdx} className="o-dot w-[11px] text-[8.5px] overflow-visible whitespace-nowrap" style={{ color: 'var(--ink-45)' }}>
                   {marker?.label ?? ''}
                 </div>
               );
             })}
           </div>
           {/* Cells */}
-          <div className="flex gap-[3px]">
+          <div className="flex gap-[4px]">
             {weeks.map((week, wIdx) => (
-              <div key={wIdx} className="flex flex-col gap-[3px]">
+              <div key={wIdx} className="flex flex-col gap-[4px]">
                 {week.map((cell) => {
                   const isSelected = cell.date === selectedDate;
-                  let cls = 'w-[10px] h-[10px] rounded-[2px] transition-colors ';
-                  if (cell.isFuture) {
-                    cls += 'bg-transparent border border-gray-100 cursor-default';
-                  } else if (cell.filled) {
-                    cls += 'bg-blue-500 hover:bg-blue-400 cursor-pointer';
-                  } else {
-                    cls += 'bg-gray-100 hover:bg-gray-200 cursor-pointer';
-                  }
-                  if (isSelected) cls += ' ring-1 ring-blue-600 ring-offset-1';
-                  if (cell.isToday) cls += ' outline outline-1 outline-gray-400';
+                  const style: React.CSSProperties = cell.isFuture
+                    ? { background: 'transparent', border: '1px solid var(--ink-07)', cursor: 'default' }
+                    : cell.filled
+                    ? { background: 'var(--blue)', cursor: 'pointer' }
+                    : { background: 'var(--ink-07)', cursor: 'pointer' };
+                  if (isSelected) style.boxShadow = '0 0 0 1.5px var(--paper), 0 0 0 3px var(--blue)';
+                  else if (cell.isToday) style.boxShadow = '0 0 0 1.5px var(--paper), 0 0 0 3px var(--ink-28)';
                   return (
                     <button
                       key={cell.date}
@@ -156,7 +153,8 @@ export function JournalHeatmap({
                       title={`${cell.date}${cell.filled ? ' — entry written' : cell.isFuture ? '' : ' — no entry'}`}
                       disabled={cell.isFuture}
                       onClick={() => !cell.isFuture && onSelect(cell.date)}
-                      className={`${cls} border-0 p-0`}
+                      className="w-[11px] h-[11px] rounded-[3px] border-0 p-0 transition-transform hover:scale-125"
+                      style={style}
                     />
                   );
                 })}
@@ -171,15 +169,14 @@ export function JournalHeatmap({
 
 function Stat({ value, label, highlight }: { value: number; label: string; highlight?: boolean }) {
   return (
-    <div className="flex items-baseline gap-1.5">
+    <div className="flex items-baseline gap-2">
       <span
-        className={`text-lg font-mono font-light tabular-nums ${
-          highlight ? 'text-blue-600' : 'text-gray-700'
-        }`}
+        className="o-dot text-[22px]"
+        style={{ color: highlight ? 'var(--blue)' : 'var(--ink)', fontWeight: 900 }}
       >
         {value}
       </span>
-      <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">{label}</span>
+      <span className="o-dot text-[10px]" style={{ color: 'var(--ink-45)' }}>{label}</span>
     </div>
   );
 }
