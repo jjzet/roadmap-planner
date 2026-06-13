@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUIStore } from '@/store/uiStore';
 import { useTodoStore } from '@/store/todoStore';
-import { useDefaultPageId } from './Dock';
+import { useDefaultPageId } from '@/hooks/useDefaultPageId';
 
 /**
  * ⌘K quick capture. Lands the thought in the page you're looking at when
@@ -29,9 +29,13 @@ export function CaptureOverlay() {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
+        setText('');
         openCapture();
       }
-      if (e.key === 'Escape') closeCapture();
+      if (e.key === 'Escape') {
+        setText('');
+        closeCapture();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -39,7 +43,6 @@ export function CaptureOverlay() {
 
   useEffect(() => {
     if (open) {
-      setText('');
       // focus after the overlay paints
       requestAnimationFrame(() => inputRef.current?.focus());
     }
@@ -81,7 +84,7 @@ export function CaptureOverlay() {
     <div
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[22vh]"
       style={{ background: 'color-mix(in srgb, var(--ink) 22%, transparent)', backdropFilter: 'blur(3px)' }}
-      onMouseDown={closeCapture}
+      onMouseDown={() => { setText(''); closeCapture(); }}
     >
       <div
         className="w-[640px] max-w-[90vw] rounded-[18px] p-2.5"

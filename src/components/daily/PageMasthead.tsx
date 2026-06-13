@@ -3,7 +3,7 @@ import { useTodoStore } from '@/store/todoStore';
 import { useJournalStore } from '@/store/journalStore';
 import { useUIStore } from '@/store/uiStore';
 import { useDashboardDataContext } from '@/hooks/DashboardDataContext';
-import { computeStreak } from './JournalRibbon';
+import { computeStreak } from '@/lib/journal';
 import { Moon, Sun } from 'lucide-react';
 
 function formatToplineDate(): string {

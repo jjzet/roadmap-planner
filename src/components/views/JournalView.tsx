@@ -4,7 +4,7 @@ import { useGoalStore } from '@/store/goalStore';
 import { useJournalStore } from '@/store/journalStore';
 import { useUIStore } from '@/store/uiStore';
 import { JournalHeatmap } from '@/components/journal/JournalHeatmap';
-import { computeStreak } from '@/components/daily/JournalRibbon';
+import { computeStreak } from '@/lib/journal';
 
 function todayISO(): string {
   return new Date().toISOString().split('T')[0];

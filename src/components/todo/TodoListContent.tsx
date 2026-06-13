@@ -71,7 +71,10 @@ export function TodoListContent() {
   };
 
   // Ordinals: groups number sequentially down the page (01, 02, …)
-  let groupOrdinal = 0;
+  const groupOrdinals = new Map<string, number>();
+  blocks.forEach((b) => {
+    if (b.type === 'group') groupOrdinals.set(b.data.id, groupOrdinals.size + 1);
+  });
 
   const menuItemClass =
     'flex items-center gap-2 w-full px-3 py-2 text-[13px] font-medium text-o-ink hover:bg-o-ink-04 border-none bg-transparent cursor-pointer text-left';
@@ -91,8 +94,7 @@ export function TodoListContent() {
           {blocks.map((block) => {
             switch (block.type) {
               case 'group':
-                groupOrdinal += 1;
-                return <TodoGroupBlock key={block.data.id} group={block.data} ordinal={groupOrdinal} />;
+                return <TodoGroupBlock key={block.data.id} group={block.data} ordinal={groupOrdinals.get(block.data.id)} />;
               case 'text':
                 return <TextBlockRow key={block.data.id} block={block.data} />;
               case 'divider':

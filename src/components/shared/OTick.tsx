@@ -2,6 +2,26 @@ import { useRef, useState } from 'react';
 
 const BURST_COLORS = ['var(--blue)', 'var(--blue-mid)', 'var(--lavender)', 'var(--sand)'];
 
+interface Particle {
+  bx: number;
+  by: number;
+  br: number;
+  color: string;
+}
+
+function makeParticles(): Particle[] {
+  return Array.from({ length: 8 }).map((_, i) => {
+    const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.6;
+    const dist = 16 + Math.random() * 14;
+    return {
+      bx: Math.cos(angle) * dist,
+      by: Math.sin(angle) * dist,
+      br: Math.round(Math.random() * 180 - 90),
+      color: BURST_COLORS[i % BURST_COLORS.length],
+    };
+  });
+}
+
 interface Props {
   checked: boolean;
   onToggle: () => void;
@@ -14,14 +34,14 @@ interface Props {
  * small soft-square burst — the endorphin moment, kept quick and quiet.
  */
 export function OTick({ checked, onToggle, size = 20, title }: Props) {
-  const [burstKey, setBurstKey] = useState(0);
+  const [burst, setBurst] = useState<{ key: number; particles: Particle[] } | null>(null);
   const burstingRef = useRef(false);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!checked && !burstingRef.current) {
       burstingRef.current = true;
-      setBurstKey((k) => k + 1);
+      setBurst((b) => ({ key: (b?.key ?? 0) + 1, particles: makeParticles() }));
       setTimeout(() => { burstingRef.current = false; }, 600);
     }
     onToggle();
@@ -49,26 +69,22 @@ export function OTick({ checked, onToggle, size = 20, title }: Props) {
           />
         </svg>
       )}
-      {burstKey > 0 && checked && (
-        <span key={burstKey} className="absolute inset-0 pointer-events-none" aria-hidden>
-          {Array.from({ length: 8 }).map((_, i) => {
-            const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.6;
-            const dist = 16 + Math.random() * 14;
-            return (
-              <span
-                key={i}
-                className="o-burst"
-                style={{
-                  left: size / 2 - 3,
-                  top: size / 2 - 3,
-                  background: BURST_COLORS[i % BURST_COLORS.length],
-                  ['--bx' as string]: `${Math.cos(angle) * dist}px`,
-                  ['--by' as string]: `${Math.sin(angle) * dist}px`,
-                  ['--br' as string]: `${Math.round(Math.random() * 180 - 90)}deg`,
-                }}
-              />
-            );
-          })}
+      {burst && checked && (
+        <span key={burst.key} className="absolute inset-0 pointer-events-none" aria-hidden>
+          {burst.particles.map((p, i) => (
+            <span
+              key={i}
+              className="o-burst"
+              style={{
+                left: size / 2 - 3,
+                top: size / 2 - 3,
+                background: p.color,
+                ['--bx' as string]: `${p.bx}px`,
+                ['--by' as string]: `${p.by}px`,
+                ['--br' as string]: `${p.br}deg`,
+              }}
+            />
+          ))}
         </span>
       )}
     </button>

@@ -1,13 +1,7 @@
 import { useUIStore } from '@/store/uiStore';
 import { useTodoStore } from '@/store/todoStore';
+import { useDefaultPageId } from '@/hooks/useDefaultPageId';
 import type { ActiveView } from '@/types';
-
-/** First root page = the daily driver ("Today" in the dock). */
-export function useDefaultPageId(): string | null {
-  const todoList = useTodoStore((s) => s.todoList);
-  const roots = todoList.filter((t) => !t.parentId).sort((a, b) => a.orderIndex - b.orderIndex);
-  return roots[0]?.id ?? null;
-}
 
 interface DockTab {
   key: ActiveView | 'today';
